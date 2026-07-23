@@ -1,26 +1,59 @@
 @import "tailwindcss";
 
+/* Fonts are injected per landing page via next/font, exposed here as utilities. */
+@theme inline {
+  --font-display: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* AAA brand system. Primary is #1f5993, carried through a full navy ramp,
+   with a struck gold drawn from the accreditation seal as the accent. */
+@theme {
+  --color-navy-950: #071729;
+  --color-navy-900: #0b2440;
+  --color-navy-800: #103156;
+  --color-navy-700: #16416f;
+  --color-navy-600: #1a4c81;
+  --color-navy-500: #1f5993;
+  --color-navy-400: #3a76b2;
+  --color-navy-300: #6d9ccb;
+  --color-navy-200: #a9c6e2;
+  --color-navy-100: #d7e6f3;
+  --color-navy-50: #f0f6fb;
+
+  --color-gold-600: #8f6f28;
+  --color-gold-500: #b08b34;
+  --color-gold-400: #c8a04a;
+  --color-gold-300: #ddbd77;
+  --color-gold-200: #eed9ab;
+  --color-gold-100: #f7ecd5;
+
+  --color-bone-100: #fffefb;
+  --color-bone-200: #faf8f3;
+  --color-bone-300: #f2eee5;
+
+  --color-ink-900: #10171f;
+  --color-ink-700: #33414f;
+  --color-ink-500: #5d6c7b;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #10171f;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
