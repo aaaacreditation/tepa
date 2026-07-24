@@ -1,0 +1,320 @@
+/* ==========================================================================
+   AAA Lead Desk: internal dashboard for landing page leads.
+   Light surface, navy #1f5993 primary, struck gold accent — the same brand
+   system as the landing pages, tuned for data instead of persuasion.
+   ========================================================================== */
+
+.dash {
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  background: #faf8f3;
+  color: #10171f;
+  min-height: 100dvh;
+}
+
+.dash ::selection {
+  background: #1f5993;
+  color: #ffffff;
+}
+
+.dash-display {
+  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.dash-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Shell ------------------------------------------------------------------ */
+
+.dash-shell {
+  display: grid;
+  grid-template-columns: 234px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.dash-aside {
+  background:
+    radial-gradient(560px 320px at 90% 0%, rgba(200, 160, 74, 0.14), transparent 60%),
+    linear-gradient(180deg, #103156 0%, #0b2440 100%);
+  color: #ffffff;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1023px) {
+  .dash-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dash-aside {
+    position: static;
+    height: auto;
+  }
+}
+
+.dash-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 0.625rem;
+  padding: 0.5625rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.dash-nav-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.dash-nav-link[data-active="true"] {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  box-shadow: inset 2px 0 0 #c8a04a;
+}
+
+/* Cards & chips ---------------------------------------------------------- */
+
+.dash-card {
+  background: #ffffff;
+  border: 1px solid rgba(31, 89, 147, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(13, 40, 70, 0.04);
+}
+
+.dash-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 89, 147, 0.16);
+  background: #ffffff;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #33414f;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.dash-chip:hover {
+  border-color: rgba(31, 89, 147, 0.4);
+  color: #10171f;
+}
+
+.dash-chip[data-active="true"] {
+  background: #1f5993;
+  border-color: #1f5993;
+  color: #ffffff;
+}
+
+/* Form fields ------------------------------------------------------------ */
+
+.dash-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #33414f;
+  margin-bottom: 0.375rem;
+}
+
+.dash-field {
+  width: 100%;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(31, 89, 147, 0.18);
+  background: #ffffff;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9375rem;
+  color: #10171f;
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.dash-field::placeholder {
+  color: #93a1b0;
+}
+
+.dash-field:focus {
+  border-color: #1f5993;
+  box-shadow: 0 0 0 3px rgba(31, 89, 147, 0.14);
+}
+
+.dash-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: background-color 140ms ease, opacity 140ms ease;
+  cursor: pointer;
+}
+
+.dash-btn-navy {
+  background: #1f5993;
+  color: #ffffff;
+}
+
+.dash-btn-navy:hover {
+  background: #16416f;
+}
+
+.dash-btn-quiet {
+  background: transparent;
+  color: #33414f;
+  border: 1px solid rgba(31, 89, 147, 0.18);
+}
+
+.dash-btn-quiet:hover {
+  border-color: rgba(31, 89, 147, 0.4);
+}
+
+/* Table ------------------------------------------------------------------ */
+
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.dash-table th {
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5d6c7b;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid rgba(31, 89, 147, 0.12);
+  white-space: nowrap;
+}
+
+.dash-table td {
+  padding: 0.6875rem 0.75rem;
+  border-bottom: 1px solid rgba(31, 89, 147, 0.07);
+  vertical-align: middle;
+}
+
+.dash-row {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.dash-row:hover {
+  background: #f4f7fb;
+}
+
+.dash-row[data-open="true"] {
+  background: #f0f6fb;
+}
+
+/* Status select: a badge that happens to be a native select. The stage dot
+   sits beside it so state never reads by text alone or color alone. */
+
+.dash-status {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(31, 89, 147, 0.18);
+  border-radius: 999px;
+  background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235d6c7b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 0.625rem center;
+  padding: 0.3125rem 1.5rem 0.3125rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #10171f;
+  cursor: pointer;
+}
+
+.dash-status:focus {
+  outline: 2px solid rgba(31, 89, 147, 0.4);
+  outline-offset: 1px;
+}
+
+/* Bar list --------------------------------------------------------------- */
+
+.dash-track {
+  position: relative;
+  height: 18px;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+}
+
+.dash-track:focus-visible {
+  outline: 2px solid rgba(31, 89, 147, 0.4);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.dash-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 0 4px 4px 0;
+  transition: width 300ms ease, filter 120ms ease;
+}
+
+.dash-track:hover .dash-bar,
+.dash-track:focus-visible .dash-bar {
+  filter: brightness(1.12);
+}
+
+.dash-bar-value {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Chart tooltip ---------------------------------------------------------- */
+
+.dash-tip {
+  position: absolute;
+  z-index: 30;
+  pointer-events: none;
+  background: #0b2440;
+  color: #ffffff;
+  border-radius: 0.5rem;
+  padding: 0.4375rem 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  box-shadow: 0 6px 18px rgba(13, 40, 70, 0.28);
+  white-space: nowrap;
+}
+
+.dash-tip .tip-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.dash-tip .tip-label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Login ------------------------------------------------------------------ */
+
+.dash-login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(1100px 620px at 80% 4%, rgba(200, 160, 74, 0.22), transparent 62%),
+    radial-gradient(900px 560px at 4% 88%, rgba(58, 118, 178, 0.32), transparent 60%),
+    linear-gradient(168deg, #0d2846 0%, #123763 44%, #071729 100%);
+}

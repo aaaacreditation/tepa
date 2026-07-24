@@ -1,4 +1,5 @@
 import { countries } from "@/app/(frontend)/tepa/countries";
+import { insertLead } from "@/lib/leads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
     website: clean(payload.website),
     message: clean(payload.message),
     receivedAt: new Date().toISOString(),
-    source: "tepa-landing-page",
+    source: "tepa",
   };
 
   try {
@@ -107,32 +108,21 @@ export async function POST(request: Request) {
   return Response.json({ ok: true });
 }
 
-/* ==========================================================================
-   WIRE YOUR LEAD DESTINATION HERE
-   --------------------------------------------------------------------------
-   Right now every enquiry is written to the server log so nothing is lost
-   while the page goes live. Replace the body of this function with whichever
-   destination the accreditation team uses, for example:
-
-     CRM webhook (HubSpot, systeme.io, Zapier, Make):
-       const res = await fetch(process.env.TEPA_LEAD_WEBHOOK!, {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify(enquiry),
-       });
-       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
-
-     Email via Resend:
-       await resend.emails.send({
-         from: "AAA Campaigns <campaigns@aaa-accreditation.org>",
-         to: "Info@aaa-accreditation.org",
-         subject: `New TEPA enquiry: ${enquiry.organization}`,
-         text: JSON.stringify(enquiry, null, 2),
-       });
-
-   Throwing from here returns a 502 to the visitor, so the form tells them to
-   email instead of silently dropping the lead.
-   ========================================================================== */
+/* Every enquiry lands in Postgres as a lead with status "lead" and shows up
+   in the dashboard at /dashboard/tepa. Throwing from here returns a 502 to
+   the visitor, so the form tells them to email instead of silently dropping
+   the lead. The log line stays as a plain text backup of the payload. */
 async function deliver(enquiry: Enquiry) {
+  await insertLead({
+    source: enquiry.source,
+    fullName: enquiry.fullName,
+    organization: enquiry.organization,
+    email: enquiry.email,
+    countryCode: enquiry.country,
+    countryName: enquiry.countryName,
+    phone: enquiry.phone,
+    website: enquiry.website,
+    message: enquiry.message,
+  });
   console.info("[tepa/enquiry]", JSON.stringify(enquiry));
 }
