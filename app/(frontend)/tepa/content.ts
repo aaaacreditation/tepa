@@ -1,13 +1,9 @@
-/**
- * Every string on the TEPA landing page lives here so copy can be edited
- * without touching layout. House style: no dashes joining words.
- */
-
 export const site = {
   org: "American Accreditation Association",
   shortOrg: "AAA",
   calendly: "https://calendly.com/accreditationaaa/consultation-call-am",
   quote: "https://aaa-accreditation.org/get-a-quote/",
+  directory: "https://aaa-accreditation.org/accredited-organizations/",
   website: "https://aaa-accreditation.org",
   phoneLabel: "+1 (571) 601 2616",
   phoneHref: "tel:+15716012616",
@@ -24,139 +20,180 @@ export const site = {
 
 export const nav = [
   { label: "Benefits", href: "#benefits" },
-  { label: "The Symbol", href: "#symbol" },
-  { label: "Requirements", href: "#requirements" },
-  { label: "Process", href: "#process" },
-  { label: "Why AAA", href: "#why" },
+  { label: "Journey", href: "#journey" },
+  { label: "In Practice", href: "#in-practice" },
+  { label: "At a Glance", href: "#at-a-glance" },
 ] as const;
 
 export const hero = {
-  eyebrow: "American Accreditation Association",
-  titleLead: "Accreditation Of",
+  eyebrow: "Accreditation for Training Providers",
+  title: "Accreditation of Training & Education Providers",
+  titleLead: "Accreditation of",
   titleAccent: "Training & Education",
   titleTail: "Providers",
-  lede: "AAA Accreditation for Training & Education gives your organization the opportunity to have its programs formally recognized. Carry the AAA Accreditation Symbol on your training materials and your certificates.",
+  lede:
+    "Give your training programs credibility that travels across borders and gain globally recognized accreditation to make your training programs stand out, attract quality students, and drive revenue growth.",
   primaryCta: "Book a Free Consultation",
-  secondaryCta: "See the Requirements",
+  secondaryCta: "View Accreditation Requirements",
   stats: [
-    { value: "3 to 8", unit: "weeks", label: "Typical timeline" },
-    { value: "3", unit: "years", label: "Certificate validity" },
-    { value: "48", unit: "hours", label: "Response time" },
+    { value: "58+", unit: "countries", label: "Countries served worldwide" },
+    { value: "3", unit: "years", label: "Accreditation validity" },
+    { value: "19,847", unit: "certificates", label: "Accredited certificates" },
   ],
 } as const;
 
-export const marquee = [
-  "Permission to display the AAA Accreditation Symbol",
-  "Listing in the American directory of competent personnel",
-  "Digital certificate service for your delegates",
-  "Recognition that travels across borders",
-] as const;
-
-export const pillars = [
-  {
-    index: "01",
-    icon: "value" as const,
-    title: "We ensure Value",
-    points: [
-      "Permission to use the Accreditation Symbol and mark from AAA on your training materials, training certificates, and publicity materials.",
-      "Access to add your certified trainees to the American directory of competent personnel.",
-    ],
-  },
-  {
-    index: "02",
-    icon: "satisfaction" as const,
-    title: "We ensure Satisfaction",
-    points: [
-      "A course carrying AAA accreditation attracts more delegates, opens new markets, and lifts your revenue.",
-      "You demonstrate to customers that you are adopting new technology through our digital certificate service.",
-    ],
-  },
-  {
-    index: "03",
-    icon: "quality" as const,
-    title: "We ensure Quality",
-    points: [
-      "Accreditation from AAA is proof that your course material and training provision meet the high standard of professionalism AAA requires. It is a mark of quality.",
-      "Access to our research and key insights into what delegates from specific industries really want from their trainer.",
-    ],
-  },
-] as const;
-
-export const symbol = {
-  eyebrow: "The Mark of Recognition",
-  title: "Put the AAA Symbol on everything you teach",
-  body: "Accredited providers display the seal on course materials, presentations, publicity, and every certificate they issue. Each seal carries its own provider reference, so delegates and employers can verify the training is genuinely recognized.",
-  points: [
-    "Displayed on training materials and certificates",
-    "Unique provider reference on every seal",
-    "Verifiable by delegates and their employers",
-  ],
-  cta: "Free Consultation, 30 Minute Call",
-} as const;
-
-export const requirements = {
-  eyebrow: "What We Look For",
-  title: "Accreditation Requirements",
-  lede: "Two sets of criteria sit at the heart of the assessment. One covers your organization and its course material, the other covers the people who deliver it.",
-  groups: [
+export const benefits = {
+  eyebrow: "The Value of Accreditation",
+  title: "Why Accreditation Makes a Difference",
+  items: [
     {
-      key: "providers",
-      label: "For Training & Education Providers",
-      items: [
-        "The organization must provide proof that all applicable learning outcomes are covered in the training course.",
-        "Training materials, including presentations, handouts, course tutor notes, exercises, and case studies, are relevant to the Body of Knowledge and are kept current as the training topic changes.",
-      ],
+      title: "Attract Learners and Grow Your Business",
+      body:
+        "Differentiate your programs from competitors, attract more learners, enter new markets, and create new partnership opportunities—providing a stronger foundation for sustainable revenue growth.",
     },
     {
-      key: "trainers",
-      label: "For Trainers",
-      items: [
-        "A minimum of five years of relevant training experience.",
-        "Relevant qualifications and experience related to the area of training.",
-        "Completion of a train the trainer program.",
-      ],
+      title: "Increase Visibility and Credibility",
+      body:
+        "Use the AAA Accreditation Symbol on approved training materials, certificates, and promotional content. Add eligible certified trainees to the American Directory of Competent Personnel and issue verifiable digital certificates.",
+    },
+    {
+      title: "Provide Proof of Quality",
+      body:
+        "Demonstrate that your organization is committed to maintaining high standards across its course materials, trainers, delivery methods, and quality controls.",
     },
   ],
 } as const;
 
-export const process = {
-  eyebrow: "The Route to Recognition",
-  title: "How to gain AAA Accreditation in 3 to 8 weeks",
-  lede: "Four stages, one assessor, and a decision committee that reviews every file before a certificate is issued.",
+export const journey = {
+  eyebrow: "Your Accreditation Journey",
+  title: "How Accreditation Works",
+  lede: "A clear four-step process, supported by AAA at every stage.",
   stages: [
     {
-      n: "1",
-      title: "Complete your application",
-      body: "Answer the questions in the application form as fully as you can and provide the relevant course materials together with the CVs of your tutors.",
+      title: "Application",
+      body:
+        "Submit information about your organization, training programs, trainers, delivery methods, and quality processes. Our team reviews your application and guides you through the required documentation.",
     },
     {
-      n: "2",
-      title: "Accreditation assessment",
-      body: "Our assessor conducts a desk assessment of your application and reviews your documents against best practice, then completes a report with a recommendation for the decision committee.",
+      title: "Assessment",
+      body:
+        "An experienced AAA assessor evaluates your documents and training provision against the applicable accreditation requirements. Any areas for improvement are clearly communicated for corrective action.",
     },
     {
-      n: "3",
-      title: "Accreditation decision",
-      body: "The accreditation decision committee reviews the final reports to confirm that every accreditation requirement has been met. We inform you promptly of the outcome.",
+      title: "Decision",
+      body:
+        "Once the assessment is complete and every requirement has been satisfactorily addressed, the findings are independently reviewed and a formal accreditation decision is made.",
     },
     {
-      n: "4",
-      title: "Accreditation certificate",
-      body: "You receive your accreditation certificate, valid for three years, along with your provider reference and the right to display the AAA symbol.",
+      title: "Accreditation Certificate",
+      body:
+        "Your organization receives its accreditation certificate, valid for three years, and may use the Accreditation Symbol in accordance with the applicable rules.",
     },
   ],
 } as const;
 
-export const why = {
-  eyebrow: "In Their Words",
-  title: "Why choose AAA for accreditation?",
-  lede: "Hear how an accredited provider describes working through the AAA assessment.",
+export const practice = {
+  eyebrow: "Accreditation in Practice",
+  title: "Trusted by Training & Education Providers Worldwide",
+  lede:
+    "See how accreditation is helping organizations strengthen credibility, reach new markets, and create measurable growth.",
+  images: [
+    {
+      src: "/tepa/practice-beauty-team.jpeg",
+      alt: "A professional training group holding AAA-accredited certificates",
+      label: "Professional education",
+    },
+    {
+      src: "/tepa/practice-qms.jpeg",
+      alt: "A training provider team holding its framed AAA accreditation certificate",
+      label: "Quality management",
+    },
+    {
+      src: "/tepa/practice-meridian.jpeg",
+      alt: "A training centre team gathered around its AAA accreditation certificate",
+      label: "Training centre",
+    },
+    {
+      src: "/tepa/hero-accreditation.jpeg",
+      alt: "Representatives of an accredited school holding their framed AAA certificate",
+      label: "Business education",
+    },
+  ],
+  stories: [
+    {
+      organization: "Cinute Digital",
+      location: "India",
+      sector: "Information Technology",
+      quote:
+        "AAA’s global recognition has opened more doors with corporate clients and institutional partners.",
+      logo: "/tepa/testimonial-cinute-logo.jpg",
+      photo: "/tepa/testimonial-cinute-photo.jpg",
+      photoAlt:
+        "Cinute Digital representatives displaying their AAA accreditation certificate",
+      photoPosition: "50% 42%",
+    },
+    {
+      organization: "Aldelma Training Center",
+      location: "Iraq · Jordan",
+      sector: "Engineering",
+      quote:
+        "Accreditation helped us gain preferred-vendor status with government entities and attract multinational corporate clients.",
+      logo: "/tepa/testimonial-aldelma-logo.jpg",
+      photo: "/tepa/testimonial-aldelma-photo.jpg",
+      photoAlt:
+        "Aldelma Training Center representative holding a framed AAA accreditation certificate",
+      photoPosition: "50% 34%",
+    },
+    {
+      organization: "Monarch Master Injector",
+      location: "USA",
+      sector: "Cosmetology",
+      quote:
+        "Accreditation contributed to 12% growth, supported more than 500 students, and helped us build over 1,500 five-star reviews.",
+      logo: "/tepa/testimonial-monarch-logo.png",
+      photo: "/tepa/testimonial-monarch-photo.jpg",
+      photoAlt:
+        "Monarch Master Injector training group gathered for a professional education event",
+      photoPosition: "50% 48%",
+    },
+  ],
+} as const;
+
+export const glance = {
+  eyebrow: "Accreditation at a Glance",
+  title: "Is Accreditation Right for Your Organization?",
+  lede:
+    "Understand who can apply, what AAA evaluates, and what your organization receives following accreditation.",
+  items: [
+    {
+      title: "Who Can Apply?",
+      body:
+        "Training centres, professional academies, corporate training departments, online learning providers, industry associations, healthcare training organizations, and other institutions delivering structured education or professional development programs.",
+    },
+    {
+      title: "What Will Be Evaluated?",
+      body:
+        "AAA assessors evaluate submitted training materials against recognized good practices and review the qualifications, professional experience, and competence of the instructors delivering the programs.",
+    },
+    {
+      title: "What Will You Receive?",
+      body:
+        "An accreditation certificate valid for three years, permission to use the Accreditation Symbol for the approved scope, and a listing in the AAA directory of accredited organizations.",
+    },
+    {
+      title: "Access to the ADCP Directory",
+      badge: "Exclusive to accredited organizations",
+      body:
+        "Secure access to the American Directory of Competent Personnel, where you can validate and showcase the competencies of certified trainees, staff, and students and manage eligible personnel.",
+    },
+  ],
 } as const;
 
 export const apply = {
   eyebrow: "Next Step",
   title: "Ready to apply?",
-  body: "Send your details and an assessor will come back to you within 48 hours with the exact documents your program needs. No obligation, no cost to enquire.",
+  body:
+    "Send your details and an assessor will come back to you within 48 hours with the exact documents your program needs. No obligation, no cost to enquire.",
   primaryCta: "Yes, Show Me How",
   secondaryCta: "Talk to an Assessor",
   captionTitle: "Accreditation Certificate",
@@ -164,14 +201,81 @@ export const apply = {
 } as const;
 
 export const formCopy = {
-  badge: "Quick Enquiry",
-  title: "We respond within 48 hours",
-  note: "Your details go straight to the accreditation team. We never share them.",
-  submit: "Enquire Now",
+  badge: "Quick Eligibility Check",
+  title: "Find out whether your programs are eligible",
+  note: "No obligation. Receive guidance on requirements and next steps within 48 hours.",
+  submit: "Check My Eligibility",
   submitting: "Sending",
   successTitle: "Enquiry received",
   successBody:
     "Thank you. An assessor will be in touch within 48 hours. If it is urgent, book a consultation call and we will speak sooner.",
   successCta: "Book a Consultation Call",
   errorGeneric: "Something went wrong on our side. Please try again, or email us directly.",
+} as const;
+
+/*
+ * Compatibility data for legacy section components that remain in the project
+ * but are no longer rendered by /tepa.
+ */
+export const marquee = [
+  "Permission to display the AAA Accreditation Symbol",
+  "Listing in the American Directory of Competent Personnel",
+  "Digital certificate service for your delegates",
+] as const;
+
+export const pillars = benefits.items.map((item, index) => ({
+  index: String(index + 1).padStart(2, "0"),
+  icon: (["value", "satisfaction", "quality"] as const)[index],
+  title: item.title,
+  points: [item.body],
+}));
+
+export const process = {
+  ...journey,
+  stages: journey.stages.map((stage, index) => ({
+    ...stage,
+    n: String(index + 1),
+  })),
+};
+
+export const requirements = {
+  eyebrow: "What We Look For",
+  title: "Accreditation Requirements",
+  lede:
+    "AAA reviews both the organization providing the training and the people responsible for delivering it.",
+  groups: [
+    {
+      key: "providers",
+      label: "For Training & Education Providers",
+      items: [
+        "Training materials must cover the applicable learning outcomes and remain relevant, complete, and current.",
+      ],
+    },
+    {
+      key: "trainers",
+      label: "For Trainers",
+      items: [
+        "Trainers must demonstrate relevant qualifications, professional experience, and training competence.",
+      ],
+    },
+  ],
+} as const;
+
+export const symbol = {
+  eyebrow: "The Mark of Recognition",
+  title: "Put the AAA Symbol on everything you teach",
+  body:
+    "Accredited providers may display the symbol on approved course materials, certificates, and promotional content.",
+  points: [
+    "Displayed on approved training materials and certificates",
+    "Unique provider reference",
+    "Verifiable by delegates and employers",
+  ],
+  cta: "Free Consultation, 30 Minute Call",
+} as const;
+
+export const why = {
+  eyebrow: "In Their Words",
+  title: "Why choose AAA for accreditation?",
+  lede: "Hear how an accredited provider describes working through the AAA assessment.",
 } as const;

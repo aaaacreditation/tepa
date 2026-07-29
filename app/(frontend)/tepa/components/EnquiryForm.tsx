@@ -1,11 +1,12 @@
 "use client";
 
 import { useId, useState } from "react";
-import { formCopy, site } from "../content";
 import { countries } from "../countries";
+import { formCopy, site } from "../content";
 import { IconArrow, IconCalendar, IconCheck } from "./Icons";
 
-type Errors = Partial<Record<"fullName" | "organization" | "email" | "country", string>>;
+type RequiredField = "fullName" | "organization" | "email" | "country";
+type Errors = Partial<Record<RequiredField, string>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -25,16 +26,18 @@ export function EnquiryForm() {
     const next: Errors = {};
     if (!data.fullName?.trim()) next.fullName = "Please tell us your name.";
     if (!data.organization?.trim()) next.organization = "Please add your organization.";
-    if (!EMAIL_RE.test(data.email?.trim() ?? "")) next.email = "Please use a valid email address.";
+    if (!EMAIL_RE.test(data.email?.trim() ?? "")) {
+      next.email = "Please use a valid email address.";
+    }
     if (!data.country) next.country = "Please choose your country.";
 
     setErrors(next);
-    if (Object.keys(next).length > 0) {
-      form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    const firstInvalid = Object.keys(next)[0] as RequiredField | undefined;
+    if (firstInvalid) {
+      (form.elements.namedItem(firstInvalid) as HTMLElement | null)?.focus();
       return;
     }
 
-    // Honeypot: real people leave this empty.
     if (data.company_website_confirm) {
       setStatus("sent");
       return;
@@ -54,6 +57,7 @@ export function EnquiryForm() {
         setStatus("failed");
         return;
       }
+
       form.reset();
       setStatus("sent");
     } catch {
@@ -64,21 +68,20 @@ export function EnquiryForm() {
 
   if (status === "sent") {
     return (
-      <div className="card-lift rounded-2xl border border-navy-500/10 bg-white p-8 text-center sm:p-10">
-        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-navy-50 text-navy-500">
-          <IconCheck className="h-7 w-7" />
-        </div>
-        <h3 className="display mt-5 text-2xl text-navy-800">{formCopy.successTitle}</h3>
-        <p className="lede mt-3 text-[0.9375rem] leading-relaxed text-ink-500">
-          {formCopy.successBody}
-        </p>
+      <div className="eligibility-card eligibility-success" role="status">
+        <span className="success-icon">
+          <IconCheck />
+        </span>
+        <p className="form-kicker">Thank you</p>
+        <h2>{formCopy.successTitle}</h2>
+        <p>{formCopy.successBody}</p>
         <a
           href={site.calendly}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn btn-navy mt-6 w-full"
+          className="tepa-button tepa-button--navy"
         >
-          <IconCalendar className="h-4 w-4" />
+          <IconCalendar className="button-icon" />
           {formCopy.successCta}
         </a>
       </div>
@@ -86,180 +89,169 @@ export function EnquiryForm() {
   }
 
   return (
-    <div className="card-lift overflow-hidden rounded-2xl border border-white/12 bg-white">
-      <div className="deep-field-flat relative px-7 py-5">
-        <span className="eyebrow text-gold-300">{formCopy.badge}</span>
-        <h2 className="display mt-1.5 text-[1.35rem] leading-snug text-white">{formCopy.title}</h2>
+    <div className="eligibility-card">
+      <div className="form-heading">
+        <p className="form-kicker">{formCopy.badge}</p>
+        <h2>{formCopy.title}</h2>
       </div>
 
-      <form onSubmit={onSubmit} noValidate className="space-y-3.5 px-7 py-6">
-        <div>
-          <label className="field-label" htmlFor={fieldId("fullName")}>
-            Full name *
-          </label>
-          <input
-            id={fieldId("fullName")}
-            name="fullName"
-            type="text"
-            autoComplete="name"
-            placeholder="Jane Doe"
-            className="field"
-            aria-invalid={Boolean(errors.fullName)}
-            aria-describedby={errors.fullName ? fieldId("fullName-err") : undefined}
-          />
-          {errors.fullName && (
-            <p id={fieldId("fullName-err")} className="mt-1.5 text-xs text-[#c0483c]">
-              {errors.fullName}
-            </p>
-          )}
-        </div>
+      <form onSubmit={onSubmit} noValidate className="eligibility-form">
+        <FormField
+          id={fieldId("fullName")}
+          name="fullName"
+          label="Full name"
+          autoComplete="name"
+          placeholder="Full name"
+          error={errors.fullName}
+        />
 
-        <div>
-          <label className="field-label" htmlFor={fieldId("organization")}>
-            Organization *
-          </label>
-          <input
-            id={fieldId("organization")}
-            name="organization"
-            type="text"
-            autoComplete="organization"
-            placeholder="Your training company"
-            className="field"
-            aria-invalid={Boolean(errors.organization)}
-            aria-describedby={errors.organization ? fieldId("organization-err") : undefined}
-          />
-          {errors.organization && (
-            <p id={fieldId("organization-err")} className="mt-1.5 text-xs text-[#c0483c]">
-              {errors.organization}
-            </p>
-          )}
-        </div>
+        <FormField
+          id={fieldId("organization")}
+          name="organization"
+          label="Organization"
+          autoComplete="organization"
+          placeholder="Organization"
+          error={errors.organization}
+        />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="field-label" htmlFor={fieldId("email")}>
-              Work email *
-            </label>
-            <input
-              id={fieldId("email")}
-              name="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="you@company.com"
-              className="field"
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? fieldId("email-err") : undefined}
-            />
-            {errors.email && (
-              <p id={fieldId("email-err")} className="mt-1.5 text-xs text-[#c0483c]">
-                {errors.email}
-              </p>
-            )}
-          </div>
+        <FormField
+          id={fieldId("email")}
+          name="email"
+          label="Work email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="Work email"
+          error={errors.email}
+        />
 
-          <div>
-            <label className="field-label" htmlFor={fieldId("phone")}>
-              Phone
-            </label>
-            <input
-              id={fieldId("phone")}
-              name="phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="+1 555 000 1234"
-              className="field"
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="field-label" htmlFor={fieldId("country")}>
-              Country *
-            </label>
-            <select
-              id={fieldId("country")}
-              name="country"
-              defaultValue=""
-              className="field"
-              aria-invalid={Boolean(errors.country)}
-              aria-describedby={errors.country ? fieldId("country-err") : undefined}
-            >
-              <option value="" disabled>
-                Select a country
+        <div className="form-field">
+          <label htmlFor={fieldId("country")}>Country</label>
+          <select
+            id={fieldId("country")}
+            name="country"
+            defaultValue=""
+            aria-invalid={Boolean(errors.country)}
+            aria-describedby={errors.country ? fieldId("country-error") : undefined}
+          >
+            <option value="" disabled>
+              Country
+            </option>
+            {countries.map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
               </option>
-              {countries.map(([code, name]) => (
-                <option key={code} value={code}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            {errors.country && (
-              <p id={fieldId("country-err")} className="mt-1.5 text-xs text-[#c0483c]">
-                {errors.country}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="field-label" htmlFor={fieldId("website")}>
-              Website
-            </label>
-            <input
-              id={fieldId("website")}
-              name="website"
-              type="text"
-              inputMode="url"
-              autoComplete="url"
-              placeholder="company.com"
-              className="field"
-            />
-          </div>
+            ))}
+          </select>
+          {errors.country ? (
+            <p id={fieldId("country-error")} className="form-error">
+              {errors.country}
+            </p>
+          ) : null}
         </div>
 
-        <div>
-          <label className="field-label" htmlFor={fieldId("message")}>
-            Tell us about your program
-          </label>
+        <FormField
+          id={fieldId("website")}
+          name="website"
+          label="Website (optional)"
+          inputMode="url"
+          autoComplete="url"
+          placeholder="Website (optional)"
+        />
+
+        <div className="form-field">
+          <label htmlFor={fieldId("message")}>Programs for accreditation</label>
           <textarea
             id={fieldId("message")}
             name="message"
             rows={3}
-            placeholder="Course titles, delivery format, number of delegates each year"
-            className="field resize-none"
+            placeholder="Programs for accreditation"
           />
         </div>
 
-        {/* Honeypot, visually and semantically hidden from people */}
-        <div aria-hidden="true" className="absolute h-0 w-0 overflow-hidden opacity-0">
+        <div aria-hidden="true" className="honeypot">
           <label htmlFor={fieldId("hp")}>Do not fill this in</label>
-          <input id={fieldId("hp")} name="company_website_confirm" type="text" tabIndex={-1} autoComplete="off" />
+          <input
+            id={fieldId("hp")}
+            name="company_website_confirm"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+          />
         </div>
 
-        {status === "failed" && (
-          <p role="alert" className="rounded-xl bg-[#fdf1f0] px-4 py-3 text-sm text-[#a03a30]">
+        {status === "failed" ? (
+          <p role="alert" className="form-submit-error">
             {message || formCopy.errorGeneric}
           </p>
-        )}
+        ) : null}
 
-        <button type="submit" disabled={status === "sending"} className="btn btn-gold w-full disabled:opacity-70">
+        <button
+          type="submit"
+          disabled={status === "sending"}
+          className="tepa-button tepa-button--navy form-submit"
+        >
           {status === "sending" ? (
             <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-900/25 border-t-navy-900" />
+              <span className="form-spinner" aria-hidden="true" />
               {formCopy.submitting}
             </>
           ) : (
             <>
               {formCopy.submit}
-              <IconArrow className="h-4 w-4" />
+              <IconArrow className="button-icon" />
             </>
           )}
         </button>
 
-        <p className="text-center text-xs leading-relaxed text-ink-500">{formCopy.note}</p>
+        <p className="form-note">
+          <span aria-hidden="true">▣</span>
+          {formCopy.note}
+        </p>
       </form>
+    </div>
+  );
+}
+
+type FormFieldProps = {
+  id: string;
+  name: string;
+  label: string;
+  type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  autoComplete?: string;
+  placeholder?: string;
+  error?: string;
+};
+
+function FormField({
+  id,
+  name,
+  label,
+  type = "text",
+  inputMode,
+  autoComplete,
+  placeholder,
+  error,
+}: FormFieldProps) {
+  return (
+    <div className="form-field">
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        name={name}
+        type={type}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
+      />
+      {error ? (
+        <p id={`${id}-error`} className="form-error">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
