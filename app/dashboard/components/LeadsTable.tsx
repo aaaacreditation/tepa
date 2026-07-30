@@ -10,13 +10,15 @@ import {
 } from "@/lib/lead-status";
 import { removeLead, setLeadNotes, setLeadStatus } from "../lead-actions";
 
+/* Mirrors the TEPA enquiry form field for field: full name, organization,
+   work email, country, website, and the programs textarea. Keep the two in
+   step when the form changes. */
 export type TableLead = {
   id: number;
   fullName: string;
   organization: string;
   email: string;
   countryName: string;
-  phone: string;
   website: string;
   message: string;
   status: LeadStatus;
@@ -51,9 +53,14 @@ export function LeadsTable({
     return leads.filter((lead) => {
       if (statusFilter !== "all" && lead.status !== statusFilter) return false;
       if (!needle) return true;
-      return [lead.fullName, lead.organization, lead.email, lead.countryName].some((field) =>
-        field.toLowerCase().includes(needle),
-      );
+      return [
+        lead.fullName,
+        lead.organization,
+        lead.email,
+        lead.countryName,
+        lead.website,
+        lead.message,
+      ].some((field) => field.toLowerCase().includes(needle));
     });
   }, [leads, query, statusFilter]);
 
@@ -64,7 +71,7 @@ export function LeadsTable({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, organization, email, country"
+          placeholder="Search name, organization, email, country, website, programs"
           aria-label="Search leads"
           className="dash-field max-w-xs !py-2 text-sm"
         />
@@ -209,10 +216,20 @@ function LeadRow({
             )}
           </p>
           <p className="text-xs text-ink-500">{lead.organization}</p>
+          {websiteHref && (
+            <a
+              href={websiteHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs font-medium text-navy-500 hover:underline"
+            >
+              {lead.website}
+            </a>
+          )}
         </td>
         <td>
           <p className="text-ink-700">{lead.email}</p>
-          {lead.phone && <p className="text-xs text-ink-500">{lead.phone}</p>}
         </td>
         <td className="whitespace-nowrap text-ink-700">{lead.countryName || "—"}</td>
         <td className="whitespace-nowrap text-ink-700" title={lead.createdFull}>
@@ -254,9 +271,9 @@ function LeadRow({
             <div className="grid gap-6 px-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
               <div className="space-y-5">
                 <div>
-                  <p className="dash-eyebrow text-navy-500">Message</p>
+                  <p className="dash-eyebrow text-navy-500">Programs for accreditation</p>
                   <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-ink-700">
-                    {lead.message || "No message left."}
+                    {lead.message || "Left blank on the form."}
                   </p>
                 </div>
                 <div>
@@ -297,16 +314,14 @@ function LeadRow({
                         </a>
                       </dd>
                     </div>
-                    {lead.phone && (
-                      <div className="flex gap-2">
-                        <dt className="w-24 shrink-0 text-ink-500">Phone</dt>
-                        <dd>
-                          <a href={`tel:${lead.phone}`} className="font-medium text-navy-500 hover:underline">
-                            {lead.phone}
-                          </a>
-                        </dd>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      <dt className="w-24 shrink-0 text-ink-500">Organization</dt>
+                      <dd className="text-ink-700">{lead.organization}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                      <dt className="w-24 shrink-0 text-ink-500">Country</dt>
+                      <dd className="text-ink-700">{lead.countryName || "—"}</dd>
+                    </div>
                     {websiteHref && (
                       <div className="flex gap-2">
                         <dt className="w-24 shrink-0 text-ink-500">Website</dt>

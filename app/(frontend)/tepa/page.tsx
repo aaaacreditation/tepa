@@ -245,25 +245,6 @@ export default function TepaLandingPage() {
               <p className="section-lede">{practice.lede}</p>
             </header>
 
-            <div className="practice-gallery">
-              {practice.images.map((image, index) => (
-                <figure
-                  className={`practice-shot practice-shot--${index + 1} reveal`}
-                  key={image.src}
-                  style={{ transitionDelay: `${index * 70}ms` }}
-                >
-                  <Image
-                    src={image.src}
-                    alt={image.alt}
-                    fill
-                    sizes="(max-width: 720px) 100vw, 50vw"
-                    className="cover-image"
-                  />
-                  <figcaption>{image.label}</figcaption>
-                </figure>
-              ))}
-            </div>
-
             <TestimonialMarquee stories={practice.stories} />
 
             <div className="center-link reveal">

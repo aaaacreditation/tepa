@@ -97,28 +97,6 @@ export const practice = {
   title: "Trusted by Training & Education Providers Worldwide",
   lede:
     "See how accreditation is helping organizations strengthen credibility, reach new markets, and create measurable growth.",
-  images: [
-    {
-      src: "/tepa/practice-beauty-team.jpeg",
-      alt: "A professional training group holding AAA-accredited certificates",
-      label: "Professional education",
-    },
-    {
-      src: "/tepa/practice-qms.jpeg",
-      alt: "A training provider team holding its framed AAA accreditation certificate",
-      label: "Quality management",
-    },
-    {
-      src: "/tepa/practice-meridian.jpeg",
-      alt: "A training centre team gathered around its AAA accreditation certificate",
-      label: "Training centre",
-    },
-    {
-      src: "/tepa/hero-accreditation.jpeg",
-      alt: "Representatives of an accredited school holding their framed AAA certificate",
-      label: "Business education",
-    },
-  ],
   stories: [
     {
       organization: "Cinute Digital",

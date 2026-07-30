@@ -89,7 +89,6 @@ export default async function SourceDashboard({
     organization: lead.organization,
     email: lead.email,
     countryName: lead.countryName,
-    phone: lead.phone,
     website: lead.website,
     message: lead.message,
     status: lead.status,
