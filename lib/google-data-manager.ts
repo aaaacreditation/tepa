@@ -298,9 +298,19 @@ export async function ingestEvent(
        rather than replaying the same dead credential. */
     if (response.status === 401) clearTokenCache();
 
-    /* 408/429 and 5xx are transient; 4xx means the request itself is wrong and
-       replaying it unchanged will fail identically. */
+    /* 408/429 and 5xx are transient; most 4xx mean the request itself is wrong
+       and replaying it unchanged will fail identically.
+
+       NOT_FOUND on the conversion action is the exception. Google returns it as
+       a 400 for a newly created action that has not propagated to Data Manager
+       yet, which can take hours. Treating that as permanent would silently drop
+       every conversion recorded in the meantime, so it retries. A genuinely
+       wrong action id simply exhausts the attempt limit and lands in 'failed',
+       where the dashboard shows it. */
+    const notFound = /NOT_FOUND|Resource not found/i.test(text);
+
     const retryable =
+      notFound ||
       response.status === 401 ||
       response.status === 408 ||
       response.status === 429 ||

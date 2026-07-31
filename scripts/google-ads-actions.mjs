@@ -49,6 +49,17 @@ if (missing.length) {
    per lead value and that must win over the account default. */
 const WANTED = [
   {
+    envVar: "GOOGLE_ADS_ACTION_LEAD",
+    name: "TEPA Enquiry",
+    category: "SUBMIT_LEAD_FORM",
+    /* The enquiry is worth nothing until it qualifies, so the later stages
+       carry the value. Reporting it still matters: customers take weeks to
+       close, and without this Google has almost no signal to learn from in
+       the opening weeks of a campaign. */
+    value: 0,
+    primary: false,
+  },
+  {
     envVar: "GOOGLE_ADS_ACTION_MQL",
     name: "TEPA MQL",
     category: "QUALIFIED_LEAD",
