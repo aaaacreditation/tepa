@@ -1,4 +1,11 @@
+import { after } from "next/server";
 import { countries } from "@/app/(frontend)/tepa/countries";
+import {
+  type Attribution,
+  attributionFromCookieHeader,
+  EMPTY_ATTRIBUTION,
+} from "@/lib/attribution";
+import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
 
 export const runtime = "nodejs";
@@ -19,6 +26,7 @@ export type Enquiry = {
   message: string;
   receivedAt: string;
   source: string;
+  attribution: Attribution;
 };
 
 /* Small in memory throttle. Enough to blunt casual abuse on a single instance;
@@ -82,6 +90,14 @@ export async function POST(request: Request) {
     );
   }
 
+  /* The click id rides in on the first party cookie the landing page wrote, so
+     it survives the visitor leaving for Calendly and coming back. The body is
+     read as a fallback for the case where the cookie was blocked. */
+  const cookieAttribution = attributionFromCookieHeader(request.headers.get("cookie"));
+  const attribution = hasAnyClickId(cookieAttribution)
+    ? cookieAttribution
+    : mergeBodyAttribution(cookieAttribution, payload);
+
   const enquiry: Enquiry = {
     fullName,
     organization,
@@ -93,6 +109,7 @@ export async function POST(request: Request) {
     message: clean(payload.message),
     receivedAt: new Date().toISOString(),
     source: "tepa",
+    attribution,
   };
 
   try {
@@ -113,7 +130,7 @@ export async function POST(request: Request) {
    the visitor, so the form tells them to email instead of silently dropping
    the lead. The log line stays as a plain text backup of the payload. */
 async function deliver(enquiry: Enquiry) {
-  await insertLead({
+  const leadId = await insertLead({
     source: enquiry.source,
     fullName: enquiry.fullName,
     organization: enquiry.organization,
@@ -123,6 +140,59 @@ async function deliver(enquiry: Enquiry) {
     phone: enquiry.phone,
     website: enquiry.website,
     message: enquiry.message,
+    attribution: enquiry.attribution,
   });
   console.info("[tepa/enquiry]", JSON.stringify(enquiry));
+
+  /* Queue the "lead" conversion in the same request that stored the lead, so
+     the two cannot disagree. Nothing is queued unless GOOGLE_ADS_ACTION_LEAD
+     is set, which is how a setup that already counts the submit with the gtag
+     snippet avoids counting it twice. */
+  const queued = await enqueueConversion(leadId, "lead");
+
+  /* Sending happens after the response so Google's latency never shows up in
+     the visitor's form submit, and a failure there leaves a retryable outbox
+     row rather than a 502 on a lead that was in fact saved. */
+  if (queued) {
+    after(async () => {
+      try {
+        await drainConversions(5);
+      } catch (error) {
+        console.error("[tepa/enquiry] conversion drain failed", error);
+      }
+    });
+  }
+}
+
+function hasAnyClickId(attribution: Attribution): boolean {
+  return Boolean(attribution.gclid || attribution.gbraid || attribution.wbraid);
+}
+
+/* Safari's tracking prevention can drop the cookie before the form is sent.
+   The form posts whatever it still holds in memory as a second chance. */
+function mergeBodyAttribution(
+  base: Attribution,
+  payload: Record<string, unknown>,
+): Attribution {
+  const fromBody = payload.attribution;
+  if (!fromBody || typeof fromBody !== "object") return base;
+
+  const body = fromBody as Record<string, unknown>;
+  const pick = (key: string, fallback: string) => {
+    const value = body[key];
+    return typeof value === "string" && value.trim() ? value.trim().slice(0, 512) : fallback;
+  };
+
+  return {
+    ...EMPTY_ATTRIBUTION,
+    ...base,
+    gclid: pick("gclid", base.gclid),
+    gbraid: pick("gbraid", base.gbraid),
+    wbraid: pick("wbraid", base.wbraid),
+    utmSource: pick("utmSource", base.utmSource),
+    utmMedium: pick("utmMedium", base.utmMedium),
+    utmCampaign: pick("utmCampaign", base.utmCampaign),
+    utmTerm: pick("utmTerm", base.utmTerm),
+    utmContent: pick("utmContent", base.utmContent),
+  };
 }

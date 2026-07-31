@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "demo:seed": "node scripts/seed-demo.mjs",
-    "demo:clear": "node scripts/seed-demo.mjs --clear"
+    "demo:clear": "node scripts/seed-demo.mjs --clear",
+    "ads:auth": "node scripts/google-ads-auth.mjs",
+    "ads:actions": "node scripts/google-ads-actions.mjs",
+    "ads:check": "node scripts/google-ads-check.mjs"
   },
   "dependencies": {
     "next": "16.2.11",

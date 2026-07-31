@@ -1,14 +1,33 @@
 "use client";
 
 import { useId, useState } from "react";
+import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
 import { countries } from "../countries";
 import { formCopy, site } from "../content";
+import { FORM_LABEL, trackConversion } from "./GoogleTag";
 import { IconArrow, IconCalendar, IconCheck } from "./Icons";
 
 type RequiredField = "fullName" | "organization" | "email" | "country";
 type Errors = Partial<Record<RequiredField, string>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/* Read the attribution cookie the landing page wrote so the click id can ride
+   along in the request body as well as the Cookie header. */
+function readAttribution() {
+  if (typeof document === "undefined") return null;
+  const prefix = `${ATTRIBUTION_COOKIE}=`;
+  for (const part of document.cookie.split(";")) {
+    const entry = part.trim();
+    if (!entry.startsWith(prefix)) continue;
+    try {
+      return parseAttribution(decodeURIComponent(entry.slice(prefix.length)));
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
 
 export function EnquiryForm() {
   const uid = useId();
@@ -48,7 +67,9 @@ export function EnquiryForm() {
       const response = await fetch("/api/tepa/enquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        /* The server reads the click id from the cookie; this copy is the
+           fallback for browsers that dropped it before submit. */
+        body: JSON.stringify({ ...data, attribution: readAttribution() }),
       });
       const body = await response.json().catch(() => ({}));
 
@@ -57,6 +78,10 @@ export function EnquiryForm() {
         setStatus("failed");
         return;
       }
+
+      /* Only after the server confirmed the lead was stored. Firing on submit
+         would count enquiries that never actually arrived. */
+      trackConversion(FORM_LABEL, { email: data.email?.trim() });
 
       form.reset();
       setStatus("sent");

@@ -27,9 +27,46 @@ export type TableLead = {
   createdLabel: string;
   createdFull: string;
   statusChangedFull: string;
+  /* Whichever ad click identifier the visitor arrived with, if any. */
+  clickId: string;
+  campaign: string;
+  utmSource: string;
+  utmMedium: string;
+  uploads: TableUpload[];
 };
 
 export type TableEvent = { id: number; label: string };
+
+/* One offline conversion upload to Google Ads for a single pipeline stage. */
+export type TableUpload = {
+  id: number;
+  stage: LeadStatus;
+  status: "pending" | "sending" | "sent" | "failed" | "skipped";
+  attempts: number;
+  lastError: string;
+  valueLabel: string;
+  sentLabel: string;
+};
+
+const UPLOAD_LABEL: Record<TableUpload["status"], string> = {
+  sent: "Sent to Google Ads",
+  sending: "Sending",
+  pending: "Queued",
+  failed: "Failed",
+  skipped: "Not sent",
+};
+
+/* State colors, not brand colors. Green and red are held to the same green the
+   notes control already uses, gold carries "waiting" so it reads as part of the
+   accreditation palette, and an unsent stage falls back to the quiet navy wash
+   rather than shouting. */
+const UPLOAD_TONE: Record<TableUpload["status"], string> = {
+  sent: "bg-[#e8f5ee] text-[#1e7f4f]",
+  sending: "bg-gold-100 text-gold-600",
+  pending: "bg-gold-100 text-gold-600",
+  failed: "bg-[#fdecec] text-[#a32020]",
+  skipped: "bg-navy-50 text-ink-500",
+};
 
 export function LeadsTable({
   leads,
@@ -346,6 +383,75 @@ function LeadRow({
                       <dd className="text-ink-700">{lead.statusChangedFull}</dd>
                     </div>
                   </dl>
+                </div>
+
+                <div>
+                  <p className="dash-eyebrow text-navy-500">Ad attribution</p>
+                  <dl className="mt-2 space-y-1.5 text-[0.8125rem]">
+                    <div className="flex gap-2">
+                      <dt className="w-24 shrink-0 text-ink-500">Click ID</dt>
+                      <dd className="min-w-0 break-all text-ink-700">
+                        {lead.clickId ? (
+                          <code className="text-[0.75rem]">{lead.clickId}</code>
+                        ) : (
+                          /* No click id means Google can only match this lead
+                             through the hashed email, which is weaker. */
+                          <span className="text-ink-500">None — not from a tracked ad click</span>
+                        )}
+                      </dd>
+                    </div>
+                    {lead.campaign && (
+                      <div className="flex gap-2">
+                        <dt className="w-24 shrink-0 text-ink-500">Campaign</dt>
+                        <dd className="text-ink-700">{lead.campaign}</dd>
+                      </div>
+                    )}
+                    {(lead.utmSource || lead.utmMedium) && (
+                      <div className="flex gap-2">
+                        <dt className="w-24 shrink-0 text-ink-500">Source</dt>
+                        <dd className="text-ink-700">
+                          {[lead.utmSource, lead.utmMedium].filter(Boolean).join(" / ")}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+
+                <div>
+                  <p className="dash-eyebrow text-navy-500">Google Ads conversions</p>
+                  {lead.uploads.length === 0 ? (
+                    <p className="mt-1.5 text-xs text-ink-500">
+                      Nothing queued. Stages only report when a conversion action is configured
+                      for them.
+                    </p>
+                  ) : (
+                    <ul className="mt-1.5 space-y-1.5 text-xs">
+                      {lead.uploads.map((upload) => (
+                        <li key={upload.id} className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-ink-700">
+                            {STATUS_LABEL[upload.stage]}
+                          </span>
+                          <span
+                            className={`rounded px-1.5 py-0.5 font-medium ${UPLOAD_TONE[upload.status]}`}
+                          >
+                            {UPLOAD_LABEL[upload.status]}
+                          </span>
+                          <span className="text-ink-500">{upload.valueLabel}</span>
+                          {upload.sentLabel && (
+                            <span className="text-ink-500">{upload.sentLabel}</span>
+                          )}
+                          {/* The reason a conversion never landed is the whole
+                              point of showing this, so it is not truncated. */}
+                          {upload.status !== "sent" && upload.lastError && (
+                            <span className="w-full break-words text-ink-500">
+                              {upload.lastError}
+                              {upload.attempts > 1 && ` (${upload.attempts} attempts)`}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 <div>

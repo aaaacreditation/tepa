@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getUploadsForSource } from "@/lib/conversions";
 import {
   LEAD_STATUSES,
   STAGE_COLORS,
@@ -8,7 +9,12 @@ import {
 import { getDashboardData } from "@/lib/leads";
 import { getSource } from "@/lib/sources";
 import { BarList, type BarRow } from "@/app/dashboard/components/BarList";
-import { LeadsTable, type TableEvent, type TableLead } from "@/app/dashboard/components/LeadsTable";
+import {
+  LeadsTable,
+  type TableEvent,
+  type TableLead,
+  type TableUpload,
+} from "@/app/dashboard/components/LeadsTable";
 import { RangeFilter } from "@/app/dashboard/components/RangeFilter";
 import { StatTile } from "@/app/dashboard/components/StatTile";
 import { TimeSeriesChart } from "@/app/dashboard/components/TimeSeriesChart";
@@ -53,8 +59,27 @@ export default async function SourceDashboard({
   const rangeKey = typeof sp.range === "string" && sp.range in RANGES ? sp.range : "30";
   const range = RANGES[rangeKey];
 
-  const data = await getDashboardData(source.key, range.days);
+  const [data, uploads] = await Promise.all([
+    getDashboardData(source.key, range.days),
+    getUploadsForSource(source.key),
+  ]);
   const { reached, pipeline, total } = data;
+
+  /* Group the outbox by lead so each row can show what actually reached Google
+     Ads. Without this the upload is invisible and a silent credential failure
+     would only surface as conversions quietly missing from the ad account. */
+  const uploadsByLead: Record<number, TableUpload[]> = {};
+  for (const upload of uploads) {
+    (uploadsByLead[upload.leadId] ??= []).push({
+      id: upload.id,
+      stage: upload.stage,
+      status: upload.status,
+      attempts: upload.attempts,
+      lastError: upload.lastError,
+      valueLabel: `${upload.currency} ${Number(upload.value).toLocaleString("en-US")}`,
+      sentLabel: upload.sentAt ? fullFmt.format(new Date(upload.sentAt)) : "",
+    });
+  }
 
   const points = data.daily.map((d) => ({
     date: d.date,
@@ -97,6 +122,11 @@ export default async function SourceDashboard({
     createdLabel: dayFmt.format(new Date(lead.createdAt)),
     createdFull: fullFmt.format(new Date(lead.createdAt)),
     statusChangedFull: fullFmt.format(new Date(lead.statusChangedAt)),
+    clickId: lead.gclid || lead.gbraid || lead.wbraid,
+    campaign: lead.utmCampaign,
+    utmSource: lead.utmSource,
+    utmMedium: lead.utmMedium,
+    uploads: uploadsByLead[lead.id] ?? [],
   }));
 
   const eventsByLead: Record<number, TableEvent[]> = {};

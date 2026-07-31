@@ -49,6 +49,65 @@ CREATE TABLE IF NOT EXISTS lead_events (
 );
 
 CREATE INDEX IF NOT EXISTS lead_events_lead_idx ON lead_events (lead_id, created_at);
+
+/* Ad attribution captured on the landing page and carried through to the
+   conversion uploads. Added with ALTER so existing installs migrate in place;
+   every column is nullable-free with a '' default so the read paths never
+   have to null check. */
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS gclid         TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS gbraid        TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS wbraid        TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_source    TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_medium    TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_campaign  TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_term      TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_content   TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS landing_path  TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS referrer      TEXT NOT NULL DEFAULT '';
+/* When the click identifier was first seen, not when the form was sent. Google
+   matches an offline conversion against the click, so the upload carries the
+   form timestamp while this stays available for debugging stale attribution. */
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS clicked_at    TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS leads_gclid_idx ON leads (gclid) WHERE gclid <> '';
+
+/* Outbox for offline conversion uploads. A row is written the moment a lead
+   reaches a stage; the sender drains it separately so a Google outage costs a
+   retry rather than a lost conversion. dedupe_key is the safety rail: moving a
+   lead mql -> lead -> mql re-enters the same key and cannot double count. */
+CREATE TABLE IF NOT EXISTS conversion_uploads (
+  id            SERIAL PRIMARY KEY,
+  lead_id       INTEGER NOT NULL REFERENCES leads (id) ON DELETE CASCADE,
+  stage         TEXT NOT NULL CHECK (stage IN ('lead', 'mql', 'sql', 'customer')),
+  dedupe_key    TEXT NOT NULL UNIQUE,
+  value         NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  currency      TEXT NOT NULL DEFAULT 'USD',
+  occurred_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  status        TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'skipped')),
+  attempts      INTEGER NOT NULL DEFAULT 0,
+  last_error    TEXT NOT NULL DEFAULT '',
+  request_id    TEXT NOT NULL DEFAULT '',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  sent_at       TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS conversion_uploads_pending_idx
+  ON conversion_uploads (status, created_at)
+  WHERE status IN ('pending', 'sending', 'failed');
+
+CREATE INDEX IF NOT EXISTS conversion_uploads_lead_idx ON conversion_uploads (lead_id);
+
+/* 'sending' marks a row claimed by a sender that is mid flight. Installs
+   created before it existed carry the old constraint, so it is replaced by
+   name rather than patched. Dropping first keeps the pair re-runnable. */
+ALTER TABLE conversion_uploads DROP CONSTRAINT IF EXISTS conversion_uploads_status_check;
+ALTER TABLE conversion_uploads ADD  CONSTRAINT conversion_uploads_status_check
+  CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'skipped'));
+
+/* Set when a row is claimed, so a sender killed mid upload can be detected
+   and its row handed back rather than stranded in 'sending' forever. */
+ALTER TABLE conversion_uploads ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ;
 `;
 
 function pool(): Pool {

@@ -1,4 +1,5 @@
 import "server-only";
+import type { Attribution } from "./attribution";
 import { q } from "./db";
 import type { LeadStatus } from "./lead-status";
 
@@ -20,6 +21,14 @@ export type LeadRow = {
   isDemo: boolean;
   createdAt: string;
   statusChangedAt: string;
+  gclid: string;
+  gbraid: string;
+  wbraid: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmTerm: string;
+  utmContent: string;
 };
 
 export type LeadEventRow = {
@@ -41,6 +50,7 @@ export type NewLead = {
   phone: string;
   website: string;
   message: string;
+  attribution: Attribution;
 };
 
 const LEAD_COLUMNS = `
@@ -58,14 +68,29 @@ const LEAD_COLUMNS = `
   notes,
   is_demo            AS "isDemo",
   to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')        AS "createdAt",
-  to_char(status_changed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "statusChangedAt"
+  to_char(status_changed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "statusChangedAt",
+  gclid,
+  gbraid,
+  wbraid,
+  utm_source   AS "utmSource",
+  utm_medium   AS "utmMedium",
+  utm_campaign AS "utmCampaign",
+  utm_term     AS "utmTerm",
+  utm_content  AS "utmContent"
 `;
 
 export async function insertLead(lead: NewLead): Promise<number> {
+  const a = lead.attribution;
   const rows = await q<{ id: number }>(
     `INSERT INTO leads
-       (source, full_name, organization, email, country_code, country_name, phone, website, message)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (source, full_name, organization, email, country_code, country_name, phone, website, message,
+        gclid, gbraid, wbraid,
+        utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+        landing_path, referrer, clicked_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+             $10, $11, $12,
+             $13, $14, $15, $16, $17,
+             $18, $19, $20)
      RETURNING id`,
     [
       lead.source,
@@ -77,21 +102,34 @@ export async function insertLead(lead: NewLead): Promise<number> {
       lead.phone,
       lead.website,
       lead.message,
+      a.gclid,
+      a.gbraid,
+      a.wbraid,
+      a.utmSource,
+      a.utmMedium,
+      a.utmCampaign,
+      a.utmTerm,
+      a.utmContent,
+      a.landingPath,
+      a.referrer,
+      a.clickedAt || null,
     ],
   );
   return rows[0].id;
 }
 
+/* Returns true when the stage actually moved, so the caller can report the
+   transition onward without re-reading the row or firing on a no-op. */
 export async function updateLeadStatus(
   id: number,
   status: LeadStatus,
   changedBy: string,
-): Promise<void> {
+): Promise<boolean> {
   const current = await q<{ status: LeadStatus }>(
     "SELECT status FROM leads WHERE id = $1",
     [id],
   );
-  if (current.length === 0 || current[0].status === status) return;
+  if (current.length === 0 || current[0].status === status) return false;
 
   await q("UPDATE leads SET status = $2, status_changed_at = now() WHERE id = $1", [id, status]);
   await q(
@@ -99,6 +137,7 @@ export async function updateLeadStatus(
      VALUES ($1, $2, $3, $4)`,
     [id, current[0].status, status, changedBy],
   );
+  return true;
 }
 
 export async function saveLeadNotes(id: number, notes: string): Promise<void> {

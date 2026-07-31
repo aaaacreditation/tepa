@@ -1,7 +1,9 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { getSession } from "@/lib/auth";
+import { drainConversions, enqueueStageAndBackfill } from "@/lib/conversions";
 import {
   deleteLead,
   isLeadStatus,
@@ -25,7 +27,29 @@ function validId(id: unknown): number {
 export async function setLeadStatus(id: number, status: string): Promise<void> {
   const session = await requireSession();
   if (!isLeadStatus(status)) throw new Error("Invalid status");
-  await updateLeadStatus(validId(id), status, session.name || session.email);
+
+  const leadId = validId(id);
+  const changed = await updateLeadStatus(leadId, status, session.name || session.email);
+
+  /* Report the new stage to Google Ads. Only a real transition queues anything,
+     so re-picking the status a lead already has stays a no-op, and the outbox
+     dedupes a demote and re-promote back to the same stage. */
+  if (changed) {
+    const queued = await enqueueStageAndBackfill(leadId, status);
+    if (queued > 0) {
+      /* Drained after the response: moving a lead should feel instant, and an
+         upload failure belongs in the outbox where it can be retried, not in
+         the face of whoever was updating the pipeline. */
+      after(async () => {
+        try {
+          await drainConversions(10);
+        } catch (error) {
+          console.error("[lead-actions] conversion drain failed", error);
+        }
+      });
+    }
+  }
+
   refresh();
 }
 
