@@ -23,6 +23,21 @@ const ROOT = resolve(import.meta.dirname, "..");
 const API = "https://googleads.googleapis.com/v25";
 const CREATE = process.argv.includes("--create");
 
+/* --primary=<stage> promotes one stage to the primary conversion goal and
+   demotes the rest to secondary.
+
+   Smart Bidding optimises against primary goals only, and needs roughly 30
+   conversions a month to learn. A campaign that reports only customers gives it
+   two or three delayed signals a month and it never leaves the learning phase,
+   so the ladder is walked upward as volume allows: enquiry first, then mql,
+   then sql, then customer. Every stage keeps reporting regardless, so the
+   history is already there when the next one is promoted.
+
+   Expect one to two weeks of unstable performance after each switch while
+   bidding relearns, so do not climb the ladder more often than that. */
+const primaryArg = process.argv.find((a) => a.startsWith("--primary="));
+const PRIMARY_STAGE = primaryArg ? primaryArg.split("=")[1].trim().toLowerCase() : "";
+
 loadEnv(".env.local");
 
 const digits = (v) => (v ?? "").replace(/\D/g, "");
@@ -80,10 +95,27 @@ const WANTED = [
     name: "TEPA Customer",
     category: "CONVERTED_LEAD",
     value: 2000,
-    /* The only stage that should steer bidding. */
-    primary: true,
+    /* Where the ladder ends, once customer volume can sustain bidding on its
+       own. For a high ticket service that may never happen, in which case sql
+       is the sensible resting place. */
+    primary: false,
   },
 ];
+
+/* The stage bidding optimises against at the start. Overridden by --primary. */
+const DEFAULT_PRIMARY = "lead";
+
+const stageOf = (envVar) => envVar.replace("GOOGLE_ADS_ACTION_", "").toLowerCase();
+
+if (PRIMARY_STAGE && !WANTED.some((w) => stageOf(w.envVar) === PRIMARY_STAGE)) {
+  console.error(
+    `\n--primary must be one of: ${WANTED.map((w) => stageOf(w.envVar)).join(", ")}\n`,
+  );
+  process.exit(1);
+}
+
+const primaryStage = PRIMARY_STAGE || DEFAULT_PRIMARY;
+for (const want of WANTED) want.primary = stageOf(want.envVar) === primaryStage;
 
 const token = await accessToken();
 
@@ -91,9 +123,11 @@ console.log("\nTEPA conversion actions");
 console.log("=".repeat(46));
 console.log(`Account: ${customerId}${loginCustomerId ? ` (via MCC ${loginCustomerId})` : ""}\n`);
 
+console.log(`Primary goal: ${primaryStage}\n`);
+
 const existing = await search(
   `SELECT conversion_action.id, conversion_action.name, conversion_action.type,
-          conversion_action.status
+          conversion_action.status, conversion_action.primary_for_goal
    FROM conversion_action
    WHERE conversion_action.status != 'REMOVED'`,
 );
@@ -104,6 +138,7 @@ const byName = new Map(
 
 const resolved = {};
 const toCreate = [];
+const toRepoint = [];
 
 for (const want of WANTED) {
   const found = byName.get(want.name);
@@ -121,7 +156,42 @@ for (const want of WANTED) {
     continue;
   }
   resolved[want.envVar] = found.id;
-  console.log(`EXISTS   ${want.name.padEnd(16)} id ${found.id}`);
+  const isPrimary = Boolean(found.primaryForGoal);
+  const label = want.primary ? "PRIMARY" : "secondary";
+  if (isPrimary !== want.primary) {
+    toRepoint.push({ id: found.id, name: want.name, primary: want.primary });
+    console.log(
+      `CHANGE   ${want.name.padEnd(16)} id ${found.id}  ${isPrimary ? "PRIMARY" : "secondary"} -> ${label}`,
+    );
+  } else {
+    console.log(`EXISTS   ${want.name.padEnd(16)} id ${found.id}  ${label}`);
+  }
+}
+
+/* Repointing which stage drives bidding is the whole point of walking the
+   ladder, so it happens whether or not anything needs creating. */
+if (toRepoint.length > 0) {
+  if (!CREATE) {
+    console.log(`\n${toRepoint.length} goal change(s) pending. Re-run with --create to apply.\n`);
+    process.exit(0);
+  }
+  const ops = toRepoint.map((r) => ({
+    update: {
+      resourceName: `customers/${customerId}/conversionActions/${r.id}`,
+      primaryForGoal: r.primary,
+    },
+    updateMask: "primaryForGoal",
+  }));
+  console.log("\nApplying goal changes...");
+  await mutate(ops, true);
+  await mutate(ops, false);
+  for (const r of toRepoint) {
+    console.log(`UPDATED  ${r.name.padEnd(16)} -> ${r.primary ? "PRIMARY" : "secondary"}`);
+  }
+  console.log(
+    "\nSmart Bidding will relearn for one to two weeks. Expect unstable\n" +
+      "performance in that window, and do not change the goal again inside it.",
+  );
 }
 
 if (toCreate.length === 0) {
