@@ -128,6 +128,34 @@ if (!clientId || !clientSecret || !refreshToken) {
           "Re-mint the refresh token with https://www.googleapis.com/auth/datamanager",
         );
       }
+
+      /* adwords is only needed by ads:actions, so a token without it still
+         uploads conversions fine. Worth saying out loud rather than letting it
+         surface later as a confusing failure when a stage is added. */
+      if (!scopes.includes("adwords")) {
+        console.log(
+          warn("Token lacks the adwords scope — `npm run ads:actions` will fail (uploads are fine)"),
+        );
+      }
+
+      /* The expiry that catches people out. Google only returns
+         refresh_token_expires_in when the OAuth consent screen is still in
+         Testing, where refresh tokens die after 7 days. A campaign wired up on
+         such a token stops reporting a week later with no obvious cause. */
+      const expiresIn = Number(body.refresh_token_expires_in);
+      if (Number.isFinite(expiresIn) && expiresIn > 0) {
+        const days = Math.floor(expiresIn / 86400);
+        const when = new Date(Date.now() + expiresIn * 1000).toISOString().slice(0, 10);
+        fail(
+          `Refresh token EXPIRES in ${days} day(s), on ${when}`,
+          "The OAuth consent screen is still in Testing. Publish it\n" +
+            "      (Google Auth Platform > Audience > Publish), then re-mint:\n" +
+            "        npm run ads:auth\n" +
+            "      Conversions stop reaching Google once it lapses.",
+        );
+      } else {
+        console.log(ok("Refresh token has no expiry (consent screen is published)"));
+      }
     } else {
       const detail = body.error_description || body.error || `HTTP ${response.status}`;
       fail(`Token refresh rejected: ${detail}`, oauthHint(body.error));
