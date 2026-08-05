@@ -704,10 +704,15 @@
 }
 
 .eligibility-success > p:not(.form-kicker) {
-  margin: 18px 0 26px;
+  margin: 18px 0 0;
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.7;
+}
+
+.eligibility-success a {
+  color: var(--blue);
+  text-underline-offset: 4px;
 }
 
 .success-icon {
@@ -1201,12 +1206,6 @@
   color: var(--gold-600);
 }
 
-.center-link {
-  display: flex;
-  justify-content: center;
-  margin-top: 38px;
-}
-
 /* At a glance */
 
 .glance-section {
@@ -1301,16 +1300,16 @@
 
 .apply-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.96fr);
-  align-items: center;
-  gap: clamp(56px, 8vw, 114px);
+  grid-template-columns: minmax(0, 1fr) minmax(350px, 0.78fr);
+  align-items: start;
+  gap: clamp(48px, 6vw, 90px);
 }
 
 .apply-photo {
   position: relative;
-  height: 520px;
+  height: 420px;
   overflow: hidden;
-  margin: 0;
+  margin: 42px 0 0;
   border-radius: 14px;
   background: #e9e4dc;
   box-shadow: 0 28px 60px rgba(17, 34, 56, 0.14);
@@ -1357,12 +1356,15 @@
   max-width: 560px;
 }
 
-.apply-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 31px;
+.apply-form {
+  min-width: 0;
+}
+
+/* The hero card floats over a photograph; this one sits on white and needs a
+   real border and a lighter shadow to read as a card at all. */
+.apply-form .eligibility-card {
+  border-color: rgba(8, 36, 63, 0.14);
+  box-shadow: 0 24px 55px rgba(17, 34, 56, 0.13);
 }
 
 .apply-email {
@@ -1814,8 +1816,10 @@
     height: min(76vw, 500px);
   }
 
-  .apply-copy {
-    order: -1;
+  .apply-form {
+    width: 100%;
+    max-width: 540px;
+    margin-inline: auto;
   }
 
   .footer-grid {
@@ -1837,8 +1841,7 @@
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr;
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(6, 27, 52, 0.1);
     background: rgba(255, 255, 255, 0.94);
@@ -1951,11 +1954,6 @@
 
   .apply-photo {
     height: 92vw;
-  }
-
-  .apply-actions {
-    align-items: stretch;
-    flex-direction: column;
   }
 
   .story-marquee-bar {

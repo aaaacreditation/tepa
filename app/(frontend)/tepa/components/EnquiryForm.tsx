@@ -5,7 +5,7 @@ import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
 import { countries } from "../countries";
 import { formCopy, site } from "../content";
 import { FORM_LABEL, trackConversion } from "./GoogleTag";
-import { IconArrow, IconCalendar, IconCheck } from "./Icons";
+import { IconArrow, IconCheck } from "./Icons";
 
 type RequiredField = "fullName" | "organization" | "email" | "country";
 type Errors = Partial<Record<RequiredField, string>>;
@@ -29,7 +29,17 @@ function readAttribution() {
   return null;
 }
 
-export function EnquiryForm() {
+type EnquiryFormProps = {
+  /* The page renders this form twice; the heading is the only thing that
+     differs between the hero copy and the closing section. */
+  badge?: string;
+  title?: string;
+};
+
+export function EnquiryForm({
+  badge = formCopy.badge,
+  title = formCopy.title,
+}: EnquiryFormProps) {
   const uid = useId();
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const [errors, setErrors] = useState<Errors>({});
@@ -100,15 +110,9 @@ export function EnquiryForm() {
         <p className="form-kicker">Thank you</p>
         <h2>{formCopy.successTitle}</h2>
         <p>{formCopy.successBody}</p>
-        <a
-          href={site.calendly}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="tepa-button tepa-button--navy"
-        >
-          <IconCalendar className="button-icon" />
-          {formCopy.successCta}
-        </a>
+        <p>
+          Need it sooner? Email <a href={`mailto:${site.email}`}>{site.email}</a>
+        </p>
       </div>
     );
   }
@@ -116,8 +120,8 @@ export function EnquiryForm() {
   return (
     <div className="eligibility-card">
       <div className="form-heading">
-        <p className="form-kicker">{formCopy.badge}</p>
-        <h2>{formCopy.title}</h2>
+        <p className="form-kicker">{badge}</p>
+        <h2>{title}</h2>
       </div>
 
       <form onSubmit={onSubmit} noValidate className="eligibility-form">

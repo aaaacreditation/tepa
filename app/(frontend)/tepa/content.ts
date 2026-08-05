@@ -186,9 +186,16 @@ export const formCopy = {
   submitting: "Sending",
   successTitle: "Enquiry received",
   successBody:
-    "Thank you. An assessor will be in touch within 48 hours. If it is urgent, book a consultation call and we will speak sooner.",
+    "Thank you. An assessor will review your programs and be in touch within 48 hours with the exact documents your application needs.",
   successCta: "Book a Consultation Call",
   errorGeneric: "Something went wrong on our side. Please try again, or email us directly.",
+} as const;
+
+/* The same form closes the page. Only the heading changes, so a visitor who
+   scrolled past the hero copy is not asked the identical question twice. */
+export const applyForm = {
+  badge: "Start Your Application",
+  title: "Tell us about your programs",
 } as const;
 
 /*

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { EnquiryForm } from "./components/EnquiryForm";
-import { IconArrow, IconCalendar } from "./components/Icons";
+import { IconArrow } from "./components/Icons";
 import { MobileCta } from "./components/MobileCta";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { TestimonialMarquee } from "./components/TestimonialMarquee";
 import {
   apply,
+  applyForm,
   benefits,
   glance,
   hero,
@@ -117,16 +118,9 @@ export default function TepaLandingPage() {
               <h1 className="hero-title reveal">{hero.title}</h1>
               <p className="hero-lede reveal">{hero.lede}</p>
 
+              {/* No booking button here: the form sitting beside this copy is
+                  the only thing we ask a visitor to do. */}
               <div className="hero-actions reveal">
-                <a
-                  href={site.calendly}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="tepa-button tepa-button--gold"
-                >
-                  <IconCalendar className="button-icon" />
-                  {hero.primaryCta}
-                </a>
                 <a href="#at-a-glance" className="text-link text-link--gold">
                   {hero.secondaryCta}
                   <IconArrow className="link-icon" />
@@ -228,7 +222,7 @@ export default function TepaLandingPage() {
 
             <div className="journey-action reveal">
               <span>Most providers complete accreditation in 3 to 8 weeks.</span>
-              <a href="#enquire" className="tepa-button tepa-button--outline-light">
+              <a href="#apply-form" className="tepa-button tepa-button--outline-light">
                 Start Your Application
                 <IconArrow className="button-icon" />
               </a>
@@ -246,18 +240,6 @@ export default function TepaLandingPage() {
             </header>
 
             <TestimonialMarquee stories={practice.stories} />
-
-            <div className="center-link reveal">
-              <a
-                href={site.directory}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-link text-link--navy"
-              >
-                Explore Accredited Organizations
-                <IconArrow className="link-icon" />
-              </a>
-            </div>
           </div>
         </section>
 
@@ -302,43 +284,34 @@ export default function TepaLandingPage() {
 
         <section id="apply" className="section apply-section">
           <div className="site-shell apply-grid">
-            <figure className="apply-photo reveal">
-              <Image
-                src="/tepa/practice-qms.jpeg"
-                alt="An accredited provider holding its framed AAA accreditation certificate"
-                fill
-                sizes="(max-width: 900px) 100vw, 48vw"
-                className="cover-image"
-              />
-              <figcaption>
-                <span>{apply.captionTitle}</span>
-                {apply.captionBody}
-              </figcaption>
-            </figure>
-
             <div className="apply-copy">
               <p className="section-kicker reveal">{apply.eyebrow}</p>
               <h2 className="section-title reveal">{apply.title}</h2>
               <p className="section-lede reveal">{apply.body}</p>
-              <div className="apply-actions reveal">
-                <a href="#enquire" className="tepa-button tepa-button--navy">
-                  {apply.primaryCta}
-                  <IconArrow className="button-icon" />
-                </a>
-                <a
-                  href={site.calendly}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="tepa-button tepa-button--outline-navy"
-                >
-                  <IconCalendar className="button-icon" />
-                  {apply.secondaryCta}
-                </a>
-              </div>
               <p className="apply-email reveal">
                 Prefer to write? Email{" "}
                 <a href={`mailto:${site.email}`}>{site.email}</a>
               </p>
+
+              <figure className="apply-photo reveal">
+                <Image
+                  src="/tepa/practice-qms.jpeg"
+                  alt="An accredited provider holding its framed AAA accreditation certificate"
+                  fill
+                  sizes="(max-width: 900px) 100vw, 48vw"
+                  className="cover-image"
+                />
+                <figcaption>
+                  <span>{apply.captionTitle}</span>
+                  {apply.captionBody}
+                </figcaption>
+              </figure>
+            </div>
+
+            {/* Second copy of the hero form, so every CTA below the fold has a
+                form to land on without sending the visitor back to the top. */}
+            <div id="apply-form" className="apply-form reveal">
+              <EnquiryForm badge={applyForm.badge} title={applyForm.title} />
             </div>
           </div>
         </section>
