@@ -52,15 +52,30 @@ export function GoogleTag() {
    for a visitor whether or not the campaign is live. */
 export function trackConversion(
   label: string,
-  params: { value?: number; currency?: string; transactionId?: string; email?: string } = {},
+  params: {
+    value?: number;
+    currency?: string;
+    transactionId?: string;
+    email?: string;
+    phone?: string;
+  } = {},
 ) {
   if (typeof window === "undefined" || !CONVERSION_ID || !label) return;
   if (typeof window.gtag !== "function") return;
 
-  /* Enhanced conversions: Google hashes this in the browser before it leaves,
-     and it lifts the match rate for clicks whose cookie has since expired. */
-  if (params.email) {
-    window.gtag("set", "user_data", { email: params.email });
+  /* Enhanced conversions: Google hashes these in the browser before they
+     leave, and they lift the match rate for clicks whose cookie has since
+     expired. Google wants the phone in E.164, so the international 00 prefix
+     is folded into + and formatting stripped; a number with no country code
+     is passed through as typed rather than guessed at. */
+  const phone = params.phone
+    ? params.phone.trim().replace(/^00/, "+").replace(/[^\d+]/g, "")
+    : "";
+  const userData: Record<string, string> = {};
+  if (params.email) userData.email = params.email;
+  if (phone) userData.phone_number = phone;
+  if (Object.keys(userData).length > 0) {
+    window.gtag("set", "user_data", userData);
   }
 
   window.gtag("event", "conversion", {

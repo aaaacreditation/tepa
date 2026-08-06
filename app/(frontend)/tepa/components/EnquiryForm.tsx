@@ -7,10 +7,20 @@ import { formCopy, site } from "../content";
 import { FORM_LABEL, trackConversion } from "./GoogleTag";
 import { IconArrow, IconCheck } from "./Icons";
 
-type RequiredField = "fullName" | "organization" | "email" | "country";
+type RequiredField = "fullName" | "organization" | "email" | "phone" | "country" | "website";
 type Errors = Partial<Record<RequiredField, string>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/* Anything with a dot-separated domain counts; visitors paste websites with
+   and without a scheme and rejecting either loses the lead. */
+const WEBSITE_RE = /^(https?:\/\/)?[^\s]+\.[^\s]{2,}$/i;
+
+/* 7 to 15 digits covers every national numbering plan. Punctuation and a
+   leading + are the visitor's business; only the digit count is checked. */
+function validPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
 
 /* Read the attribution cookie the landing page wrote so the click id can ride
    along in the request body as well as the Cookie header. */
@@ -58,7 +68,13 @@ export function EnquiryForm({
     if (!EMAIL_RE.test(data.email?.trim() ?? "")) {
       next.email = "Please use a valid email address.";
     }
+    if (!validPhone(data.phone?.trim() ?? "")) {
+      next.phone = "Please add a phone number with your country code.";
+    }
     if (!data.country) next.country = "Please choose your country.";
+    if (!WEBSITE_RE.test(data.website?.trim() ?? "")) {
+      next.website = "Please add your website.";
+    }
 
     setErrors(next);
     const firstInvalid = Object.keys(next)[0] as RequiredField | undefined;
@@ -91,7 +107,7 @@ export function EnquiryForm({
 
       /* Only after the server confirmed the lead was stored. Firing on submit
          would count enquiries that never actually arrived. */
-      trackConversion(FORM_LABEL, { email: data.email?.trim() });
+      trackConversion(FORM_LABEL, { email: data.email?.trim(), phone: data.phone?.trim() });
 
       form.reset();
       setStatus("sent");
@@ -154,6 +170,17 @@ export function EnquiryForm({
           error={errors.email}
         />
 
+        <FormField
+          id={fieldId("phone")}
+          name="phone"
+          label="Phone number"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder="Phone number, with country code"
+          error={errors.phone}
+        />
+
         <div className="form-field">
           <label htmlFor={fieldId("country")}>Country</label>
           <select
@@ -182,10 +209,11 @@ export function EnquiryForm({
         <FormField
           id={fieldId("website")}
           name="website"
-          label="Website (optional)"
+          label="Website"
           inputMode="url"
           autoComplete="url"
-          placeholder="Website (optional)"
+          placeholder="Website"
+          error={errors.website}
         />
 
         <div className="form-field">

@@ -173,8 +173,9 @@ for (let i = 0; i < COUNT; i++) {
       email,
       countryCode,
       countryName,
-      Math.random() < 0.6 ? `+1 555 0${100 + Math.floor(Math.random() * 900)}` : "",
-      Math.random() < 0.7 ? `${slug}.example.com` : "",
+      /* Both fields are required on the live form, so every demo row has them. */
+      `+1 555 0${100 + Math.floor(Math.random() * 900)}`,
+      `${slug}.example.com`,
       pick(MESSAGES),
       status,
       created,

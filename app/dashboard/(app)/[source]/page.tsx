@@ -113,6 +113,7 @@ export default async function SourceDashboard({
     fullName: lead.fullName,
     organization: lead.organization,
     email: lead.email,
+    phone: lead.phone,
     countryName: lead.countryName,
     website: lead.website,
     message: lead.message,

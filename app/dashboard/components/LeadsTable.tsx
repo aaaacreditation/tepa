@@ -11,13 +11,14 @@ import {
 import { removeLead, setLeadNotes, setLeadStatus } from "../lead-actions";
 
 /* Mirrors the TEPA enquiry form field for field: full name, organization,
-   work email, country, website, and the programs textarea. Keep the two in
-   step when the form changes. */
+   work email, phone, country, website, and the programs textarea. Keep the
+   two in step when the form changes. */
 export type TableLead = {
   id: number;
   fullName: string;
   organization: string;
   email: string;
+  phone: string;
   countryName: string;
   website: string;
   message: string;
@@ -94,6 +95,7 @@ export function LeadsTable({
         lead.fullName,
         lead.organization,
         lead.email,
+        lead.phone,
         lead.countryName,
         lead.website,
         lead.message,
@@ -108,7 +110,7 @@ export function LeadsTable({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, organization, email, country, website, programs"
+          placeholder="Search name, organization, email, phone, country, website, programs"
           aria-label="Search leads"
           className="dash-field max-w-xs !py-2 text-sm"
         />
@@ -267,6 +269,7 @@ function LeadRow({
         </td>
         <td>
           <p className="text-ink-700">{lead.email}</p>
+          {lead.phone && <p className="text-xs text-ink-500">{lead.phone}</p>}
         </td>
         <td className="whitespace-nowrap text-ink-700">{lead.countryName || "—"}</td>
         <td className="whitespace-nowrap text-ink-700" title={lead.createdFull}>
@@ -352,6 +355,23 @@ function LeadRow({
                       </dd>
                     </div>
                     <div className="flex gap-2">
+                      <dt className="w-24 shrink-0 text-ink-500">Phone</dt>
+                      <dd>
+                        {lead.phone ? (
+                          <a
+                            href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
+                            className="font-medium text-navy-500 hover:underline"
+                          >
+                            {lead.phone}
+                          </a>
+                        ) : (
+                          /* Only leads captured before the phone field became
+                             required can be missing one. */
+                          <span className="text-ink-500">—</span>
+                        )}
+                      </dd>
+                    </div>
+                    <div className="flex gap-2">
                       <dt className="w-24 shrink-0 text-ink-500">Organization</dt>
                       <dd className="text-ink-700">{lead.organization}</dd>
                     </div>
@@ -359,10 +379,10 @@ function LeadRow({
                       <dt className="w-24 shrink-0 text-ink-500">Country</dt>
                       <dd className="text-ink-700">{lead.countryName || "—"}</dd>
                     </div>
-                    {websiteHref && (
-                      <div className="flex gap-2">
-                        <dt className="w-24 shrink-0 text-ink-500">Website</dt>
-                        <dd>
+                    <div className="flex gap-2">
+                      <dt className="w-24 shrink-0 text-ink-500">Website</dt>
+                      <dd>
+                        {websiteHref ? (
                           <a
                             href={websiteHref}
                             target="_blank"
@@ -371,9 +391,11 @@ function LeadRow({
                           >
                             {lead.website}
                           </a>
-                        </dd>
-                      </div>
-                    )}
+                        ) : (
+                          <span className="text-ink-500">—</span>
+                        )}
+                      </dd>
+                    </div>
                     <div className="flex gap-2">
                       <dt className="w-24 shrink-0 text-ink-500">Received</dt>
                       <dd className="text-ink-700">{lead.createdFull}</dd>

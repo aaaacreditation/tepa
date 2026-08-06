@@ -12,8 +12,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/* Mirrors the client checks in EnquiryForm.tsx; keep the two in step. */
+const WEBSITE_RE = /^(https?:\/\/)?[^\s]+\.[^\s]{2,}$/i;
 const MAX_LEN = 2000;
 const VALID_COUNTRY = new Set(countries.map(([code]) => code));
+
+function validPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
 
 export type Enquiry = {
   fullName: string;
@@ -75,13 +82,17 @@ export async function POST(request: Request) {
   const fullName = clean(payload.fullName);
   const organization = clean(payload.organization);
   const email = clean(payload.email);
+  const phone = clean(payload.phone);
   const country = clean(payload.country);
+  const website = clean(payload.website);
 
   const fieldErrors: Record<string, string> = {};
   if (!fullName) fieldErrors.fullName = "Full name is required.";
   if (!organization) fieldErrors.organization = "Organization is required.";
   if (!EMAIL_RE.test(email)) fieldErrors.email = "A valid email address is required.";
+  if (!validPhone(phone)) fieldErrors.phone = "A valid phone number is required.";
   if (!VALID_COUNTRY.has(country)) fieldErrors.country = "A valid country is required.";
+  if (!WEBSITE_RE.test(website)) fieldErrors.website = "A website is required.";
 
   if (Object.keys(fieldErrors).length > 0) {
     return Response.json(
@@ -104,8 +115,8 @@ export async function POST(request: Request) {
     email,
     country,
     countryName: countries.find(([code]) => code === country)?.[1] ?? country,
-    phone: clean(payload.phone),
-    website: clean(payload.website),
+    phone,
+    website,
     message: clean(payload.message),
     receivedAt: new Date().toISOString(),
     source: "tepa",
