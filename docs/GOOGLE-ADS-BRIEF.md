@@ -5,7 +5,7 @@ current state, and the constraints. The operational commands live in
 `.claude/skills/google-ads/SKILL.md`; the technical detail lives in
 `docs/google-ads-conversions.md`.
 
-Last verified: **2026-07-31**. Commit `4a0ca09`.
+Last verified: **2026-08-06**. Commit `8be8dfe`.
 
 ---
 
@@ -62,11 +62,15 @@ phase and would bid badly. So the ladder is climbed upward as volume allows.
 ### Current rung: `lead`
 
 ```
-TEPA Enquiry    PRIMARY      ← bidding optimises for this
-TEPA MQL        secondary
-TEPA SQL        secondary
-TEPA Customer   secondary
+TEPA Enquiry               PRIMARY      ← bidding optimises for this
+TEPA MQL                   secondary
+TEPA SQL                   secondary
+TEPA Customer              secondary
+TEPA TY Page               secondary    ← pre-existing, demoted 2026-08-06
+Book Free Consult - TEPA   PRIMARY      ← pre-existing, decision pending
 ```
+
+The last two are not managed by `ads:actions`. See section 6.
 
 ### When to climb
 
@@ -158,37 +162,87 @@ way.
 
 ### Working and verified live
 
-- All four conversion actions exist, enabled, in account `6578203282`
+- **Deployed** at <https://campaigns.aaa-accreditation.org/tepa> (note the
+  plural `campaigns`). It runs on a Vercel account separate from
+  `mounirbennassars-projects`, so `vercel` CLI from this machine cannot see it.
+- **A real conversion has reached Google.** On 2026-08-06 `TEPA Enquiry`
+  recorded its first genuine upload from a live enquiry. The full path is
+  proven: form → lead → outbox → Data Manager → Google Ads.
+- All four conversion actions exist, enabled, type `UPLOAD_CLICKS`, in account
+  `6578203282`
 - Credentials valid; token carries both scopes
-- Data Manager accepted a `validateOnly` event for **every** stage
+- **OAuth consent screen published** (2026-08-06). The token minted afterwards
+  carries **no expiry** — `ads:check` confirms with "Refresh token has no expiry
+  (consent screen is published)". The weekly `invalid_grant` cycle is over.
+  Publishing is not retroactive: tokens minted while in *Testing* keep their
+  7 day expiry, so the re-mint must come after the publish.
 - Neon production database migrated; schema is idempotent
 - Build, typecheck and lint clean
 
 ### Open — in priority order
 
-1. **Publish the OAuth consent screen.** The current refresh token expires
-   **2026-08-06** because the screen is still in *Testing*. Conversions stop
-   silently when it lapses. Google Auth Platform → Audience → Publish, then
-   `npm run ads:auth`, then update `.env.local` **and Vercel**.
+1. **Put the post-publish token into Vercel.** A token fixed locally changes
+   nothing in production, and a lapsed one fails silently with no error surfaced
+   anywhere. Production still holds a token minted *before* the consent screen
+   was published, and those keep their 7 day expiry no matter what the app's
+   status is now — so it will lapse on its own unless replaced. Old tokens are
+   not revoked by minting a new one; the expiry is what kills them.
 2. **Rotate credentials.** The Neon password, Google client secret, refresh
-   tokens and a GitHub PAT were all shared in plaintext during setup.
-3. **Deploy to Vercel.** Environment variables are listed in
-   `docs/google-ads-conversions.md`. `DATABASE_URL` must be the Neon **pooled**
-   URL; `localhost` will not work.
-4. **Add a scheduled retry.** Nothing currently drains the outbox on a timer.
-   A Vercel Cron hitting `POST /api/conversions/process` every 15 minutes would
-   let transient failures heal unattended.
-5. **Decide on Calendly tracking.** `NEXT_PUBLIC_GOOGLE_ADS_ID` and
-   `NEXT_PUBLIC_GOOGLE_ADS_LABEL_CALENDLY` are set locally but the tag only
-   loads in production. Booking clicks are uncounted until deployed.
+   tokens and two GitHub PATs were shared in plaintext during setup and again on
+   2026-08-06.
+3. **Add a scheduled retry.** Nothing drains the outbox on a timer. A Vercel
+   Cron hitting `POST /api/conversions/process` every 15 minutes would let
+   transient failures heal unattended.
+4. **Decide whether `Book Free Consult - TEPA` stays primary.** See below.
 
 ### Not yet proven
 
-- **No real conversion has reached Google.** Every test so far has been
-  `validateOnly`, which Google authorises and discards. The first genuine
-  upload happens when a real lead moves stage on a deployed site.
-- The dashboard status-change path has been verified by typecheck, build and the
-  outbox SQL, but not clicked through in a browser end to end.
+- **MQL, SQL and Customer have never received real data.** All three sit at
+  zero, which is why Google Ads flags them as misconfigured — that warning means
+  "nothing has ever arrived", not "set up wrong". Their configuration was
+  verified correct against the API. Moving one real lead to MQL in the dashboard
+  exercises the ladder and clears the flag.
+
+### Pre-existing conversion actions — a third double count route
+
+The account already contained two `WEBPAGE` actions from before this project,
+and they are easy to miss because `ads:actions` only manages the four it owns:
+
+| Action | Type | Note |
+| --- | --- | --- |
+| `TEPA TY Page` (`7598422292`) | WEBPAGE | Fires on a thank you page. **Demoted to secondary 2026-08-06.** |
+| `Book Free Consult - TEPA` (`7600426012`) | WEBPAGE | Outbound Calendly click. Still **primary**. |
+
+`TEPA TY Page` and `TEPA Enquiry` count the *same* event, and both were primary
+until 2026-08-06 — every enquiry was counted twice into bidding. The guardrail in
+`docs/google-ads-conversions.md` only warns about `NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM`
+versus `GOOGLE_ADS_ACTION_LEAD`; this was a third route nobody had written down.
+
+**Check `primary_for_goal` across every action in the account, not just the four
+this project creates, whenever conversion counts look inflated.**
+
+`Book Free Consult - TEPA` is a genuinely different event so it is not double
+counting, but it does mean bidding still steers toward two goals at once. The
+new landing page sends every CTA to the enquiry form, so its volume should fall
+away on its own.
+
+The new landing page **cannot** fire `TEPA TY Page`: it has no thank you page and
+`NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM` is deliberately blank. Conversions still
+appearing on it therefore come from somewhere else, most likely an older
+WordPress landing page still receiving campaign traffic. Worth tracing.
+
+### Reading real conversion counts
+
+`npm run ads:check` proves credentials but says nothing about whether Google
+actually *recorded* anything. To see real counts, query the Google Ads API:
+
+```
+SELECT conversion_action.name, metrics.all_conversions
+FROM conversion_action WHERE segments.date DURING TODAY
+```
+
+`LAST_30_DAYS` **excludes today**, which will make a conversion that landed this
+morning look like zero. Check `TODAY` before concluding nothing arrived.
 
 ## 7. Commands
 
