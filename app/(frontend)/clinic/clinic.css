@@ -1,0 +1,2835 @@
+/* /clinic design system.
+
+   Third sibling to tepa.css and healthcare.css: same architecture — one
+   scoped stylesheet, hand written, no utility framework — and its own
+   identity, taken from the approved clinic artwork rather than invented here.
+
+   That artwork is AAA navy and gold, so this page reads as the certificate on
+   the wall: deep navy grounds, gold reserved for the things that matter, and
+   generous white between sections. Where the comp reached for hard edges and
+   heavy borders, this reaches for soft radii, one shadow scale and colour that
+   only arrives on hover, which is the whole of the modernisation.
+
+   The page is set entirely in Poppins. A geometric sans with a tall x-height
+   holds a 3rem hero and a 0.9rem card body from one family, so hierarchy is
+   carried by weight and size rather than by a second typeface.
+
+   The page has one job — book a consultation — so the form is styled as the
+   brightest object on the screen at every size, and nothing else competes with
+   the gold. */
+
+.cl {
+  /* Navy, from the darkest ground up to the link blue. */
+  --navy-deep: #001d33;
+  --navy: #002747;
+  --navy-mid: #002f56;
+  --navy-hi: #003763;
+  --navy-lift: #0a4d80;
+  --navy-line: #17527d;
+
+  /* Gold. The accent does the pointing; it is never a background for body
+     copy, only for the one button that matters. */
+  --gold: #f4bd4b;
+  --gold-hi: #ffd472;
+  --gold-deep: #c9922a;
+  --gold-ink: #7a5405;
+  --gold-soft: #fff7e6;
+  --gold-line: #ecd7a2;
+
+  --ink: #0b2f51;
+  --ink-soft: #294761;
+  --muted: #56697c;
+  --muted-light: rgba(226, 237, 245, 0.78);
+  --line: #dfe6ec;
+  --line-strong: #c8d5df;
+  --mist: #f2f6f9;
+  --paper: #f7fafc;
+  --white: #fff;
+  --danger: #b0483d;
+
+  --shadow-sm: 0 8px 22px -14px rgba(0, 39, 71, 0.4);
+  --shadow: 0 18px 44px -26px rgba(0, 39, 71, 0.45);
+  --shadow-lg: 0 34px 80px -40px rgba(0, 30, 53, 0.55);
+
+  --r-lg: 26px;
+  --r: 18px;
+  --r-sm: 12px;
+  --r-btn: 12px;
+
+  --sans: var(--font-poppins), "Segoe UI", system-ui, -apple-system, Arial,
+    sans-serif;
+  /* Both aliases resolve to Poppins. They are kept apart so the display and
+     body roles stay nameable at every call site. */
+  --display: var(--sans);
+  --body: var(--sans);
+
+  min-width: 0;
+  overflow-x: clip;
+  color: var(--ink);
+  background: var(--white);
+  font-family: var(--body);
+  /* Poppins sets a touch wide for running text at these sizes. */
+  letter-spacing: -0.004em;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.cl *,
+.cl *::before,
+.cl *::after {
+  box-sizing: border-box;
+}
+
+.cl ::selection {
+  color: var(--navy-deep);
+  background: var(--gold);
+}
+
+.cl [id] {
+  scroll-margin-top: 96px;
+}
+
+.cl img {
+  max-width: 100%;
+}
+
+/* The element resets are wrapped in :where() so they carry zero specificity.
+   Written plainly, `.cl p` (0,1,1) outranks a component class like `.cl-lede`
+   (0,1,0) and silently eats its margins. */
+:where(.cl) h1,
+:where(.cl) h2,
+:where(.cl) h3,
+:where(.cl) h4 {
+  margin: 0;
+  color: inherit;
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.22;
+  text-wrap: balance;
+}
+
+/* Geometric letterforms open up as they scale, so the two display sizes are
+   tracked in rather than left at the small-heading default. */
+:where(.cl) h1 {
+  letter-spacing: -0.034em;
+  line-height: 1.1;
+}
+
+:where(.cl) h2 {
+  letter-spacing: -0.028em;
+  line-height: 1.15;
+}
+
+:where(.cl) p,
+:where(.cl) figure,
+:where(.cl) ul,
+:where(.cl) ol {
+  margin: 0;
+}
+
+:where(.cl) ul,
+:where(.cl) ol {
+  padding: 0;
+  list-style: none;
+}
+
+:where(.cl) a {
+  color: inherit;
+}
+
+.cl :focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.cl-wrap {
+  width: min(1240px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
+/* ==========================================================================
+   Shared type
+   ========================================================================== */
+
+.cl-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--gold-ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.cl-eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  flex: 0 0 auto;
+  background: var(--gold-deep);
+}
+
+.cl-eyebrow--gold {
+  color: var(--gold);
+}
+
+.cl-eyebrow--gold::before {
+  background: var(--gold);
+}
+
+.cl-heading h2 {
+  margin: 18px 0 0;
+  font-size: clamp(2.05rem, 3.5vw, 3.1rem);
+}
+
+.cl-lede {
+  max-width: 66ch;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.72;
+  text-wrap: pretty;
+}
+
+.cl-heading--center {
+  max-width: 900px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.cl-heading--center .cl-lede {
+  margin-inline: auto;
+}
+
+.cl-heading--split {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 24px 64px;
+  align-items: end;
+}
+
+.cl-heading--split .cl-lede {
+  margin-top: 0;
+}
+
+/* The one decorated word in the hero headline. Drawn as a background so it
+   sits behind the descenders instead of clipping them the way an underline
+   would, and so it survives a line break in the middle of the phrase. */
+.cl-underline {
+  background: linear-gradient(var(--gold), var(--gold)) 0 calc(100% - 7px) / 100% 4px
+    no-repeat;
+}
+
+/* Icon tiles.
+
+   A navy squircle carrying a gold Lucide glyph — the page's two brand colours
+   in the one element, rather than the tinted-beige box the comp used. The
+   inset highlight is what stops a flat navy square reading as a hole punched
+   in the card: it puts a single pixel of light on the top edge, the way a
+   physical enamel badge catches it.
+
+   The hover state swaps the two colours over. It is driven from the parent
+   card so the whole card is the target, not the 56px tile inside it. */
+.cl-tile {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  background: linear-gradient(148deg, var(--navy-hi), var(--navy-deep));
+  color: var(--gold);
+  box-shadow:
+    0 12px 24px -14px rgba(0, 39, 71, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition:
+    background 0.24s ease,
+    color 0.24s ease,
+    transform 0.24s ease;
+}
+
+.cl-tile svg {
+  width: 26px;
+  height: 26px;
+}
+
+.cl-tile--sm {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+}
+
+.cl-tile--sm svg {
+  width: 23px;
+  height: 23px;
+}
+
+.cl-benefit:hover .cl-tile,
+.cl-standard:hover .cl-tile {
+  background: linear-gradient(148deg, var(--gold-hi), var(--gold));
+  color: var(--navy-deep);
+  transform: translateY(-2px);
+}
+
+.cl-ico {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.cl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 26px;
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  font-family: var(--body);
+  font-size: 0.97rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.cl-btn:hover {
+  transform: translateY(-2px);
+}
+
+.cl-btn:disabled {
+  cursor: progress;
+  opacity: 0.72;
+  transform: none;
+}
+
+.cl-btn--gold {
+  color: var(--navy-deep);
+  background: linear-gradient(160deg, var(--gold-hi), var(--gold));
+  box-shadow: 0 14px 30px -16px rgba(201, 146, 42, 0.9);
+}
+
+.cl-btn--gold:hover {
+  background: linear-gradient(160deg, #ffdd8c, var(--gold-hi));
+  box-shadow: 0 18px 34px -16px rgba(201, 146, 42, 0.95);
+}
+
+.cl-btn--navy {
+  color: var(--white);
+  background: var(--navy-mid);
+  box-shadow: var(--shadow-sm);
+}
+
+.cl-btn--navy:hover {
+  background: var(--navy-hi);
+}
+
+/* ==========================================================================
+   Masthead
+   ========================================================================== */
+
+.cl-head {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+
+.cl-head-row {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.cl-brand {
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+.cl-brand img {
+  width: auto;
+  height: 46px;
+}
+
+.cl-nav {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+}
+
+.cl-nav a {
+  padding: 6px 0;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.16s ease, border-color 0.16s ease;
+}
+
+.cl-nav a:hover {
+  color: var(--navy-mid);
+  border-bottom-color: var(--gold);
+}
+
+.cl-head-cta {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  border-radius: var(--r-btn);
+  color: var(--navy-deep);
+  background: var(--gold);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.cl-head-cta:hover {
+  background: var(--gold-hi);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Hero
+   ========================================================================== */
+
+.cl-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(56px, 6vw, 92px) 0 clamp(48px, 5vw, 72px);
+  color: var(--white);
+  /* Still painted, and not only as a fallback: it is what the veil grades
+     down to, and what shows for the moment before the photograph decodes. */
+  background: linear-gradient(148deg, var(--navy-hi), var(--navy) 58%, var(--navy-deep));
+  border-bottom: 1px solid var(--navy-line);
+}
+
+/* The photograph, full bleed behind everything.
+
+   It was a framed figure in the left column until now. As a ground it does
+   more with less: the section keeps the room the frame was taking, the eye
+   goes to the headline and the form rather than to a picture competing with
+   them, and the hero reads as one object instead of three stacked ones. */
+.cl-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.cl-hero-bg img {
+  object-fit: cover;
+  /* The group of clinicians sits centre-right in the frame; this keeps their
+     faces out from under the form card at desktop widths. */
+  object-position: 42% 34%;
+  /* Desaturated so it reads as ground rather than subject, but only lightly
+     dimmed: the veil above does the darkening, and doing it twice leaves a
+     near-black field with a photograph nobody can see in it. */
+  filter: saturate(0.72) contrast(1.02) brightness(0.94);
+  transform: scale(1.04);
+}
+
+/* Two graded washes over the photograph.
+
+   The first runs across: near opaque under the headline, thinning towards the
+   right so some of the room survives behind the form. The second runs down,
+   sealing the top edge into the masthead and the bottom into the section that
+   follows. Together they are what makes white text on a photograph legible
+   without flattening it to a solid block. */
+.cl-hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      100deg,
+      var(--navy-deep) 4%,
+      rgba(0, 29, 51, 0.93) 28%,
+      rgba(0, 39, 71, 0.62) 58%,
+      rgba(0, 29, 51, 0.78)
+    ),
+    linear-gradient(rgba(0, 29, 51, 0.5), transparent 24% 70%, rgba(0, 29, 51, 0.7));
+}
+
+/* Two painted layers, both inert: a measurement grid that fades out downward,
+   and one warm gold bloom behind the headline. */
+.cl-hero-grid-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.34;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 30px 30px;
+  -webkit-mask-image: linear-gradient(#000, transparent 72%);
+  mask-image: linear-gradient(#000, transparent 72%);
+}
+
+.cl-hero-aura {
+  position: absolute;
+  top: -220px;
+  left: -180px;
+  width: 720px;
+  height: 720px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(244, 189, 75, 0.14), transparent 68%);
+}
+
+.cl-hero .cl-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+/* The hero is one grid with three children. Placement is explicit here so the
+   DOM can stay in phone order — headline, form, proof — and the single-column
+   fallback needs no reordering at all, just the removal of these rules.
+
+   The copy column is given the taller of the two rows to lead into, so the
+   headline sits optically level with the top of the form card. */
+.cl-hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(354px, 420px);
+  column-gap: clamp(32px, 4vw, 72px);
+  row-gap: clamp(30px, 4vw, 48px);
+  align-items: start;
+}
+
+.cl-hero-copy {
+  grid-column: 1;
+  grid-row: 1;
+  /* Nudged down so the headline starts against the form's heading rather than
+     against the badge sitting above it. */
+  padding-top: clamp(0px, 1.4vw, 22px);
+}
+
+.cl-hero-form {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+/* The proof strip runs under the copy only, so it closes the left column at
+   the same depth the form closes the right. */
+.cl-proof {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+}
+
+.cl-hero-copy h1 {
+  margin: 22px 0 0;
+  max-width: 16ch;
+  font-size: clamp(2.2rem, 3.6vw, 3.5rem);
+  font-weight: 600;
+  /* The headline now sits on a photograph rather than flat navy. A soft
+     shadow keeps the strokes off whatever tone happens to fall behind them,
+     without ever reading as a shadow. */
+  text-shadow: 0 2px 18px rgba(0, 20, 36, 0.45);
+}
+
+.cl-hero-lede {
+  max-width: 52ch;
+  margin: 24px 0 0;
+  color: rgba(232, 241, 247, 0.86);
+  font-size: clamp(1rem, 1.1vw, 1.1rem);
+  line-height: 1.74;
+  text-shadow: 0 1px 12px rgba(0, 20, 36, 0.4);
+  text-wrap: pretty;
+}
+
+/* Trust indicators. The same three claims as the comp, set as quiet chips so
+   they support the form rather than shout over it.
+
+   An explicit grid rather than flex wrapping: the two numeral chips and the
+   much wider ISQua chip land within a few pixels of the column width, so
+   whether they made one row or two came down to how a given browser measured
+   the logo. Two up with ISQua spanning underneath is the same result, chosen
+   rather than stumbled into. */
+.cl-proof {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* These sit directly on the photograph now, so the blur is doing real work
+   rather than decorating a flat ground: it is what separates the numerals
+   from whatever happens to be behind them. */
+.cl-proof-card {
+  min-width: 0;
+  min-height: 74px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r);
+  background: rgba(0, 24, 43, 0.46);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+
+/* The glyph gets its own disc rather than floating loose against the navy —
+   it reads as a deliberate mark at 20px, where a bare stroke icon reads as
+   a scuff. */
+.cl-proof-ico {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(244, 189, 75, 0.14);
+  color: var(--gold);
+}
+
+.cl-proof-ico svg {
+  width: 21px;
+  height: 21px;
+}
+
+.cl-proof-card p {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.cl-proof-card b {
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 1.72rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.cl-proof-card small {
+  min-width: 0;
+  color: var(--muted-light);
+  font-size: 0.83rem;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+/* This chip carries a 120px logo as well as its label, so it asks for half
+   again the width of the other two. Below roughly 900px that no longer fits
+   beside them and the chip takes a row of its own — which is what the wide
+   basis buys: the wrap happens on its own, with no breakpoint to maintain. */
+.cl-proof-card--isqua {
+  grid-column: 1 / -1;
+}
+
+/* The ISQua artwork is a JPEG with its own white ground, so it gets a white
+   chip to sit on rather than a filter — knocking it out to a silhouette would
+   destroy a mark this page is not licensed to redraw. */
+.cl-proof-card--isqua img {
+  width: auto;
+  height: 46px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--white);
+}
+
+/* ==========================================================================
+   Consultation form
+
+   One ordinary vertical form, used in both placements: heading, then one
+   field per row, then the button. `panel` is the card standing beside the
+   hero headline and `stack` is the closing card; they differ only in trim.
+
+   An earlier revision laid the hero copy out as a wide horizontal band with
+   the fields in a three-then-two grid. It filled the width, but it read as a
+   toolbar rather than something to fill in, and every field was too short to
+   show what the visitor had typed. A single column is slower to scan and
+   faster to complete, which is the trade this page wants.
+   ========================================================================== */
+
+.cl-form-card {
+  position: relative;
+  overflow: hidden;
+  padding: 28px 28px 26px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* A hairline of gold across the very top of the card. It is the one piece of
+   ornament the form carries, and it ties the white card back to the navy it
+   sits on. */
+.cl-form-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-hi), var(--gold-deep));
+}
+
+.cl-form-card--stack {
+  padding: 32px 32px 30px;
+}
+
+.cl-form-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: var(--gold-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cl-form-intro h2 {
+  margin: 12px 0 0;
+  font-size: clamp(1.3rem, 1.5vw, 1.5rem);
+  line-height: 1.24;
+}
+
+.cl-form-lede {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.cl-form {
+  margin-top: 20px;
+}
+
+/* One field per row, at every width. */
+.cl-form-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.cl-field {
+  min-width: 0;
+}
+
+/* The placeholder is the visible label, as in the artwork. A real label is
+   still rendered and hidden here — a placeholder vanishes the moment someone
+   types, and it is not a label to a screen reader at all. */
+.cl-field > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.cl-field input,
+.cl-field select {
+  width: 100%;
+  height: 52px;
+  padding: 0 15px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-family: var(--body);
+  font-size: 0.95rem;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.cl-field select {
+  appearance: none;
+  padding-right: 40px;
+  /* Chevron drawn in the background so the control keeps one border radius
+     across every platform's native select. */
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 23px, calc(100% - 14px) 23px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.cl-field input::placeholder {
+  color: #8798a7;
+}
+
+.cl-field input:focus,
+.cl-field select:focus {
+  outline: none;
+  background: var(--white);
+  border-color: var(--navy-lift);
+  box-shadow: 0 0 0 3px rgba(10, 77, 128, 0.15);
+}
+
+.cl-field input:focus-visible,
+.cl-field select:focus-visible {
+  outline: none;
+}
+
+.cl-field [aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.cl-field-error {
+  margin-top: 6px;
+  color: var(--danger);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.cl-honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.cl-form-action {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cl-form-action .cl-btn {
+  width: 100%;
+  min-height: 56px;
+  font-size: 0.97rem;
+}
+
+.cl-form-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.cl-form-note svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--gold-deep);
+}
+
+.cl-form-error {
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: #fbeae7;
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.cl-spinner {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(0, 29, 51, 0.28);
+  border-top-color: var(--navy-deep);
+  border-radius: 50%;
+  animation: cl-spin 0.7s linear infinite;
+}
+
+@keyframes cl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cl-form-done {
+  display: block;
+  text-align: center;
+}
+
+.cl-form-tick {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-line);
+  color: var(--gold-ink);
+}
+
+.cl-form-tick svg {
+  width: 30px;
+  height: 30px;
+}
+
+.cl-form-done h2 {
+  font-size: 1.55rem;
+}
+
+.cl-form-done p {
+  max-width: 52ch;
+  margin: 12px auto 0;
+  color: var(--muted);
+  font-size: 0.97rem;
+  line-height: 1.65;
+}
+
+.cl-form-done-mail a {
+  color: var(--navy-lift);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Section rhythm
+   ========================================================================== */
+
+.cl-section {
+  position: relative;
+  padding: 100px 0;
+}
+
+.cl-section--white {
+  background: var(--white);
+}
+
+.cl-section--mist {
+  background: var(--mist);
+}
+
+.cl-section--paper {
+  background: var(--paper);
+  border-block: 1px solid var(--line);
+}
+
+.cl-section--navy {
+  color: var(--white);
+  background:
+    radial-gradient(circle at 82% 8%, rgba(244, 189, 75, 0.14), transparent 30rem),
+    linear-gradient(155deg, var(--navy-hi), var(--navy) 62%, var(--navy-deep));
+}
+
+.cl-section--navy .cl-lede {
+  color: var(--muted-light);
+}
+
+/* ==========================================================================
+   Benefits
+   ========================================================================== */
+
+.cl-benefit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 52px;
+}
+
+/* The card at rest is white, a hairline and one soft shadow — nothing else.
+   The comp ruled a 4px gold bar across the top of every card, which put the
+   loudest colour on the page on the least important element and left three
+   of them competing with the form. The gold now arrives only under the
+   cursor, as a bloom in the corner nearest it. */
+.cl-benefit {
+  position: relative;
+  overflow: hidden;
+  padding: 34px 30px 32px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.24s ease,
+    border-color 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.cl-benefit::before {
+  content: "";
+  position: absolute;
+  top: -70px;
+  right: -70px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(244, 189, 75, 0.26), transparent 70%);
+  transition: opacity 0.3s ease;
+}
+
+.cl-benefit:hover {
+  transform: translateY(-6px);
+  border-color: var(--gold-line);
+  box-shadow: var(--shadow);
+}
+
+.cl-benefit:hover::before {
+  opacity: 1;
+}
+
+.cl-benefit h3 {
+  position: relative;
+  margin: 24px 0 12px;
+  font-size: 1.28rem;
+}
+
+.cl-benefit p {
+  position: relative;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.68;
+}
+
+.cl-outcomes {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 2.28fr);
+  gap: 40px;
+  align-items: center;
+  margin-top: 24px;
+  padding: 32px 34px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+.cl-outcomes-head h3 {
+  margin-top: 12px;
+  font-size: 1.32rem;
+}
+
+.cl-outcome-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px;
+}
+
+.cl-outcome-list li {
+  display: flex;
+  gap: 14px;
+}
+
+.cl-outcome-list li > span {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-line);
+  color: var(--gold-ink);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.cl-outcome-list h4 {
+  font-size: 1.02rem;
+  line-height: 1.3;
+}
+
+.cl-outcome-list p {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 0.87rem;
+  line-height: 1.55;
+}
+
+.cl-pullquote {
+  max-width: 880px;
+  margin: 34px auto 0;
+  padding: 22px 30px;
+  border-left: 3px solid var(--gold);
+  border-radius: 0 var(--r) var(--r) 0;
+  background: var(--white);
+  color: var(--navy-mid);
+  font-family: var(--display);
+  font-size: 1.08rem;
+  font-weight: 500;
+  letter-spacing: -0.014em;
+  line-height: 1.6;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+/* ==========================================================================
+   What we evaluate
+   ========================================================================== */
+
+.cl-standards-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.4fr);
+  gap: 46px;
+  align-items: start;
+}
+
+.cl-standards-intro {
+  position: sticky;
+  top: 110px;
+  padding: 40px 36px;
+  color: var(--white);
+  border-radius: var(--r-lg);
+  background: linear-gradient(150deg, var(--navy-hi), var(--navy) 70%, var(--navy-deep));
+  box-shadow: var(--shadow);
+}
+
+.cl-standards-intro h2 {
+  margin: 20px 0 0;
+  font-size: clamp(2rem, 3.2vw, 2.9rem);
+}
+
+.cl-standards-lede {
+  margin: 20px 0 0;
+  color: var(--muted-light);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.cl-standards-note {
+  margin: 26px 0 0;
+  padding: 20px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--white);
+  font-size: 0.93rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.cl-standards-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.cl-standard {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 24px 24px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  transition:
+    transform 0.24s ease,
+    box-shadow 0.24s ease,
+    border-color 0.24s ease;
+}
+
+.cl-standard::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(244, 189, 75, 0.24), transparent 70%);
+  transition: opacity 0.3s ease;
+}
+
+.cl-standard:hover {
+  transform: translateY(-4px);
+  border-color: var(--gold-line);
+  box-shadow: var(--shadow);
+}
+
+.cl-standard:hover::before {
+  opacity: 1;
+}
+
+/* The numeral is set as a watermark rather than a label: large, tinted back
+   almost into the card, and out of the reading order entirely. It gives the
+   five cards a countable rhythm without asking to be read as content. */
+.cl-standard-index {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  color: var(--navy);
+  font-family: var(--display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  opacity: 0.07;
+  transition: opacity 0.24s ease;
+}
+
+.cl-standard:hover .cl-standard-index {
+  opacity: 0.13;
+}
+
+.cl-standard h3 {
+  position: relative;
+  margin: 18px 0 10px;
+  font-size: 1.1rem;
+  line-height: 1.32;
+}
+
+.cl-standard p {
+  position: relative;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.62;
+}
+
+/* The fifth standard has no partner, so it runs the full width rather than
+   leaving a hole in the grid. */
+.cl-standard:last-child {
+  grid-column: 1 / -1;
+}
+
+/* ==========================================================================
+   Process
+   ========================================================================== */
+
+.cl-process-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 26px;
+  align-items: stretch;
+  margin-top: 50px;
+}
+
+.cl-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cl-step {
+  display: flex;
+  gap: 16px;
+  padding: 26px 24px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  transition:
+    transform 0.24s ease,
+    border-color 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.cl-step:hover {
+  transform: translateY(-3px);
+  border-color: var(--gold-line);
+  box-shadow: var(--shadow-sm);
+}
+
+.cl-step > span {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(148deg, var(--navy-hi), var(--navy-deep));
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+/* The final step is where the certificate arrives, so it is the one card in
+   the sequence wearing the accent. */
+.cl-step.is-final {
+  border-color: var(--gold-line);
+  background: var(--gold-soft);
+}
+
+.cl-step.is-final > span {
+  background: linear-gradient(148deg, var(--gold-hi), var(--gold));
+  color: var(--navy-deep);
+}
+
+.cl-step h3 {
+  margin-bottom: 9px;
+  font-size: 1.08rem;
+  line-height: 1.32;
+}
+
+.cl-step p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.62;
+}
+
+.cl-process-photo {
+  position: relative;
+  min-height: 460px;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--navy);
+  box-shadow: var(--shadow);
+}
+
+.cl-process-photo img {
+  object-fit: cover;
+  object-position: 51% center;
+}
+
+.cl-process-photo::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 62%;
+  background: linear-gradient(transparent, rgba(0, 29, 51, 0.92));
+  pointer-events: none;
+}
+
+.cl-process-photo figcaption {
+  position: absolute;
+  z-index: 2;
+  left: 24px;
+  right: 24px;
+  bottom: 108px;
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 1.28rem;
+  line-height: 1.3;
+}
+
+.cl-cycle {
+  position: absolute;
+  z-index: 2;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cl-cycle li {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: var(--r-sm);
+  background: rgba(0, 29, 51, 0.72);
+  color: #eaf1f6;
+  font-size: 0.74rem;
+  line-height: 1.3;
+  backdrop-filter: blur(5px);
+}
+
+.cl-cycle b {
+  margin-bottom: 3px;
+  color: var(--gold);
+  font-family: var(--display);
+  font-size: 1.24rem;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Is it right for your clinic
+   ========================================================================== */
+
+.cl-fit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 50px;
+}
+
+.cl-fit {
+  position: relative;
+  overflow: hidden;
+  padding: 34px 32px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.cl-fit-label {
+  display: block;
+  color: var(--gold-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.cl-fit h3 {
+  margin: 13px 0 22px;
+  font-size: 1.26rem;
+}
+
+.cl-fit ul {
+  display: grid;
+  gap: 13px;
+}
+
+.cl-fit li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.cl-fit li svg {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  padding: 4px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: var(--gold);
+}
+
+.cl-fit--navy {
+  color: var(--white);
+  background: linear-gradient(150deg, var(--navy-hi), var(--navy) 72%);
+  border-color: var(--navy-line);
+  box-shadow: var(--shadow);
+}
+
+.cl-fit--navy .cl-fit-label {
+  color: var(--gold);
+}
+
+.cl-fit--navy li {
+  color: #e7eff5;
+}
+
+.cl-fit--navy li svg {
+  background: rgba(244, 189, 75, 0.16);
+  color: var(--gold);
+}
+
+.cl-reassure {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 22px;
+  padding: 24px 28px;
+  border: 1px solid var(--gold-line);
+  border-radius: var(--r-lg);
+  background: var(--gold-soft);
+}
+
+.cl-reassure > span {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(148deg, var(--navy-hi), var(--navy-deep));
+  color: var(--gold);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.cl-reassure > span svg {
+  width: 25px;
+  height: 25px;
+}
+
+.cl-reassure > div {
+  flex: 1 1 auto;
+}
+
+.cl-reassure h3 {
+  font-size: 1.12rem;
+}
+
+.cl-reassure p {
+  margin-top: 6px;
+  color: var(--ink-soft);
+  font-size: 0.91rem;
+  line-height: 1.62;
+}
+
+.cl-reassure .cl-btn {
+  flex: 0 0 auto;
+}
+
+/* ==========================================================================
+   Accredited clinic story
+   ========================================================================== */
+
+.cl-story-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 48px;
+  align-items: center;
+}
+
+.cl-video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid rgba(244, 189, 75, 0.45);
+  border-radius: var(--r-lg);
+  background: var(--navy-deep);
+  box-shadow: var(--shadow-lg);
+}
+
+.cl-video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.cl-video button {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.cl-video img {
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.cl-video button:hover img {
+  transform: scale(1.03);
+}
+
+.cl-video-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    170deg,
+    rgba(0, 29, 51, 0.3),
+    rgba(0, 29, 51, 0.72)
+  );
+}
+
+.cl-video-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 78px;
+  height: 78px;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--navy-deep);
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.cl-video-play svg {
+  width: 34px;
+  height: 34px;
+  fill: currentcolor;
+  translate: 2px 0;
+}
+
+.cl-video button:hover .cl-video-play {
+  transform: scale(1.07);
+  background: var(--gold-hi);
+}
+
+.cl-video-label {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 1.2rem;
+  text-align: left;
+}
+
+.cl-video-label small {
+  margin-top: 4px;
+  color: var(--muted-light);
+  font-family: var(--body);
+  font-size: 0.8rem;
+}
+
+.cl-story-copy h2 {
+  margin: 20px 0 0;
+  font-size: clamp(2rem, 3.2vw, 2.8rem);
+}
+
+.cl-story-lede {
+  margin: 18px 0 0;
+  color: var(--muted-light);
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+.cl-story-id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 26px;
+  padding: 14px 18px;
+  border: 1px solid rgba(244, 189, 75, 0.4);
+  border-radius: var(--r);
+  background: rgba(0, 29, 51, 0.45);
+}
+
+.cl-story-id > span {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--gold);
+  color: var(--navy-deep);
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cl-story-id strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.cl-story-id small {
+  color: var(--muted-light);
+  font-size: 0.84rem;
+}
+
+.cl-story-points {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.cl-story-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #e7eff5;
+  font-size: 0.97rem;
+  line-height: 1.5;
+}
+
+.cl-story-points svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  padding: 3px;
+  border-radius: 50%;
+  background: rgba(244, 189, 75, 0.18);
+  color: var(--gold);
+}
+
+.cl-orgs {
+  margin-top: 62px;
+  padding-top: 34px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.cl-orgs-label {
+  color: var(--muted-light);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cl-orgs ul {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px 34px;
+  margin-top: 24px;
+}
+
+.cl-orgs li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cl-orgs img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--white);
+}
+
+.cl-orgs b {
+  display: block;
+  color: var(--white);
+  font-size: 0.92rem;
+}
+
+.cl-orgs small {
+  color: var(--muted-light);
+  font-size: 0.8rem;
+}
+
+/* ==========================================================================
+   Team
+
+   The flip card /healthcare uses, in this page's navy and gold. The front
+   carries the portrait and the role; the biography is on the back, which
+   keeps four cards to a readable height instead of letting the longest bio
+   set the row.
+   ========================================================================== */
+
+.cl-team-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 52px;
+}
+
+.cl-flip {
+  display: block;
+  width: 100%;
+  /* Fixed, because the two faces are stacked absolutely and neither can size
+     the card. Tall enough for the longest biography to need no scrolling. */
+  height: 340px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-lg);
+  outline-offset: 4px;
+  background: none;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  perspective: 1400px;
+}
+
+/* The shared focus style squares the focused element off to a 4px radius,
+   which on a card this round leaves the ring visibly the wrong shape. */
+.cl-flip:focus-visible {
+  border-radius: var(--r-lg);
+}
+
+/* Every element inside the button is a span, because a button may only hold
+   phrasing content. They each need blockifying by hand for the sizing and the
+   flex layouts below to apply at all. */
+.cl-flip-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 620ms cubic-bezier(0.4, 0.15, 0.2, 1);
+}
+
+.cl-flip[data-flipped="true"] .cl-flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* Hover only where there is a pointer that can hover. On a touchscreen the
+   tap handler is the whole interaction. */
+@media (hover: hover) {
+  .cl-flip:hover .cl-flip-inner {
+    transform: rotateY(180deg);
+  }
+}
+
+.cl-flip-face {
+  position: absolute;
+  overflow: hidden;
+  inset: 0;
+  border-radius: var(--r-lg);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.cl-flip-front {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 28px 22px 22px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  transition: border-color 0.24s ease;
+}
+
+.cl-flip:hover .cl-flip-front {
+  border-color: var(--gold-line);
+}
+
+.cl-portrait {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 126px;
+  height: 126px;
+  flex: 0 0 auto;
+  border: 3px solid var(--mist);
+  border-radius: 50%;
+  background: var(--navy);
+  box-shadow: 0 12px 26px -16px rgba(0, 39, 71, 0.8);
+}
+
+.cl-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 18%;
+}
+
+.cl-flip-name {
+  display: block;
+  margin-top: 20px;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.3;
+}
+
+.cl-flip-role {
+  display: block;
+  margin-top: 8px;
+  color: var(--gold-ink);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.cl-flip-hint {
+  display: block;
+  margin-top: auto;
+  padding-top: 14px;
+  color: #93a5b5;
+  font-size: 0.69rem;
+  letter-spacing: 0.03em;
+}
+
+.cl-flip-hint-short {
+  display: none;
+}
+
+.cl-flip-back {
+  display: flex;
+  flex-direction: column;
+  padding: 26px 24px;
+  color: var(--white);
+  background: linear-gradient(150deg, var(--navy-hi), var(--navy) 70%, var(--navy-deep));
+  border: 1px solid var(--navy-line);
+  transform: rotateY(180deg);
+}
+
+.cl-flip-back .cl-flip-name {
+  margin-top: 0;
+  color: var(--white);
+  font-size: 1rem;
+}
+
+.cl-flip-back .cl-flip-role {
+  color: var(--gold);
+}
+
+.cl-flip-bio {
+  display: block;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  margin-top: 14px;
+  padding-right: 8px;
+  color: var(--muted-light);
+  font-size: 0.82rem;
+  line-height: 1.66;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 189, 75, 0.45) transparent;
+}
+
+.cl-flip-bio::-webkit-scrollbar {
+  width: 5px;
+}
+
+.cl-flip-bio::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: rgba(244, 189, 75, 0.45);
+}
+
+/* ==========================================================================
+   Closing call to action
+   ========================================================================== */
+
+.cl-final {
+  position: relative;
+  overflow: hidden;
+  padding: 96px 0;
+  color: var(--white);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(244, 189, 75, 0.16), transparent 32rem),
+    linear-gradient(150deg, var(--navy-hi), var(--navy) 60%, var(--navy-deep));
+}
+
+.cl-final .cl-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.cl-final-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 56px;
+  align-items: center;
+}
+
+.cl-final-copy h2 {
+  margin: 20px 0 0;
+  font-size: clamp(2.1rem, 3.4vw, 3.05rem);
+}
+
+.cl-final-lede {
+  max-width: 52ch;
+  margin: 20px 0 0;
+  color: var(--muted-light);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.cl-final-points {
+  display: grid;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.cl-final-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #e7eff5;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.cl-final-points svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  padding: 3px;
+  border-radius: 50%;
+  background: rgba(244, 189, 75, 0.18);
+  color: var(--gold);
+}
+
+.cl-final-contact {
+  margin-top: 28px;
+  color: var(--muted-light);
+  font-size: 0.95rem;
+}
+
+.cl-final-contact a {
+  color: var(--gold);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(244, 189, 75, 0.45);
+}
+
+.cl-final-note {
+  margin-top: 10px;
+  color: rgba(226, 237, 245, 0.6);
+  font-size: 0.82rem;
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+.cl-foot {
+  padding: 66px 0 26px;
+  color: var(--muted-light);
+  background: var(--navy-deep);
+}
+
+.cl-foot-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 44px;
+}
+
+.cl-foot-brand img {
+  width: auto;
+  height: 52px;
+  filter: brightness(0) invert(1);
+}
+
+.cl-foot-brand p {
+  max-width: 42ch;
+  margin-top: 18px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.cl-foot-socials {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cl-foot-socials a {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  color: var(--muted-light);
+  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.cl-foot-socials svg {
+  width: 18px;
+  height: 18px;
+}
+
+.cl-foot-socials a:hover {
+  color: var(--navy-deep);
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.cl-foot h2 {
+  color: var(--white);
+  font-family: var(--body);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.cl-foot-links {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.cl-foot-links a {
+  width: fit-content;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: color 0.16s ease;
+}
+
+.cl-foot-links a:hover {
+  color: var(--gold);
+}
+
+.cl-foot-contact {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.cl-foot-contact li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.cl-foot-contact svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  margin-top: 3px;
+  color: var(--gold);
+}
+
+.cl-foot-contact a {
+  text-decoration: none;
+}
+
+.cl-foot-contact a:hover {
+  color: var(--gold);
+}
+
+.cl-foot-bottom {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-top: 48px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.82rem;
+}
+
+.cl-foot-bottom a {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+/* ==========================================================================
+   Floating affordances
+   ========================================================================== */
+
+.cl-wa {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 45;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--white);
+  background: #25d366;
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.5);
+  transition: transform 0.16s ease;
+}
+
+.cl-wa svg {
+  width: 28px;
+  height: 28px;
+}
+
+.cl-wa:hover {
+  transform: scale(1.06);
+}
+
+/* The sticky bar is a phone affordance only: on a laptop the masthead button
+   is always one glance away, so a second fixed bar would just eat the page. */
+.cl-mobile-cta {
+  display: none;
+}
+
+/* ==========================================================================
+   Reveal on scroll
+
+   Hiding is switched on from RevealController rather than from here, so a
+   visitor whose JavaScript never arrives reads a fully visible page.
+   ========================================================================== */
+
+.cl[data-reveal="on"] .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.cl[data-reveal="on"] .reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==========================================================================
+   Responsive
+
+   Six steps rather than four. The page carries three separate grid systems
+   — the hero, the card decks and the footer — and they do not run out of
+   room at the same width, so each one breaks where it actually breaks
+   instead of all of them queueing behind the narrowest.
+   ========================================================================== */
+
+/* The masthead links stop fitting beside the logo and the button well before
+   anything else is under pressure. */
+@media (max-width: 1180px) {
+  .cl-nav {
+    display: none;
+  }
+
+  .cl-standards-intro {
+    position: static;
+  }
+}
+
+/* The hero's second column can no longer hold a comfortable form. Dropping
+   the explicit placement is the whole change: the children then fall into
+   their DOM order, which is already the phone order. */
+@media (max-width: 1080px) {
+  .cl-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
+  }
+
+  .cl-hero-copy,
+  .cl-hero-form,
+  .cl-proof {
+    grid-column: 1;
+    grid-row: auto;
+    align-self: auto;
+  }
+
+  .cl-hero-copy {
+    padding-top: 0;
+  }
+
+  /* Left to itself the card would stretch the full 1240px and set five
+     fields across a line and a half of whitespace each. */
+  .cl-hero-form {
+    width: 100%;
+    max-width: 580px;
+    margin-inline: auto;
+  }
+
+  .cl-hero-copy h1 {
+    max-width: 20ch;
+  }
+
+  /* One column wide, the copy runs across the whole frame, so the across-the-
+     frame grade has nothing left to protect on the right. It darkens evenly
+     instead, and the photograph carries the section as texture rather than as
+     something you are meant to look through the text at. */
+  .cl-hero-veil {
+    background:
+      linear-gradient(rgba(0, 29, 51, 0.8), rgba(0, 29, 51, 0.88)),
+      linear-gradient(150deg, var(--navy-hi), var(--navy) 60%, var(--navy-deep));
+  }
+
+  .cl-hero-bg img {
+    object-position: 50% 30%;
+  }
+}
+
+@media (max-width: 1000px) {
+  .cl-wrap {
+    width: min(1240px, calc(100% - 36px));
+  }
+
+  .cl-section,
+  .cl-final {
+    padding: 76px 0;
+  }
+
+  .cl-hero {
+    padding: 56px 0;
+  }
+
+  .cl-standards-grid,
+  .cl-story-grid,
+  .cl-final-grid,
+  .cl-outcomes,
+  .cl-process-layout,
+  .cl-fit-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .cl-heading--split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  /* Three abreast becomes two; one apiece is still too early here. */
+  .cl-benefit-grid,
+  .cl-team-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cl-process-photo {
+    min-height: 420px;
+  }
+
+  .cl-reassure {
+    flex-wrap: wrap;
+  }
+
+  .cl-reassure .cl-btn {
+    width: 100%;
+  }
+
+  .cl-foot-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cl-foot-brand {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The standards and the steps stay two abreast the whole way down: they are
+   two abreast on a desktop and two abreast on a phone, so dropping them to
+   one column in between would have been the only width on the page where a
+   narrower screen showed more per row than a wider one. Only the outcomes,
+   which start at three, have a step to take here. */
+@media (max-width: 860px) {
+  .cl-outcome-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .cl-outcome-list > *:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .cl-hero-form {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .cl-wrap {
+    width: calc(100% - 28px);
+  }
+
+  .cl-section,
+  .cl-final {
+    padding: 58px 0;
+  }
+
+  .cl-hero {
+    padding: 36px 0 46px;
+  }
+
+  .cl-head-row {
+    min-height: 66px;
+    gap: 14px;
+  }
+
+  .cl-brand img {
+    height: 38px;
+  }
+
+  .cl-head-cta {
+    padding: 10px 14px;
+    font-size: 0.8rem;
+  }
+
+  /* ---- Type -------------------------------------------------------------
+     One scale for the whole phone layout rather than a size fixed per section
+     as it went wrong. Every display size is set in vw between a floor and a
+     ceiling, so the steps between them hold from a 320px phone to a 640px one
+     instead of collapsing into each other at the bottom of the range. */
+  .cl-hero-copy h1 {
+    max-width: none;
+    font-size: clamp(1.85rem, 8.4vw, 2.5rem);
+    letter-spacing: -0.032em;
+    line-height: 1.14;
+  }
+
+  .cl-heading h2,
+  .cl-standards-intro h2,
+  .cl-story-copy h2,
+  .cl-final-copy h2 {
+    font-size: clamp(1.5rem, 6.6vw, 2.05rem);
+    letter-spacing: -0.026em;
+    line-height: 1.2;
+  }
+
+  .cl-hero-lede,
+  .cl-lede,
+  .cl-standards-lede,
+  .cl-story-lede,
+  .cl-final-lede {
+    font-size: 0.94rem;
+    line-height: 1.68;
+  }
+
+  .cl-eyebrow {
+    font-size: 0.71rem;
+  }
+
+  /* ---- Trust chips ------------------------------------------------------
+     Two up, with the numeral stacked over its label rather than beside it.
+     Side by side the pair needs about 200px and there are only 175 to give;
+     stacked, the chip is sized by its widest word instead. */
+  .cl-proof {
+    gap: 10px;
+  }
+
+  .cl-proof-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .cl-proof-card p {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cl-proof-ico {
+    width: 36px;
+    height: 36px;
+  }
+
+  .cl-proof-card b {
+    font-size: 1.6rem;
+  }
+
+  /* The ISQua chip spans both columns, so it keeps the logo beside its
+     label. */
+  .cl-proof-card--isqua {
+    align-items: center;
+    flex-direction: row;
+    gap: 14px;
+  }
+
+  .cl-form-card,
+  .cl-form-card--stack {
+    padding: 22px 18px 20px;
+    border-radius: var(--r);
+  }
+
+  /* A 16px control is the smallest iOS will render without zooming the whole
+     page on focus, which on a form this long throws the layout sideways. */
+  .cl-field input,
+  .cl-field select {
+    font-size: 1rem;
+  }
+
+  /* ---- Card decks, two up ----------------------------------------------
+     Every deck on the page runs two to a row on a phone. A single column of
+     full-width cards turns each section into a long scroll of near-identical
+     blocks with no sense of how many there are; two up shows the set. */
+  .cl-benefit-grid,
+  .cl-standards-list,
+  .cl-steps,
+  .cl-outcome-list,
+  .cl-team-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 34px;
+  }
+
+  /* A deck with an odd number of cards leaves the last one alone beside a
+     hole, which reads as a layout that broke. It takes the full width
+     instead — three benefits and five standards both land this way. */
+  .cl-benefit-grid > *:last-child:nth-child(odd),
+  .cl-standards-list > *:last-child:nth-child(odd),
+  .cl-outcome-list > *:last-child:nth-child(odd),
+  .cl-steps > *:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .cl-benefit,
+  .cl-standard,
+  .cl-step {
+    padding: 20px 16px;
+    border-radius: var(--r);
+  }
+
+  .cl-fit,
+  .cl-outcomes {
+    padding: 24px 20px;
+  }
+
+  /* Half a row wide there is no space for a numeral sitting beside a heading,
+     so the step and outcome cards stack theirs above it. */
+  .cl-step,
+  .cl-outcome-list li {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cl-tile {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+
+  .cl-tile svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .cl-tile--sm {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+  }
+
+  .cl-tile--sm svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .cl-benefit h3 {
+    margin: 16px 0 8px;
+    font-size: 1.02rem;
+  }
+
+  .cl-benefit p,
+  .cl-standard p,
+  .cl-step p {
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .cl-standard h3 {
+    margin: 14px 0 8px;
+    font-size: 0.96rem;
+  }
+
+  .cl-standard-index {
+    top: 10px;
+    right: 12px;
+    font-size: 1.9rem;
+  }
+
+  .cl-step h3 {
+    margin-bottom: 8px;
+    font-size: 0.96rem;
+  }
+
+  .cl-outcome-list h4 {
+    font-size: 0.94rem;
+  }
+
+  .cl-outcome-list p {
+    font-size: 0.81rem;
+  }
+
+  /* ---- Team cards, two up ----------------------------------------------
+     Everything on the face shrinks to match the halved width: a 126px
+     portrait would leave no room for the name under it. */
+  .cl-flip {
+    height: 276px;
+  }
+
+  .cl-flip-front {
+    padding: 20px 12px 14px;
+  }
+
+  .cl-portrait {
+    width: 88px;
+    height: 88px;
+    border-width: 3px;
+  }
+
+  .cl-flip-name {
+    margin-top: 14px;
+    font-size: 0.88rem;
+  }
+
+  .cl-flip-role {
+    margin-top: 6px;
+    font-size: 0.68rem;
+    line-height: 1.4;
+  }
+
+  .cl-flip-hint {
+    padding-top: 10px;
+    font-size: 0.64rem;
+  }
+
+  .cl-flip-hint-long {
+    display: none;
+  }
+
+  .cl-flip-hint-short {
+    display: inline;
+  }
+
+  .cl-flip-back {
+    padding: 18px 15px;
+  }
+
+  .cl-flip-back .cl-flip-name {
+    font-size: 0.86rem;
+  }
+
+  .cl-flip-bio {
+    margin-top: 10px;
+    padding-right: 6px;
+    font-size: 0.75rem;
+    line-height: 1.58;
+  }
+
+  .cl-reassure {
+    padding: 22px 20px;
+    gap: 16px;
+  }
+
+  .cl-process-photo {
+    min-height: 360px;
+  }
+
+  /* The badges stay two-up even here: stacking them makes the overlay tall
+     enough to swallow the caption above it. */
+  .cl-cycle li {
+    padding: 10px 12px;
+  }
+
+  .cl-cycle b {
+    font-size: 1.1rem;
+  }
+
+  .cl-process-photo figcaption {
+    bottom: 104px;
+    font-size: 1.08rem;
+  }
+
+  .cl-pullquote {
+    padding: 18px 20px;
+    font-size: 1rem;
+    text-align: left;
+  }
+
+  .cl-orgs ul {
+    gap: 14px 22px;
+  }
+
+  .cl-foot-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+  }
+
+  /* The action bar is fixed, so it covers whatever the page happens to end
+     on — which was the copyright line. The footer reserves the bar's height
+     plus the home indicator underneath it. */
+  .cl-foot {
+    padding-bottom: calc(94px + env(safe-area-inset-bottom));
+  }
+
+  /* ---- Sticky action bar ------------------------------------------------
+     Two actions side by side: WhatsApp for a visitor with a question, the
+     form for one ready to book. The bar is lifted off the page by a shadow
+     rather than pinned to it by a border — over a card deck a hairline reads
+     as one more card edge. */
+  .cl-mobile-cta {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 44;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px calc(11px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 -10px 30px -14px rgba(0, 30, 53, 0.45);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    transform: translateY(120%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0.3, 1);
+  }
+
+  .cl-mobile-cta[data-shown="true"] {
+    transform: none;
+  }
+
+  .cl-mobile-cta .cl-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 52px;
+  }
+
+  /* Square, and the same height as the button beside it, so the pair reads as
+     one control rather than a button with something stuck to it. */
+  .cl-mobile-wa {
+    width: 52px;
+    height: 52px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-btn);
+    color: var(--white);
+    background: #25d366;
+    box-shadow: 0 10px 22px -12px rgba(37, 211, 102, 0.9);
+  }
+
+  .cl-mobile-wa svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* WhatsApp is in the bar now, so the floating bubble stands down while the
+     bar is up. Two ways to reach the same conversation, on screen at once,
+     is not twice the affordance. */
+  .cl-mobile-cta[data-shown="true"] ~ .cl-wa {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+  }
+
+  .cl-wa {
+    right: 16px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    width: 50px;
+    height: 50px;
+    transition:
+      opacity 0.24s ease,
+      transform 0.24s ease;
+  }
+
+  .cl-wa svg {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+/* Small phones. Two cards to a row still, on about 160px each, so everything
+   below is the last few pixels of horizontal room being found. The type scale
+   above is set in vw and has already stepped down by itself; nothing here
+   resets it, which is what kept the old 1.72rem override from quietly making
+   headings on a 360px phone larger than on a 390px one. */
+@media (max-width: 400px) {
+  .cl-wrap {
+    width: calc(100% - 20px);
+  }
+
+  .cl-eyebrow {
+    gap: 9px;
+    letter-spacing: 0.12em;
+  }
+
+  .cl-eyebrow::before {
+    width: 18px;
+  }
+
+  .cl-btn {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+  }
+
+  .cl-form-intro h2 {
+    font-size: 1.15rem;
+  }
+
+  .cl-benefit,
+  .cl-standard,
+  .cl-step {
+    padding: 17px 13px;
+  }
+
+  .cl-tile {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+  }
+
+  .cl-tile svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .cl-tile--sm {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  .cl-tile--sm svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .cl-benefit h3,
+  .cl-standard h3,
+  .cl-step h3 {
+    font-size: 0.92rem;
+  }
+
+  .cl-benefit p,
+  .cl-standard p,
+  .cl-step p {
+    font-size: 0.79rem;
+  }
+
+  .cl-standard-index {
+    font-size: 1.6rem;
+  }
+
+  .cl-proof-card {
+    padding: 12px;
+  }
+
+  .cl-proof-card b {
+    font-size: 1.45rem;
+  }
+
+  .cl-flip {
+    height: 268px;
+  }
+
+  .cl-portrait {
+    width: 78px;
+    height: 78px;
+  }
+
+  .cl-flip-name {
+    margin-top: 12px;
+    font-size: 0.83rem;
+  }
+
+  .cl-flip-role {
+    font-size: 0.65rem;
+  }
+
+  .cl-flip-bio {
+    font-size: 0.72rem;
+  }
+
+  .cl-story-id > span {
+    width: 42px;
+    height: 42px;
+    font-size: 0.95rem;
+  }
+
+  /* The bar keeps its 52px targets; it is the label that gives way. */
+  .cl-mobile-cta {
+    gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .cl-mobile-cta .cl-btn {
+    padding-inline: 12px;
+    font-size: 0.86rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl *,
+  .cl *::before,
+  .cl *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .cl[data-reveal="on"] .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* The card still turns — it is the only way to reach the biography — but it
+     turns instantly rather than sweeping through 180 degrees. */
+  .cl-flip-inner {
+    transition: none;
+  }
+}
