@@ -43,6 +43,11 @@ Two consequences that trip people up:
 | Visitor clicks a Calendly link | gtag in the browser | Happens before any form fill |
 | Lead moved to MQL / SQL / Customer | Server upload to Data Manager | Happens days later, with no browser present |
 
+This is shared by every landing page. `/tepa` and `/healthcare` each mount
+`AttributionCapture` and `GoogleTag` from `app/(frontend)/components`, post to
+their own enquiry route, and write a lead tagged with their source key. What
+differs per page is only which conversion actions the stages report into.
+
 The pipeline stages are the reason this exists. A form fill is a weak signal —
 some enquiries are students, some are competitors. Telling Google which ones
 became customers, and what each stage is worth, is what lets Smart Bidding
@@ -92,19 +97,34 @@ double count.
 ### 2. Conversion actions in Google Ads
 
 Create one conversion action per stage you want to report, under
-**Goals → Conversions → New conversion action → Import → Manual import**.
+**Goals → Conversions → New conversion action → Import → Manual import**, or
+let the script do it:
+
+```bash
+npm run ads:actions                                  # TEPA, show what is missing
+npm run ads:actions -- --create                      # TEPA, create them
+npm run ads:actions -- --source=healthcare --create  # the healthcare page
+```
 
 Suggested setup:
 
-| Stage | Action name | Count | Value |
-| --- | --- | --- | --- |
-| Lead | TEPA Enquiry | One | 0 (or your cost per lead) |
-| MQL | TEPA MQL | One | 50 |
-| SQL | TEPA SQL | One | 250 |
-| Customer | TEPA Customer | One | 2000 |
+| Stage | TEPA action | Healthcare action | Count | Value |
+| --- | --- | --- | --- | --- |
+| Lead | TEPA Enquiry | Healthcare Enquiry | One | 0 (or your cost per lead) |
+| MQL | TEPA MQL | Healthcare MQL | One | 50 |
+| SQL | TEPA SQL | Healthcare SQL | One | 250 |
+| Customer | TEPA Customer | Healthcare Customer | One | 2000 |
 
 Set **Count: One** on all of them — one organization accrediting is one
 conversion, not one per program.
+
+#### One set of actions per landing page
+
+Each landing page in `lib/sources.ts` reports into its own actions, named with
+the suffixed environment variables below. A campaign then bids on the funnel it
+actually paid for. Point two landing pages at one action and Smart Bidding
+cannot tell them apart: the healthcare campaign optimises partly against TEPA's
+leads and vice versa. `npm run ads:check` warns when that is the case.
 
 Only the *Customer* action normally belongs in the **Primary** conversion goal
 used for bidding. Keep the rest as **Secondary** so they are observed but do not
@@ -131,7 +151,16 @@ GOOGLE_ADS_ACTION_MQL=987654321
 GOOGLE_ADS_ACTION_SQL=987654322
 GOOGLE_ADS_ACTION_CUSTOMER=987654323
 
-# Value per stage. Defaults: 0 / 50 / 250 / 2000.
+# Per landing page. A suffixed variable wins over the shared one above; with
+# none set the page falls back to the shared action. The suffix is the source
+# key from lib/sources.ts, uppercased.
+GOOGLE_ADS_ACTION_LEAD_HEALTHCARE=
+GOOGLE_ADS_ACTION_MQL_HEALTHCARE=987654331
+GOOGLE_ADS_ACTION_SQL_HEALTHCARE=987654332
+GOOGLE_ADS_ACTION_CUSTOMER_HEALTHCARE=987654333
+
+# Value per stage. Defaults: 0 / 50 / 250 / 2000. Also accepts the suffix, so a
+# healthcare customer can be worth more than a training one.
 GOOGLE_ADS_VALUE_MQL=50
 GOOGLE_ADS_VALUE_SQL=250
 GOOGLE_ADS_VALUE_CUSTOMER=2000
@@ -142,8 +171,9 @@ CONVERSIONS_CRON_SECRET=<random string>
 
 # --- Browser side tag (optional) ---
 NEXT_PUBLIC_GOOGLE_ADS_ID=AW-123456789
-NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM=AbC-D_efGh
-NEXT_PUBLIC_GOOGLE_ADS_LABEL_CALENDLY=XyZ-1_23456
+NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM=AbC-D_efGh            # /tepa
+NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM_HEALTHCARE=IjK-L_mnOp # /healthcare
+NEXT_PUBLIC_GOOGLE_ADS_LABEL_CALENDLY=XyZ-1_23456       # /tepa only
 ```
 
 > **Do not set both `NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM` and

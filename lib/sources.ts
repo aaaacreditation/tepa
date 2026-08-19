@@ -16,6 +16,18 @@ export const SOURCES: Record<string, LandingPageSource> = {
     name: "Training & Education Provider Accreditation",
     path: "/tepa",
   },
+  healthcare: {
+    key: "healthcare",
+    label: "Healthcare",
+    name: "Healthcare Accreditation for Hospitals & Clinics",
+    path: "/healthcare",
+  },
+  clinic: {
+    key: "clinic",
+    label: "Clinic",
+    name: "Clinic Accreditation Readiness Assessment",
+    path: "/clinic",
+  },
 };
 
 export function getSource(key: string): LandingPageSource | null {

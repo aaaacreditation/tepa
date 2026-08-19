@@ -64,26 +64,71 @@ else console.log(dim("      GOOGLE_ADS_LOGIN_CUSTOMER_ID not set (fine unless ac
 console.log("\n2. Conversion actions");
 const STAGES = ["lead", "mql", "sql", "customer"];
 const DEFAULT_VALUE = { lead: 0, mql: 50, sql: 250, customer: 2000 };
+
+/* Mirrors lib/sources.ts and lib/conversions.ts: a landing page reports into
+   its own suffixed action when one is set and falls back to the shared one
+   otherwise, so both are resolved here exactly the way the app resolves them. */
+const LANDING_PAGES = [
+  { key: "tepa", label: "TEPA", envSuffix: "" },
+  { key: "healthcare", label: "Healthcare", envSuffix: "_HEALTHCARE" },
+  { key: "clinic", label: "Clinic", envSuffix: "_CLINIC" },
+];
+
+const envForPage = (base, page) =>
+  (page.envSuffix && env(`${base}${page.envSuffix}`)) || env(base);
+
 const configured = [];
 
-for (const stage of STAGES) {
-  const action = env(`GOOGLE_ADS_ACTION_${stage.toUpperCase()}`);
-  const rawValue = env(`GOOGLE_ADS_VALUE_${stage.toUpperCase()}`);
-  const value = rawValue === "" ? DEFAULT_VALUE[stage] : Number(rawValue);
+for (const page of LANDING_PAGES) {
+  console.log(dim(`      ${page.label} (/${page.key})`));
 
-  if (!action) {
-    console.log(dim(`      ${stage.padEnd(9)} not configured — this stage will not be reported`));
-    continue;
-  }
-  if (!/^\d+$/.test(action)) {
-    fail(
-      `GOOGLE_ADS_ACTION_${stage.toUpperCase()} should be the numeric conversion action ID, got "${action}"`,
-      "Google Ads > Goals > Conversions > the action > the ctId number in the page URL",
+  for (const stage of STAGES) {
+    const base = `GOOGLE_ADS_ACTION_${stage.toUpperCase()}`;
+    const action = envForPage(base, page);
+    const rawValue = envForPage(`GOOGLE_ADS_VALUE_${stage.toUpperCase()}`, page);
+    const value = rawValue === "" ? DEFAULT_VALUE[stage] : Number(rawValue);
+    const scoped = page.envSuffix && env(`${base}${page.envSuffix}`);
+
+    if (!action) {
+      console.log(
+        dim(`      ${stage.padEnd(9)} not configured — this stage will not be reported`),
+      );
+      continue;
+    }
+    if (!/^\d+$/.test(action)) {
+      fail(
+        `${base}${scoped ? page.envSuffix : ""} should be the numeric conversion action ID, got "${action}"`,
+        "Google Ads > Goals > Conversions > the action > the ctId number in the page URL",
+      );
+      continue;
+    }
+    console.log(
+      ok(
+        `${stage.padEnd(9)} action ${action}, value ${value}` +
+          (scoped ? "" : dim("  (shared)")),
+      ),
     );
-    continue;
+    configured.push({ page: page.key, stage, action, value });
   }
-  console.log(ok(`${stage.padEnd(9)} action ${action}, value ${value}`));
-  configured.push({ stage, action, value });
+}
+
+/* Two landing pages reporting into one action is legal but it means Smart
+   Bidding cannot tell the campaigns apart, so say so rather than let it pass
+   as a working setup. */
+const shared = STAGES.filter((stage) => {
+  const ids = LANDING_PAGES.map((page) =>
+    envForPage(`GOOGLE_ADS_ACTION_${stage.toUpperCase()}`, page),
+  ).filter(Boolean);
+  return ids.length > 1 && new Set(ids).size === 1;
+});
+if (shared.length > 0) {
+  console.log(
+    warn(
+      `Every landing page reports ${shared.join(", ")} into the same conversion action.\n` +
+        "      Each campaign will optimise against the others' leads.\n" +
+        "      Fix: npm run ads:actions -- --source=healthcare --create",
+    ),
+  );
 }
 
 if (configured.length === 0) {
@@ -251,29 +296,38 @@ if (!gtagId) {
   fail(`NEXT_PUBLIC_GOOGLE_ADS_ID should look like AW-123456789, got "${gtagId}"`);
 } else {
   console.log(ok(`gtag will load with ${gtagId}`));
-  const formLabel = env("NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM");
   const calLabel = env("NEXT_PUBLIC_GOOGLE_ADS_LABEL_CALENDLY");
-  console.log(
-    formLabel
-      ? ok("Form submit conversion label set")
-      : dim("      No form submit label — browser side form conversion is off"),
-  );
   console.log(
     calLabel
       ? ok("Calendly click conversion label set")
       : dim("      No Calendly label — booking clicks are not counted"),
   );
 
-  /* Double counting is the quiet failure here: both paths would report the
-     same form submit against the same conversion action. */
-  if (formLabel && env("GOOGLE_ADS_ACTION_LEAD")) {
-    console.log(
-      warn(
-        "Both NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM and GOOGLE_ADS_ACTION_LEAD are set.\n" +
-          "      If they point at the same conversion action, every enquiry counts twice.\n" +
-          "      Pick one: the browser tag, or the server side upload.",
-      ),
-    );
+  /* One form label per landing page. Double counting is the quiet failure
+     here: with the browser label and the server side action both set, the two
+     paths report the same form submit against the same conversion action. */
+  /* Same suffix rule as the conversion actions, so a new landing page needs
+     adding in exactly one place. */
+  for (const page of LANDING_PAGES) {
+    const key = `NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM${page.envSuffix}`;
+    const label = env(key);
+    if (!label) {
+      console.log(
+        dim(`      ${page.label}: no form submit label — the browser side conversion is off`),
+      );
+      continue;
+    }
+    console.log(ok(`${page.label} form submit conversion label set`));
+
+    if (envForPage("GOOGLE_ADS_ACTION_LEAD", page)) {
+      console.log(
+        warn(
+          `Both ${key} and a lead conversion action are set for ${page.label}.\n` +
+            "      If they point at the same conversion action, every enquiry counts twice.\n" +
+            "      Pick one: the browser tag, or the server side upload.",
+        ),
+      );
+    }
   }
 }
 

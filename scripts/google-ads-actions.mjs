@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 /* Creates the Import conversion actions the pipeline stages report against.
 
-     npm run ads:actions             show what exists and what is missing
-     npm run ads:actions -- --create create the missing ones
+     npm run ads:actions                        show what exists and what is missing
+     npm run ads:actions -- --create            create the missing ones
+     npm run ads:actions -- --source=healthcare work on a different landing page
+
+   Each landing page gets its own set of actions, so a campaign bids on the
+   funnel it actually paid for rather than a pool shared with every other page.
+   The app resolves them the same way: GOOGLE_ADS_ACTION_LEAD_HEALTHCARE if it
+   is set, otherwise the unsuffixed GOOGLE_ADS_ACTION_LEAD.
 
    Offline conversion imports can only be received by a conversion action of
    type UPLOAD_CLICKS. The account's existing TEPA actions are type WEBPAGE,
@@ -22,6 +28,23 @@ import { resolve } from "node:path";
 const ROOT = resolve(import.meta.dirname, "..");
 const API = "https://googleads.googleapis.com/v25";
 const CREATE = process.argv.includes("--create");
+
+/* Mirrors lib/sources.ts. The first entry keeps the unsuffixed variables it
+   has always used, so an account set up before there was a second landing page
+   needs no renaming. */
+const LANDING_PAGES = {
+  tepa: { label: "TEPA", envSuffix: "" },
+  healthcare: { label: "Healthcare", envSuffix: "_HEALTHCARE" },
+  clinic: { label: "Clinic", envSuffix: "_CLINIC" },
+};
+
+const sourceArg = process.argv.find((a) => a.startsWith("--source="));
+const SOURCE = sourceArg ? sourceArg.split("=")[1].trim().toLowerCase() : "tepa";
+if (!LANDING_PAGES[SOURCE]) {
+  console.error(`\n--source must be one of: ${Object.keys(LANDING_PAGES).join(", ")}\n`);
+  process.exit(1);
+}
+const PAGE = LANDING_PAGES[SOURCE];
 
 /* --primary=<stage> promotes one stage to the primary conversion goal and
    demotes the rest to secondary.
@@ -62,64 +85,64 @@ if (missing.length) {
 /* Values are the defaults the app falls back to, so the account and the code
    agree out of the box. alwaysUseDefaultValue stays false: the upload sends a
    per lead value and that must win over the account default. */
-const WANTED = [
+const STAGES = [
   {
-    envVar: "GOOGLE_ADS_ACTION_LEAD",
-    name: "TEPA Enquiry",
+    stage: "lead",
+    suffix: "Enquiry",
     category: "SUBMIT_LEAD_FORM",
     /* The enquiry is worth nothing until it qualifies, so the later stages
        carry the value. Reporting it still matters: customers take weeks to
        close, and without this Google has almost no signal to learn from in
        the opening weeks of a campaign. */
     value: 0,
-    primary: false,
   },
   {
-    envVar: "GOOGLE_ADS_ACTION_MQL",
-    name: "TEPA MQL",
+    stage: "mql",
+    suffix: "MQL",
     category: "QUALIFIED_LEAD",
     value: 50,
-    /* Secondary. Observed and reported, but kept out of bidding so the mid
-       funnel does not pull optimisation away from actual customers. */
-    primary: false,
   },
   {
-    envVar: "GOOGLE_ADS_ACTION_SQL",
-    name: "TEPA SQL",
+    stage: "sql",
+    suffix: "SQL",
     category: "QUALIFIED_LEAD",
     value: 250,
-    primary: false,
   },
   {
-    envVar: "GOOGLE_ADS_ACTION_CUSTOMER",
-    name: "TEPA Customer",
+    stage: "customer",
+    suffix: "Customer",
     category: "CONVERTED_LEAD",
-    value: 2000,
     /* Where the ladder ends, once customer volume can sustain bidding on its
        own. For a high ticket service that may never happen, in which case sql
        is the sensible resting place. */
-    primary: false,
+    value: 2000,
   },
 ];
+
+/* Everything but the chosen stage stays secondary: observed and reported, but
+   kept out of bidding so the mid funnel does not pull optimisation away from
+   the goal that was picked. */
+const WANTED = STAGES.map((s) => ({
+  ...s,
+  envVar: `GOOGLE_ADS_ACTION_${s.stage.toUpperCase()}${PAGE.envSuffix}`,
+  name: `${PAGE.label} ${s.suffix}`,
+  primary: false,
+}));
 
 /* The stage bidding optimises against at the start. Overridden by --primary. */
 const DEFAULT_PRIMARY = "lead";
 
-const stageOf = (envVar) => envVar.replace("GOOGLE_ADS_ACTION_", "").toLowerCase();
-
-if (PRIMARY_STAGE && !WANTED.some((w) => stageOf(w.envVar) === PRIMARY_STAGE)) {
-  console.error(
-    `\n--primary must be one of: ${WANTED.map((w) => stageOf(w.envVar)).join(", ")}\n`,
-  );
+if (PRIMARY_STAGE && !WANTED.some((w) => w.stage === PRIMARY_STAGE)) {
+  console.error(`\n--primary must be one of: ${WANTED.map((w) => w.stage).join(", ")}\n`);
   process.exit(1);
 }
 
 const primaryStage = PRIMARY_STAGE || DEFAULT_PRIMARY;
-for (const want of WANTED) want.primary = stageOf(want.envVar) === primaryStage;
+for (const want of WANTED) want.primary = want.stage === primaryStage;
 
 const token = await accessToken();
 
-console.log("\nTEPA conversion actions");
+console.log(`\n${PAGE.label} conversion actions`);
 console.log("=".repeat(46));
 console.log(`Account: ${customerId}${loginCustomerId ? ` (via MCC ${loginCustomerId})` : ""}\n`);
 
@@ -161,10 +184,10 @@ for (const want of WANTED) {
   if (isPrimary !== want.primary) {
     toRepoint.push({ id: found.id, name: want.name, primary: want.primary });
     console.log(
-      `CHANGE   ${want.name.padEnd(16)} id ${found.id}  ${isPrimary ? "PRIMARY" : "secondary"} -> ${label}`,
+      `CHANGE   ${want.name.padEnd(20)} id ${found.id}  ${isPrimary ? "PRIMARY" : "secondary"} -> ${label}`,
     );
   } else {
-    console.log(`EXISTS   ${want.name.padEnd(16)} id ${found.id}  ${label}`);
+    console.log(`EXISTS   ${want.name.padEnd(20)} id ${found.id}  ${label}`);
   }
 }
 
@@ -186,7 +209,7 @@ if (toRepoint.length > 0) {
   await mutate(ops, true);
   await mutate(ops, false);
   for (const r of toRepoint) {
-    console.log(`UPDATED  ${r.name.padEnd(16)} -> ${r.primary ? "PRIMARY" : "secondary"}`);
+    console.log(`UPDATED  ${r.name.padEnd(20)} -> ${r.primary ? "PRIMARY" : "secondary"}`);
   }
   console.log(
     "\nSmart Bidding will relearn for one to two weeks. Expect unstable\n" +
@@ -203,7 +226,7 @@ if (!CREATE) {
   console.log(`\n${toCreate.length} to create. Re-run with --create to make them:\n`);
   for (const w of toCreate) {
     console.log(
-      `  ${w.name.padEnd(16)} Import / ${w.category} / $${w.value} / ${w.primary ? "Primary" : "Secondary"}`,
+      `  ${w.name.padEnd(20)} Import / ${w.category} / $${w.value} / ${w.primary ? "Primary" : "Secondary"}`,
     );
   }
   console.log("");
@@ -237,7 +260,7 @@ const results = await mutate(operations, false);
 results.forEach((res, i) => {
   const id = String(res.resourceName).split("/").pop();
   resolved[toCreate[i].envVar] = id;
-  console.log(`CREATED  ${toCreate[i].name.padEnd(16)} id ${id}`);
+  console.log(`CREATED  ${toCreate[i].name.padEnd(20)} id ${id}`);
 });
 
 report();

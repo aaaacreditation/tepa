@@ -74,23 +74,42 @@ export function validateOnly(): boolean {
   return process.env.GOOGLE_ADS_VALIDATE_ONLY === "true";
 }
 
+/* Landing pages may report into their own conversion actions by suffixing the
+   variable with the source key — GOOGLE_ADS_ACTION_LEAD_HEALTHCARE — which is
+   what lets each campaign bid on its own funnel instead of a pooled one. With
+   no suffixed variable set the shared action is used, so a single landing page
+   setup needs no extra configuration. */
+function envForSource(base: string, source?: string): string | undefined {
+  if (source) {
+    const suffix = source.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+    const scoped = process.env[`${base}_${suffix}`];
+    if (scoped !== undefined && scoped.trim()) return scoped;
+  }
+  return process.env[base];
+}
+
 /* A stage is only reported when it has a conversion action id. Leaving one
    unset is the supported way to opt a stage out, which matters for 'lead':
    most setups already count the form submit with the gtag snippet in the
    browser, and reporting it here too would count it twice. */
-export function stageConfig(stage: ConversionStage): StageConfig | null {
-  const conversionActionId = (process.env[ENV_ACTION[stage]] ?? "").trim();
+export function stageConfig(
+  stage: ConversionStage,
+  source?: string,
+): StageConfig | null {
+  const conversionActionId = (envForSource(ENV_ACTION[stage], source) ?? "").trim();
   if (!conversionActionId) return null;
 
-  const raw = process.env[ENV_VALUE[stage]];
+  const raw = envForSource(ENV_VALUE[stage], source);
   const parsed = raw === undefined ? Number.NaN : Number(raw);
   const value = Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_VALUES[stage];
 
   return { stage, conversionActionId, value };
 }
 
-export function configuredStages(): StageConfig[] {
-  return LEAD_STATUSES.map(stageConfig).filter((s): s is StageConfig => s !== null);
+export function configuredStages(source?: string): StageConfig[] {
+  return LEAD_STATUSES.map((stage) => stageConfig(stage, source)).filter(
+    (s): s is StageConfig => s !== null,
+  );
 }
 
 /* ==========================================================================
@@ -102,12 +121,26 @@ export function configuredStages(): StageConfig[] {
    than a second conversion for the same milestone. */
 const dedupeKey = (leadId: number, stage: ConversionStage) => `${leadId}:${stage}`;
 
+/* Which conversion action a stage reports into depends on the landing page the
+   lead came from, and the caller does not always know it — the dashboard moves
+   a lead by id alone. Reading it back keeps every call site the same shape. */
+async function leadSource(leadId: number): Promise<string | null> {
+  const rows = await q<{ source: string }>("SELECT source FROM leads WHERE id = $1", [
+    leadId,
+  ]);
+  return rows.length > 0 ? rows[0].source : null;
+}
+
 export async function enqueueConversion(
   leadId: number,
   stage: ConversionStage,
   occurredAt: Date = new Date(),
+  knownSource?: string,
 ): Promise<boolean> {
-  const config = stageConfig(stage);
+  const source = knownSource ?? (await leadSource(leadId));
+  if (source === null) return false;
+
+  const config = stageConfig(stage, source);
   if (!config) return false;
 
   const rows = await q<{ id: number }>(
@@ -132,9 +165,13 @@ export async function enqueueStageAndBackfill(
   const target = LEAD_STATUSES.indexOf(stage);
   if (target < 0) return 0;
 
+  /* Resolved once and threaded through, rather than re-read for each stage. */
+  const source = await leadSource(leadId);
+  if (source === null) return 0;
+
   let queued = 0;
   for (let i = 0; i <= target; i += 1) {
-    if (await enqueueConversion(leadId, LEAD_STATUSES[i], occurredAt)) queued += 1;
+    if (await enqueueConversion(leadId, LEAD_STATUSES[i], occurredAt, source)) queued += 1;
   }
   return queued;
 }
@@ -164,6 +201,7 @@ type PendingJob = {
   gbraid: string;
   wbraid: string;
   isDemo: boolean;
+  source: string;
 };
 
 export type DrainResult = {
@@ -225,7 +263,8 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
             l.gclid,
             l.gbraid,
             l.wbraid,
-            l.is_demo  AS "isDemo"
+            l.is_demo  AS "isDemo",
+            l.source
      FROM conversion_uploads c
      JOIN leads l ON l.id = c.lead_id
      WHERE c.id = ANY($1::int[])
@@ -249,7 +288,7 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
       continue;
     }
 
-    const action = stageConfig(job.stage);
+    const action = stageConfig(job.stage, job.source);
     if (!action) {
       await q(
         `UPDATE conversion_uploads
