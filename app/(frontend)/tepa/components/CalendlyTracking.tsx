@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { CALENDLY_LABEL, trackConversion } from "./GoogleTag";
+import { CALENDLY_LABEL, trackConversion } from "../../components/GoogleTag";
 
 /* Counts clicks on the Calendly booking links.
 

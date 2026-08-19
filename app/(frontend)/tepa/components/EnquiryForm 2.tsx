@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { formCopy, site } from "../content";
-import { countries } from "../countries";
+import { countries } from "@/lib/countries";
 import { IconArrow, IconCalendar, IconCheck } from "./Icons";
 
 type Errors = Partial<Record<"fullName" | "organization" | "email" | "country", string>>;

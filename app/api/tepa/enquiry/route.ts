@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { countries } from "@/app/(frontend)/tepa/countries";
+import { countries } from "@/lib/countries";
 import {
   type Attribution,
   attributionFromCookieHeader,

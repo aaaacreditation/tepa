@@ -2,9 +2,9 @@
 
 import { useId, useState } from "react";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
-import { countries } from "../countries";
+import { countries } from "@/lib/countries";
 import { formCopy, site } from "../content";
-import { FORM_LABEL, trackConversion } from "./GoogleTag";
+import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { IconArrow, IconCheck } from "./Icons";
 
 type RequiredField = "fullName" | "organization" | "email" | "phone" | "country" | "website";

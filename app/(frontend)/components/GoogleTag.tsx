@@ -86,5 +86,14 @@ export function trackConversion(
   });
 }
 
+/* One label per conversion action, per landing page. They have to be written
+   out literally: Next inlines NEXT_PUBLIC_* at build time by matching the
+   source text, so a computed process.env[key] would come back undefined in the
+   browser. Leaving one blank opts that event out, which is how a stage already
+   reported server side avoids being counted twice. */
 export const FORM_LABEL = process.env.NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM ?? "";
 export const CALENDLY_LABEL = process.env.NEXT_PUBLIC_GOOGLE_ADS_LABEL_CALENDLY ?? "";
+export const HEALTHCARE_FORM_LABEL =
+  process.env.NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM_HEALTHCARE ?? "";
+export const CLINIC_FORM_LABEL =
+  process.env.NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM_CLINIC ?? "";

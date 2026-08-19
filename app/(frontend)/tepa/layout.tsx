@@ -1,7 +1,7 @@
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
-import { AttributionCapture } from "./components/AttributionCapture";
+import { AttributionCapture } from "../components/AttributionCapture";
 import { CalendlyTracking } from "./components/CalendlyTracking";
-import { GoogleTag } from "./components/GoogleTag";
+import { GoogleTag } from "../components/GoogleTag";
 import "./tepa.css";
 
 const fraunces = Fraunces({

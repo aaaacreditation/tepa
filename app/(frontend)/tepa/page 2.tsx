@@ -5,7 +5,7 @@ import { MobileCta } from "./components/MobileCta";
 import { Pillars } from "./components/Pillars";
 import { Process } from "./components/Process";
 import { Requirements } from "./components/Requirements";
-import { RevealController } from "./components/RevealController";
+import { RevealController } from "../components/RevealController";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { SymbolSection } from "./components/SymbolSection";
