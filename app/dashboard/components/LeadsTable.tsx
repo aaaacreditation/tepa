@@ -8,7 +8,7 @@ import {
   isLeadStatus,
   type LeadStatus,
 } from "@/lib/lead-status";
-import { TIER_LABEL, type QualificationTier } from "@/lib/qualification";
+import { MQL_TIERS, TIER_LABEL, type QualificationTier } from "@/lib/qualification";
 import { removeLead, setLeadNotes, setLeadStatus } from "../lead-actions";
 
 /* Mirrors the TEPA enquiry form field for field: full name, organization,
@@ -35,11 +35,7 @@ export type TableLead = {
   utmSource: string;
   utmMedium: string;
   uploads: TableUpload[];
-  /* The three qualifying answers, and the verdict computed at submit time.
-     tier is '' for leads that predate qualification. */
-  organizationType: string;
-  programCount: string;
-  contactRole: string;
+  /* The verdict computed at submit time. '' for leads that predate it. */
   qualificationScore: number;
   qualificationTier: string;
   qualificationReasons: string[];
@@ -456,25 +452,10 @@ function LeadRow({
                       ))}
                     </ul>
                     <p className="mt-2 text-xs text-ink-500">
-                      A guide, not a decision. Move the stage on what you know.
+                      {MQL_TIERS.has(lead.qualificationTier as QualificationTier)
+                        ? "Qualifies for MQL on the form alone. Confirm it against what you know."
+                        : "Does not meet the MQL bar on the form alone. Promote only if you know something the form does not."}
                     </p>
-                  </div>
-                )}
-
-                {(lead.organizationType || lead.programCount || lead.contactRole) && (
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <p className="dash-eyebrow text-navy-500">Organization type</p>
-                      <p className="mt-1 text-sm text-ink-700">{lead.organizationType || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="dash-eyebrow text-navy-500">Programs</p>
-                      <p className="mt-1 text-sm text-ink-700">{lead.programCount || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="dash-eyebrow text-navy-500">Role</p>
-                      <p className="mt-1 text-sm text-ink-700">{lead.contactRole || "—"}</p>
-                    </div>
                   </div>
                 )}
 

@@ -7,13 +7,7 @@ import {
 } from "@/lib/attribution";
 import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
-import {
-  ORGANIZATION_TYPES,
-  PROGRAM_COUNTS,
-  ROLES,
-  type Qualification,
-  scoreLead,
-} from "@/lib/qualification";
+import { type Qualification, scoreLead } from "@/lib/qualification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,12 +17,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const WEBSITE_RE = /^(https?:\/\/)?[^\s]+\.[^\s]{2,}$/i;
 const MAX_LEN = 2000;
 const VALID_COUNTRY = new Set(countries.map(([code]) => code));
-/* Validated against the same arrays the form renders from, so a mismatch
-   between the two is a compile error rather than a lead stored with an answer
-   the scorer will silently ignore. */
-const VALID_ORGANIZATION_TYPE: Set<string> = new Set(ORGANIZATION_TYPES);
-const VALID_PROGRAM_COUNT: Set<string> = new Set(PROGRAM_COUNTS);
-const VALID_ROLE: Set<string> = new Set(ROLES);
 
 function validPhone(value: string): boolean {
   const digits = value.replace(/\D/g, "");
@@ -44,9 +32,6 @@ export type Enquiry = {
   phone: string;
   website: string;
   message: string;
-  organizationType: string;
-  programCount: string;
-  contactRole: string;
   receivedAt: string;
   source: string;
   attribution: Attribution;
@@ -102,9 +87,6 @@ export async function POST(request: Request) {
   const phone = clean(payload.phone);
   const country = clean(payload.country);
   const website = clean(payload.website);
-  const organizationType = clean(payload.organizationType);
-  const programCount = clean(payload.programCount);
-  const contactRole = clean(payload.role);
 
   const fieldErrors: Record<string, string> = {};
   if (!fullName) fieldErrors.fullName = "Full name is required.";
@@ -113,13 +95,6 @@ export async function POST(request: Request) {
   if (!validPhone(phone)) fieldErrors.phone = "A valid phone number is required.";
   if (!VALID_COUNTRY.has(country)) fieldErrors.country = "A valid country is required.";
   if (!WEBSITE_RE.test(website)) fieldErrors.website = "A website is required.";
-  if (!VALID_ORGANIZATION_TYPE.has(organizationType)) {
-    fieldErrors.organizationType = "Please choose the type of organization.";
-  }
-  if (!VALID_PROGRAM_COUNT.has(programCount)) {
-    fieldErrors.programCount = "Please choose how many programs you want accredited.";
-  }
-  if (!VALID_ROLE.has(contactRole)) fieldErrors.role = "Please choose your role.";
 
   if (Object.keys(fieldErrors).length > 0) {
     return Response.json(
@@ -149,9 +124,6 @@ export async function POST(request: Request) {
     website,
     message,
     countryCode: country,
-    organizationType,
-    programCount,
-    role: contactRole,
   });
 
   const enquiry: Enquiry = {
@@ -163,9 +135,6 @@ export async function POST(request: Request) {
     phone,
     website,
     message,
-    organizationType,
-    programCount,
-    contactRole,
     receivedAt: new Date().toISOString(),
     source: "tepa",
     attribution,
@@ -201,9 +170,6 @@ async function deliver(enquiry: Enquiry) {
     website: enquiry.website,
     message: enquiry.message,
     attribution: enquiry.attribution,
-    organizationType: enquiry.organizationType,
-    programCount: enquiry.programCount,
-    contactRole: enquiry.contactRole,
     qualification: enquiry.qualification,
   });
   console.info("[tepa/enquiry]", JSON.stringify(enquiry));

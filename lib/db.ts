@@ -71,17 +71,20 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS clicked_at    TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS leads_gclid_idx ON leads (gclid) WHERE gclid <> '';
 
-/* Qualification. The three answers come from the enquiry form; the score and
-   tier are computed once at insert time by lib/qualification.ts rather than on
-   every dashboard render, so a change to the scoring never silently rewrites
-   the history a reviewer has already acted on.
+/* Qualification. The score and tier are computed once at insert time by
+   lib/qualification.ts rather than on every dashboard render, so a change to
+   the scoring never silently rewrites the history a reviewer has already acted
+   on. Every column carries the same '' / 0 default as its neighbours, so the
+   leads that predate this still read without a null check and land on tier ''
+   — which the dashboard renders as "not scored" rather than as a judgement it
+   never made. Reasons are newline joined: short sentences for a human to read,
+   never queried.
 
-   'role' is a reserved word in SQL, hence contact_role. Every column carries
-   the same '' / 0 default as its neighbours so the 34 leads that predate this
-   still read without a null check, and they land on tier '' — which the
-   dashboard renders as "not scored" rather than as a judgement it never made.
-   Reasons are newline joined: they are short sentences for a human to read,
-   never queried, and a TEXT column keeps them in step with the rest. */
+   organization_type, program_count and contact_role backed three extra form
+   questions that were removed for making the form too long. They are kept
+   rather than dropped: the columns are empty and cost nothing, dropping them
+   is irreversible, and re-adding the questions later would otherwise mean
+   another migration. Nothing reads or writes them. */
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS organization_type     TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS program_count         TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_role          TEXT NOT NULL DEFAULT '';

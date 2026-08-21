@@ -128,9 +128,6 @@ export default async function SourceDashboard({
     utmSource: lead.utmSource,
     utmMedium: lead.utmMedium,
     uploads: uploadsByLead[lead.id] ?? [],
-    organizationType: lead.organizationType,
-    programCount: lead.programCount,
-    contactRole: lead.contactRole,
     qualificationScore: lead.qualificationScore,
     /* '' for every lead created before qualification existed. The table reads
        that as unscored and shows no badge, rather than showing a verdict the
