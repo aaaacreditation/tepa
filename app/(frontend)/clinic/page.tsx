@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { ICONS, IconArrow, IconCheck, IconHelp, IconWhatsApp } from "./icons";
+import { ICONS, IconArrow, IconCheck, IconHelp } from "./icons";
 import { ConsultationForm } from "./components/ConsultationForm";
 import { MobileCta } from "./components/MobileCta";
 import { SiteFooter } from "./components/SiteFooter";
+import { SectionCta } from "./components/SectionCta";
 import { SiteHeader } from "./components/SiteHeader";
 import { StoryVideo } from "./components/StoryVideo";
 import { TeamGrid } from "./components/TeamGrid";
@@ -15,6 +16,7 @@ import {
   hero,
   organizations,
   process,
+  sectionCtas,
   site,
   standards,
   story,
@@ -226,6 +228,8 @@ export default function ClinicLandingPage() {
             </div>
 
             <p className="cl-pullquote reveal">{benefits.note}</p>
+
+            <SectionCta {...sectionCtas.benefits} />
           </div>
         </section>
 
@@ -263,6 +267,12 @@ export default function ClinicLandingPage() {
                 );
               })}
             </ol>
+          </div>
+
+          {/* Outside the two-column grid: as a third child it would land under
+              the sticky intro panel rather than across the section. */}
+          <div className="cl-wrap">
+            <SectionCta {...sectionCtas.standards} />
           </div>
         </section>
 
@@ -315,6 +325,8 @@ export default function ClinicLandingPage() {
                 </ul>
               </figure>
             </div>
+
+            <SectionCta {...sectionCtas.process} />
           </div>
         </section>
 
@@ -366,7 +378,7 @@ export default function ClinicLandingPage() {
                 <h3>{fit.reassuranceTitle}</h3>
                 <p>{fit.reassuranceBody}</p>
               </div>
-              <a className="cl-btn cl-btn--navy" href="#closing-form">
+              <a className="cl-btn cl-btn--red" href="#closing-form">
                 Ask an advisor
                 <IconArrow className="cl-ico" />
               </a>
@@ -428,6 +440,10 @@ export default function ClinicLandingPage() {
               ))}
             </ul>
           </div>
+
+          <div className="cl-wrap">
+            <SectionCta {...sectionCtas.story} tone="navy" />
+          </div>
         </section>
 
         {/* ================================================================
@@ -443,6 +459,8 @@ export default function ClinicLandingPage() {
             </header>
 
             <TeamGrid />
+
+            <SectionCta {...sectionCtas.team} />
           </div>
         </section>
 
@@ -494,16 +512,6 @@ export default function ClinicLandingPage() {
 
       <SiteFooter />
       <MobileCta />
-
-      <a
-        className="cl-wa"
-        href={site.whatsapp}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Chat with an advisor on WhatsApp"
-      >
-        <IconWhatsApp />
-      </a>
     </>
   );
 }

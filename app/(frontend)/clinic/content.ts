@@ -12,7 +12,6 @@ export const site = {
   clinicProgramme: "https://aaa-accreditation.org/healthcare-accreditation",
   phoneLabel: "+1 (571) 601 2616",
   phoneHref: "tel:+15716012616",
-  whatsapp: "https://wa.me/447487550737",
   email: "Info@aaa-accreditation.org",
   address: ["8609 Westwood Center Drive", "Tysons Corner, VA 22182, USA"],
   social: [
@@ -295,6 +294,44 @@ export const organizations = {
       logo: "/healthcare/organizations/millennia.jpeg",
     },
   ],
+} as const;
+
+/* The band that closes every section between the hero form and the closing
+   form. Each one is written out of the section above it — the sentence has to
+   follow from what was just read, or it is a banner rather than a next step.
+
+   They all point at the closing form rather than at whichever of the two is
+   physically nearer. Scrolling is smooth site-wide, so sending a visitor to
+   the hero form would animate them back up past everything they had just
+   read and land them under the H1, which reads as the page resetting. The
+   closing section is the one built to convert — form, reassurance, phone and
+   email together — so every band goes forwards into it. */
+export const sectionCtas = {
+  benefits: {
+    note: "Want to know what these outcomes would look like for your own clinic?",
+    label: "Book a Free Consultation",
+    href: "#closing-form",
+  },
+  standards: {
+    note: "An advisor can walk you through which of the five areas apply to your scope of services.",
+    label: "Talk to an Advisor",
+    href: "#closing-form",
+  },
+  process: {
+    note: "Get a realistic timeline for your clinic before you commit to anything.",
+    label: "Start With a Free Consultation",
+    href: "#closing-form",
+  },
+  story: {
+    note: "Your clinic's story could be the next one here.",
+    label: "Begin Your Accreditation",
+    href: "#closing-form",
+  },
+  team: {
+    note: "Speak with the team directly — the first conversation is free and carries no obligation.",
+    label: "Book a Free Consultation",
+    href: "#closing-form",
+  },
 } as const;
 
 export const finalCta = {

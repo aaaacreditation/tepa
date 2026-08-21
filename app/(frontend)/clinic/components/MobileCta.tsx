@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { site } from "../content";
-import { IconArrow, IconWhatsApp } from "../icons";
+import { IconArrow } from "../icons";
 
 /* The page carries the same consultation form twice, in the hero and at the
    end. The sticky bar sends the visitor to whichever one is closer so it never
@@ -39,24 +38,12 @@ export function MobileCta() {
     nearest.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   }
 
-  /* Two actions, not one: the form is the goal, but a visitor on a phone who
-     would rather ask a question than fill in five fields should not have to
-     hunt for a way to do it. WhatsApp moves into the bar here, and the
-     floating bubble steps aside while the bar is up — three live calls to
-     action stacked in one corner is clutter, not choice. */
+  /* One action, spanning the bar. The page asks for exactly one thing, and
+     the sections above now carry their own buttons to it, so the bar has no
+     second job left to do. */
   return (
     <div className="cl-mobile-cta" data-shown={shown}>
-      <a
-        className="cl-mobile-wa"
-        href={site.whatsapp}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Chat with an advisor on WhatsApp"
-      >
-        <IconWhatsApp />
-      </a>
-
-      <a href="#consultation" onClick={onClick} className="cl-btn cl-btn--gold">
+      <a href="#consultation" onClick={onClick} className="cl-btn cl-btn--red">
         Book a Free Consultation
         <IconArrow className="cl-ico" />
       </a>

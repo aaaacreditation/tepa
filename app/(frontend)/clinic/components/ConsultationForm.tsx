@@ -229,7 +229,7 @@ export function ConsultationForm({
             </p>
           ) : null}
 
-          <button type="submit" disabled={status === "sending"} className="cl-btn cl-btn--gold">
+          <button type="submit" disabled={status === "sending"} className="cl-btn cl-btn--red">
             {status === "sending" ? (
               <>
                 <span className="cl-spinner" aria-hidden="true" />

@@ -36,6 +36,20 @@
   --gold-soft: #fff7e6;
   --gold-line: #ecd7a2;
 
+  /* Red. Every call to action on the page is red on white, so the scale is
+     built around that pairing: --red is the lightest tone a label ever sits
+     on (5.9:1 against white) and the gradient only travels downwards from
+     there, which keeps the contrast floor at the top edge of the button
+     rather than somewhere in the middle of it. --red-hi is the hover tone and
+     still clears 5:1. Gold stays the page's accent — it points at things; red
+     is the only colour you can press. */
+  --red: #c8102e;
+  --red-hi: #d81e34;
+  --red-deep: #9d0c22;
+  --red-ink: #7a0617;
+  --red-soft: #fff1f3;
+  --red-line: #f4c9d0;
+
   --ink: #0b2f51;
   --ink-soft: #294761;
   --muted: #56697c;
@@ -316,25 +330,77 @@
   transform: none;
 }
 
-.cl-btn--gold {
-  color: var(--navy-deep);
-  background: linear-gradient(160deg, var(--gold-hi), var(--gold));
-  box-shadow: 0 14px 30px -16px rgba(201, 146, 42, 0.9);
-}
-
-.cl-btn--gold:hover {
-  background: linear-gradient(160deg, #ffdd8c, var(--gold-hi));
-  box-shadow: 0 18px 34px -16px rgba(201, 146, 42, 0.95);
-}
-
-.cl-btn--navy {
+/* The page has exactly one button style. A second one would only ever be
+   asking a visitor to rank two calls to action, and there is only one thing
+   to do here. */
+.cl-btn--red {
   color: var(--white);
-  background: var(--navy-mid);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(160deg, var(--red), var(--red-deep));
+  box-shadow: 0 14px 30px -16px rgba(157, 12, 34, 0.9);
 }
 
-.cl-btn--navy:hover {
-  background: var(--navy-hi);
+.cl-btn--red:hover {
+  background: linear-gradient(160deg, var(--red-hi), var(--red));
+  box-shadow: 0 18px 34px -16px rgba(157, 12, 34, 0.95);
+}
+
+/* On navy the shadow does nothing — a dark glow on a dark ground — so the
+   button is separated from it by a light rim instead. */
+.cl-section--navy .cl-btn--red,
+.cl-final .cl-btn--red {
+  box-shadow:
+    0 14px 30px -16px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* ==========================================================================
+   Section call to action
+
+   The page carries the consultation form twice, at the very top and the very
+   bottom, which leaves a long middle where a visitor who has just been
+   convinced has nothing to press. Every section in between now closes on one
+   of these bands: the sentence that section earned, and the button that
+   answers it. They point at whichever of the two forms is nearer, so nobody
+   is ever thrown back to the top of a page they have almost finished.
+   ========================================================================== */
+
+.cl-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  margin-top: 52px;
+  padding: 22px 28px;
+  border: 1px solid var(--red-line);
+  border-radius: var(--r-lg);
+  background: var(--red-soft);
+}
+
+.cl-cta-row p {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--ink-soft);
+  font-family: var(--display);
+  font-size: 1.04rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.cl-cta-row .cl-btn {
+  flex: 0 0 auto;
+}
+
+/* Over navy the tinted panel would read as a stain, so the band darkens into
+   the ground it sits on and is drawn by a hairline instead. */
+.cl-cta-row--navy {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(0, 29, 51, 0.42);
+}
+
+.cl-cta-row--navy p {
+  color: var(--muted-light);
 }
 
 /* ==========================================================================
@@ -394,8 +460,8 @@
   flex: 0 0 auto;
   padding: 12px 20px;
   border-radius: var(--r-btn);
-  color: var(--navy-deep);
-  background: var(--gold);
+  color: var(--white);
+  background: var(--red);
   font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
@@ -404,7 +470,7 @@
 }
 
 .cl-head-cta:hover {
-  background: var(--gold-hi);
+  background: var(--red-hi);
   transform: translateY(-1px);
 }
 
@@ -2101,36 +2167,11 @@
 }
 
 /* ==========================================================================
-   Floating affordances
+   Sticky action bar
    ========================================================================== */
 
-.cl-wa {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 45;
-  width: 54px;
-  height: 54px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--white);
-  background: #25d366;
-  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.5);
-  transition: transform 0.16s ease;
-}
-
-.cl-wa svg {
-  width: 28px;
-  height: 28px;
-}
-
-.cl-wa:hover {
-  transform: scale(1.06);
-}
-
-/* The sticky bar is a phone affordance only: on a laptop the masthead button
-   is always one glance away, so a second fixed bar would just eat the page. */
+/* A phone affordance only: on a laptop the masthead button is always one
+   glance away, so a second fixed bar would just eat the page. */
 .cl-mobile-cta {
   display: none;
 }
@@ -2577,6 +2618,24 @@
     gap: 16px;
   }
 
+  /* Centred once it stacks — a left-aligned sentence over a full-width button
+     leaves the band looking like it lost a column. */
+  .cl-cta-row {
+    margin-top: 36px;
+    padding: 22px 20px;
+    gap: 18px;
+    text-align: center;
+  }
+
+  .cl-cta-row p {
+    font-size: 0.97rem;
+  }
+
+  .cl-cta-row .cl-btn {
+    width: 100%;
+    min-height: 52px;
+  }
+
   .cl-process-photo {
     min-height: 360px;
   }
@@ -2619,10 +2678,9 @@
   }
 
   /* ---- Sticky action bar ------------------------------------------------
-     Two actions side by side: WhatsApp for a visitor with a question, the
-     form for one ready to book. The bar is lifted off the page by a shadow
-     rather than pinned to it by a border — over a card deck a hairline reads
-     as one more card edge. */
+     One action, full width: the form is the only thing this page asks for.
+     The bar is lifted off the page by a shadow rather than pinned to it by a
+     border — over a card deck a hairline reads as one more card edge. */
   .cl-mobile-cta {
     position: fixed;
     inset: auto 0 0;
@@ -2649,48 +2707,6 @@
     min-height: 52px;
   }
 
-  /* Square, and the same height as the button beside it, so the pair reads as
-     one control rather than a button with something stuck to it. */
-  .cl-mobile-wa {
-    width: 52px;
-    height: 52px;
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    border-radius: var(--r-btn);
-    color: var(--white);
-    background: #25d366;
-    box-shadow: 0 10px 22px -12px rgba(37, 211, 102, 0.9);
-  }
-
-  .cl-mobile-wa svg {
-    width: 26px;
-    height: 26px;
-  }
-
-  /* WhatsApp is in the bar now, so the floating bubble stands down while the
-     bar is up. Two ways to reach the same conversation, on screen at once,
-     is not twice the affordance. */
-  .cl-mobile-cta[data-shown="true"] ~ .cl-wa {
-    opacity: 0;
-    transform: scale(0.8);
-    pointer-events: none;
-  }
-
-  .cl-wa {
-    right: 16px;
-    bottom: calc(20px + env(safe-area-inset-bottom));
-    width: 50px;
-    height: 50px;
-    transition:
-      opacity 0.24s ease,
-      transform 0.24s ease;
-  }
-
-  .cl-wa svg {
-    width: 26px;
-    height: 26px;
-  }
 }
 
 /* Small phones. Two cards to a row still, on about 160px each, so everything
