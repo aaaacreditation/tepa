@@ -463,78 +463,75 @@
   border-bottom: 1px solid var(--navy-line);
 }
 
-/* The photograph, full bleed behind everything.
+/* The wave field.
 
-   It was a framed figure in the left column until now. As a ground it does
-   more with less: the section keeps the room the frame was taking, the eye
-   goes to the headline and the form rather than to a picture competing with
-   them, and the hero reads as one object instead of three stacked ones. */
-.cl-hero-bg {
+   What replaced the photograph as the hero's ground. Three copies of one
+   path, each sliding exactly half its own width — the path holds two
+   identical periods, so half a width lands the second where the first was and
+   the loop has no seam. Height, tone, speed and direction are all that differ
+   between the layers, and that difference is what reads as depth.
+
+   Masked away at the top so the waves rise out of the navy rather than being
+   laid across it, and kept to the lower half so nothing moves behind the
+   headline. Motion this slow is atmosphere; anything faster would be a
+   distraction sitting next to the one form the page exists to collect. */
+.cl-waves {
   position: absolute;
-  inset: 0;
-  z-index: -2;
+  /* Bottom-anchored to the stage, which ends where the copy and the form do —
+     so the crest lands in the gap above the photograph instead of behind it. */
+  inset: auto 0 0;
+  height: min(74%, 430px);
+  overflow: hidden;
   pointer-events: none;
+  /* Faded at both ends. Each path fills solid from its crest down to the foot
+     of the svg, so without a fade at the bottom the fill simply stops at the
+     stage edge and draws a hard rule across the section. The crest survives
+     the fade; the slab under it does not. */
+  -webkit-mask-image: linear-gradient(transparent, #000 40%, #000 76%, transparent);
+  mask-image: linear-gradient(transparent, #000 40%, #000 76%, transparent);
 }
 
-.cl-hero-bg img {
-  object-fit: cover;
-  /* The team runs the full width of the frame and their faces sit a third of
-     the way down it. Centred keeps the doctor and the award in the band the
-     veil leaves clear, between the headline and the form. */
-  object-position: 50% 32%;
-  /* Barely touched. The photograph used to be desaturated and dimmed here and
-     then darkened again by the veil, which is how a lit clinic reception ends
-     up a navy field with a shape in it. All the darkening now happens in one
-     place, above, and only where text stands on it — so the scrubs are blue,
-     the wall is warm, and the gold sign on it reads as gold. */
-  filter: saturate(1.02) contrast(1.06);
-  transform: scale(1.03);
+.cl-wave {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  /* Twice the container, so translating by half of itself moves the layer by
+     exactly one period of the curve. */
+  width: 200%;
+  animation: cl-wave-drift linear infinite;
 }
 
-/* The scrim over the photograph.
+.cl-wave path {
+  fill: currentcolor;
+}
 
-   It used to be a wash across the whole frame, near opaque at the left and
-   still 0.62 at its thinnest — a blanket. Everything under it was navy, the
-   photograph included, and no amount of image tuning could win that back.
+.cl-wave--a {
+  height: 100%;
+  color: rgba(255, 255, 255, 0.062);
+  animation-duration: 46s;
+}
 
-   It is shaped to the layout now rather than spread across it. Three layers:
+.cl-wave--b {
+  height: 76%;
+  color: rgba(244, 189, 75, 0.095);
+  animation-duration: 33s;
+  animation-direction: reverse;
+}
 
-   1. The grade across. Full strength under the copy, then it opens out over
-      about a seventh of the frame and is all but gone by 60% — which is the
-      gap between where the headline stops and where the form card starts. The
-      team, the award and the clinic's own sign behind them sit in that gap
-      with almost nothing over them. It firms up again at the right so the
-      card meets ground rather than a lit wall at its edges.
-   2. Seals top and bottom, tying the section into the masthead above and the
-      one below without touching the band in between.
-   3. A vignette, which is what stops a bright photograph from fraying at the
-      corners of a dark section.
+.cl-wave--c {
+  height: 54%;
+  color: rgba(93, 173, 255, 0.085);
+  animation-duration: 23s;
+}
 
-   The stops are load-bearing: move where the copy ends and these move with
-   it, or the headline's last word ends up on a lit wall. */
-.cl-hero-veil {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(
-      93deg,
-      rgba(0, 21, 38, 0.95) 0%,
-      rgba(0, 22, 40, 0.9) 34%,
-      rgba(0, 24, 43, 0.6) 43%,
-      rgba(0, 26, 46, 0.18) 52%,
-      rgba(0, 27, 48, 0.05) 60%,
-      rgba(0, 25, 44, 0.3) 86%,
-      rgba(0, 22, 40, 0.46) 100%
-    ),
-    linear-gradient(
-      rgba(0, 24, 43, 0.6) 0%,
-      transparent 22%,
-      transparent 60%,
-      rgba(0, 24, 43, 0.8) 100%
-    ),
-    radial-gradient(138% 124% at 50% 48%, transparent 54%, rgba(0, 18, 33, 0.46));
+@keyframes cl-wave-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 /* Two painted layers, both inert: a measurement grid that fades out downward,
@@ -563,6 +560,13 @@
   height: 720px;
   pointer-events: none;
   background: radial-gradient(circle, rgba(244, 189, 75, 0.14), transparent 68%);
+}
+
+/* The stage the ground layers are measured against. `isolation` keeps the
+   painted layers inside it from reaching the photograph below. */
+.cl-hero-stage {
+  position: relative;
+  isolation: isolate;
 }
 
 .cl-hero .cl-wrap {
@@ -599,10 +603,11 @@
   grid-row: 1 / span 2;
 }
 
-/* The closing card stands on flat paper; this one stands on a lit photograph,
-   and the page's ordinary card shadow disappears against it. A deeper, wider
-   cast plus a hairline of light on the edge is what holds it off the picture
-   rather than letting it look pasted onto it. */
+/* The closing card stands on flat paper; this one stands on a dark field with
+   something moving in it, and the page's ordinary card shadow disappears
+   against navy. A deeper, wider cast plus a hairline of light on the top edge
+   is what keeps it a card sitting on the section rather than a white hole
+   cut out of it. */
 .cl-hero-form .cl-form-card {
   box-shadow:
     0 2px 0 rgba(255, 255, 255, 0.5) inset,
@@ -618,30 +623,151 @@
   align-self: end;
 }
 
+/* A pill rather than the dash-and-caps the rest of the page uses. It is the
+   first thing above the headline and the only label on a field of navy, so it
+   wants an edge to hold it; the dot pulses once every four seconds, which is
+   enough to say the page is alive and not enough to watch. */
+.cl-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 13px;
+  color: var(--gold);
+  border: 1px solid rgba(244, 189, 75, 0.32);
+  border-radius: 999px;
+  background: rgba(244, 189, 75, 0.09);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.cl-hero-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: cl-pulse 4s ease-out infinite;
+}
+
+@keyframes cl-pulse {
+  0%,
+  70%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 189, 75, 0.5);
+  }
+
+  35% {
+    box-shadow: 0 0 0 7px rgba(244, 189, 75, 0);
+  }
+}
+
+/* No text shadow any more. It was there to hold the strokes off a photograph,
+   and there is no photograph behind them now — on flat navy it only softened
+   the type. Set tighter than the page's other headings: at this size the
+   default tracking and 1.22 leading leave the lines drifting apart, and
+   closing both up is what makes a headline read as one block. */
 .cl-hero-copy h1 {
-  margin: 22px 0 0;
+  margin: 26px 0 0;
   max-width: 15ch;
-  font-size: clamp(2.3rem, 3.9vw, 3.75rem);
+  font-size: clamp(2.4rem, 4.2vw, 4rem);
   font-weight: 600;
-  /* Set tighter than the page's other headings. At this size the default
-     tracking and 1.22 leading leave the lines drifting apart; closing both up
-     is what makes a headline read as one block rather than four rows. */
-  letter-spacing: -0.028em;
-  line-height: 1.07;
-  /* The headline sits on a photograph rather than flat navy. A wide, soft
-     shadow keeps the strokes off whatever tone falls behind them without ever
-     reading as a shadow. */
-  text-shadow: 0 2px 26px rgba(0, 16, 30, 0.55);
+  letter-spacing: -0.032em;
+  line-height: 1.05;
 }
 
 .cl-hero-lede {
   max-width: 50ch;
-  margin: 22px 0 0;
-  color: rgba(233, 242, 248, 0.9);
-  font-size: clamp(1rem, 1.1vw, 1.1rem);
-  line-height: 1.72;
-  text-shadow: 0 1px 16px rgba(0, 16, 30, 0.55);
+  margin: 24px 0 0;
+  color: rgba(226, 238, 247, 0.82);
+  font-size: clamp(1.02rem, 1.15vw, 1.14rem);
+  line-height: 1.75;
   text-wrap: pretty;
+}
+
+/* The photograph, in its own place at last.
+
+   Below the copy and the form rather than underneath them, which is what lets
+   it be shown at full strength: nothing is set over it, so it needs no scrim,
+   no desaturation and no dimming, and it is simply the picture it always was.
+   The letterbox is deliberate — the team's faces sit a third of the way down
+   the frame, so a wide window centred there holds every one of them and drops
+   only floor and ceiling. */
+.cl-hero-shot {
+  position: relative;
+  z-index: 1;
+  margin: clamp(40px, 4.4vw, 66px) 0 0;
+  height: clamp(230px, 29vw, 430px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: clamp(16px, 1.5vw, 24px);
+  box-shadow: 0 40px 90px -36px rgba(0, 10, 20, 0.85);
+}
+
+.cl-hero-shot img {
+  object-fit: cover;
+  object-position: 50% 30%;
+}
+
+/* A credit, not a caption. The picture is a named clinic holding a real
+   award, and saying so is the difference between evidence and stock. */
+.cl-hero-shot figcaption {
+  position: absolute;
+  left: clamp(14px, 1.4vw, 22px);
+  bottom: clamp(14px, 1.4vw, 20px);
+  padding: 8px 15px;
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(0, 20, 36, 0.52);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  font-size: 0.81rem;
+  font-weight: 500;
+  letter-spacing: 0.015em;
+}
+
+/* The hero arrives rather than appearing. Each piece lifts a few pixels into
+   place, one after the next, over less than a third of a second all told —
+   fast enough that nothing is ever waited for, and `both` is safe because the
+   longest any element stays hidden is its own 0.24s delay. */
+@keyframes cl-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+}
+
+.cl-hero-copy > *,
+.cl-hero-form,
+.cl-proof,
+.cl-hero-shot {
+  animation: cl-rise 0.66s cubic-bezier(0.22, 0.82, 0.28, 1) both;
+}
+
+.cl-hero-copy > *:nth-child(2) {
+  animation-delay: 0.07s;
+}
+
+.cl-hero-copy > *:nth-child(3) {
+  animation-delay: 0.13s;
+}
+
+.cl-hero-form {
+  animation-delay: 0.1s;
+}
+
+.cl-proof {
+  animation-delay: 0.19s;
+}
+
+.cl-hero-shot {
+  animation-delay: 0.24s;
 }
 
 /* Trust indicators. The same three claims as the comp, set as quiet chips so
@@ -2265,20 +2391,10 @@
     max-width: 20ch;
   }
 
-  /* One column wide, the copy runs across the whole frame, so the pool has
-     nothing left to pool around and the scrim goes even. It stays translucent
-     though: the layer underneath used to be an opaque navy gradient, which
-     did not dim the photograph so much as cover it, and below 1080px nobody
-     had ever seen it. Even at 0.86 the room, the scrubs and the sign behind
-     the team all still read through. */
-  .cl-hero-veil {
-    background:
-      linear-gradient(rgba(0, 24, 43, 0.74), rgba(0, 26, 46, 0.86)),
-      radial-gradient(120% 84% at 50% 26%, rgba(0, 20, 37, 0.34), transparent 72%);
-  }
-
-  .cl-hero-bg img {
-    object-position: 50% 30%;
+  /* One column wide the picture has the full frame to itself, so it can take
+     a taller window and show more than the letterbox does beside the copy. */
+  .cl-hero-shot {
+    height: clamp(230px, 42vw, 380px);
   }
 }
 

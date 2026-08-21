@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { ICONS, IconArrow, IconCheck, IconHelp } from "./icons";
 import { ConsultationForm } from "./components/ConsultationForm";
+import { HeroWaves } from "./components/HeroWaves";
 import { MobileCta } from "./components/MobileCta";
 import { SiteFooter } from "./components/SiteFooter";
 import { SectionCta } from "./components/SectionCta";
@@ -111,79 +112,90 @@ export default function ClinicLandingPage() {
 
       <main>
         {/* ================================================================
-            Hero — the clinic photograph is the ground the whole section is
-            built on rather than a framed picture sitting inside it. Headline
-            and proof down the left, the consultation form standing beside
-            them as an ordinary vertical card. The form is the whole point of
-            the page, so it sits above the fold on a laptop rather than
-            waiting for a scroll.
+            Hero.
 
-            The children are placed on the grid explicitly at desktop widths,
-            which leaves the DOM free to carry the phone order instead:
-            headline, form, proof. On a phone the form is the second thing a
+            The photograph used to be the ground the whole section stood on,
+            which meant it had to be dark enough to carry white text and was
+            therefore never really visible. It has its own place now, below
+            the fold line and shown whole, and the ground it left behind is a
+            navy field with a wave running through it — so the copy sits on
+            something built for copy, and the picture is a picture.
+
+            The grid's children are placed explicitly at desktop widths, which
+            leaves the DOM free to carry the phone order instead: headline,
+            form, proof, photograph. On a phone the form is the second thing a
             visitor meets rather than the last.
             ================================================================ */}
         <section id="top" className="cl-hero">
-          {/* Decorative: the photograph is atmosphere here, not information,
-              so it carries no alt text. The clinic in it is credited by name
-              in the story section further down the page. */}
-          <div className="cl-hero-bg" aria-hidden="true">
-            {/* Quality above the 75 default: this is the one photograph on the
-                page shown at full viewport width, and at 75 the flat clinic
-                wall behind the team bands rather than graduates. */}
-            <Image
-              src={hero.photo}
-              alt=""
-              fill
-              preload
-              quality={92}
-              sizes="100vw"
-            />
+          {/* The ground and the copy share a stage, and the photograph sits
+              outside it. That is what puts the wave crest where it belongs:
+              anchored to the foot of the copy and running into the top edge of
+              the picture, rather than to the foot of the section, where the
+              picture would simply cover it. */}
+          <div className="cl-hero-stage">
+            <div className="cl-hero-grid-bg" aria-hidden="true" />
+            <div className="cl-hero-aura" aria-hidden="true" />
+            <HeroWaves />
+
+            <div className="cl-wrap cl-hero-grid">
+              <div className="cl-hero-copy">
+                <p className="cl-hero-eyebrow">{hero.eyebrow}</p>
+                <h1>
+                  {hero.titleLead}{" "}
+                  <span className="cl-underline">{hero.titleAccent}</span>
+                </h1>
+                <p className="cl-hero-lede">{hero.lede}</p>
+              </div>
+
+              <div id="consultation" className="cl-hero-form">
+                <ConsultationForm />
+              </div>
+
+              <ul className="cl-proof" aria-label="Accreditation trust indicators">
+                {hero.proof.map((item) => {
+                  const Icon = ICONS[item.icon];
+                  return (
+                    <li className="cl-proof-card" key={item.label}>
+                      <span className="cl-proof-ico">
+                        <Icon />
+                      </span>
+                      <p>
+                        <b>{item.value}</b>
+                        <small>{item.label}</small>
+                      </p>
+                    </li>
+                  );
+                })}
+
+                <li className="cl-proof-card cl-proof-card--isqua">
+                  <Image
+                    src="/healthcare/isqua-eea.jpg"
+                    alt="ISQua External Evaluation Association"
+                    width={800}
+                    height={221}
+                  />
+                  <small>{hero.isquaNote}</small>
+                </li>
+              </ul>
+            </div>
           </div>
-          <div className="cl-hero-veil" aria-hidden="true" />
-          <div className="cl-hero-grid-bg" aria-hidden="true" />
-          <div className="cl-hero-aura" aria-hidden="true" />
 
-          <div className="cl-wrap cl-hero-grid">
-            <div className="cl-hero-copy">
-              <p className="cl-eyebrow cl-eyebrow--gold">{hero.eyebrow}</p>
-              <h1>
-                {hero.titleLead}{" "}
-                <span className="cl-underline">{hero.titleAccent}</span>
-              </h1>
-              <p className="cl-hero-lede">{hero.lede}</p>
-            </div>
-
-            <div id="consultation" className="cl-hero-form">
-              <ConsultationForm />
-            </div>
-
-            <ul className="cl-proof" aria-label="Accreditation trust indicators">
-              {hero.proof.map((item) => {
-                const Icon = ICONS[item.icon];
-                return (
-                  <li className="cl-proof-card" key={item.label}>
-                    <span className="cl-proof-ico">
-                      <Icon />
-                    </span>
-                    <p>
-                      <b>{item.value}</b>
-                      <small>{item.label}</small>
-                    </p>
-                  </li>
-                );
-              })}
-
-              <li className="cl-proof-card cl-proof-card--isqua">
-                <Image
-                  src="/healthcare/isqua-eea.jpg"
-                  alt="ISQua External Evaluation Association"
-                  width={800}
-                  height={221}
-                />
-                <small>{hero.isquaNote}</small>
-              </li>
-            </ul>
+          {/* The photograph, shown rather than shown through. It carries alt
+              text and a credit now: as a ground it was atmosphere, and here it
+              is a named clinic holding a real award, which is the whole reason
+              it earns the room. */}
+          <div className="cl-wrap">
+            <figure className="cl-hero-shot">
+              <Image
+                src={hero.photo}
+                alt={hero.photoAlt}
+                fill
+                preload
+                quality={92}
+                sizes="(max-width: 1000px) 100vw, 1240px"
+              />
+              <figcaption>{hero.photoCaption}</figcaption>
+            </figure>
           </div>
         </section>
 
