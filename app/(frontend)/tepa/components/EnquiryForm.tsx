@@ -3,11 +3,21 @@
 import { useId, useState } from "react";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
 import { countries } from "@/lib/countries";
+import { ORGANIZATION_TYPES, PROGRAM_COUNTS, ROLES } from "@/lib/qualification";
 import { formCopy, site } from "../content";
 import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { IconArrow, IconCheck } from "./Icons";
 
-type RequiredField = "fullName" | "organization" | "email" | "phone" | "country" | "website";
+type RequiredField =
+  | "fullName"
+  | "organization"
+  | "email"
+  | "phone"
+  | "country"
+  | "website"
+  | "organizationType"
+  | "programCount"
+  | "role";
 type Errors = Partial<Record<RequiredField, string>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -75,6 +85,11 @@ export function EnquiryForm({
     if (!WEBSITE_RE.test(data.website?.trim() ?? "")) {
       next.website = "Please add your website.";
     }
+    if (!data.organizationType) next.organizationType = "Please choose the type of organization.";
+    if (!data.programCount) {
+      next.programCount = "Please choose how many programs you want accredited.";
+    }
+    if (!data.role) next.role = "Please choose your role.";
 
     setErrors(next);
     const firstInvalid = Object.keys(next)[0] as RequiredField | undefined;
@@ -216,6 +231,35 @@ export function EnquiryForm({
           error={errors.website}
         />
 
+        {/* These three do the qualifying. The last option in the organization
+            and role lists lets a visitor who is in the wrong place say so
+            plainly, which is worth more than any guess we could make from the
+            rest of the form — and spares them a sales call they did not
+            want. */}
+        <SelectField
+          id={fieldId("organizationType")}
+          name="organizationType"
+          label="Type of organization"
+          options={ORGANIZATION_TYPES}
+          error={errors.organizationType}
+        />
+
+        <SelectField
+          id={fieldId("programCount")}
+          name="programCount"
+          label="Programs to accredit"
+          options={PROGRAM_COUNTS}
+          error={errors.programCount}
+        />
+
+        <SelectField
+          id={fieldId("role")}
+          name="role"
+          label="Your role"
+          options={ROLES}
+          error={errors.role}
+        />
+
         <div className="form-field">
           <label htmlFor={fieldId("message")}>Programs for accreditation</label>
           <textarea
@@ -266,6 +310,47 @@ export function EnquiryForm({
           {formCopy.note}
         </p>
       </form>
+    </div>
+  );
+}
+
+type SelectFieldProps = {
+  id: string;
+  name: string;
+  label: string;
+  options: readonly string[];
+  error?: string;
+};
+
+/* Same shape as FormField, but the label stays visible above the control
+   rather than living in the placeholder. A select has no placeholder to fall
+   back on once a choice is made, and "Training centre" on its own does not
+   tell the visitor which question it answered. */
+function SelectField({ id, name, label, options, error }: SelectFieldProps) {
+  return (
+    <div className="form-field">
+      <label htmlFor={id}>{label}</label>
+      <select
+        id={id}
+        name={name}
+        defaultValue=""
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
+      >
+        <option value="" disabled>
+          {label}
+        </option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+      {error ? (
+        <p id={`${id}-error`} className="form-error">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

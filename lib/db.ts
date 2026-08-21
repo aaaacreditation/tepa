@@ -71,6 +71,35 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS clicked_at    TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS leads_gclid_idx ON leads (gclid) WHERE gclid <> '';
 
+/* Qualification. The three answers come from the enquiry form; the score and
+   tier are computed once at insert time by lib/qualification.ts rather than on
+   every dashboard render, so a change to the scoring never silently rewrites
+   the history a reviewer has already acted on.
+
+   'role' is a reserved word in SQL, hence contact_role. Every column carries
+   the same '' / 0 default as its neighbours so the 34 leads that predate this
+   still read without a null check, and they land on tier '' — which the
+   dashboard renders as "not scored" rather than as a judgement it never made.
+   Reasons are newline joined: they are short sentences for a human to read,
+   never queried, and a TEXT column keeps them in step with the rest. */
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS organization_type     TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS program_count         TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_role          TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS qualification_score   INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS qualification_tier    TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS qualification_reasons TEXT NOT NULL DEFAULT '';
+
+/* Dropped and re-added by name so the pair stays re-runnable, the same way the
+   conversion_uploads status check is handled below. '' is a member because
+   pre-qualification rows keep it. */
+ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_qualification_tier_check;
+ALTER TABLE leads ADD  CONSTRAINT leads_qualification_tier_check
+  CHECK (qualification_tier IN ('', 'disqualified', 'weak', 'qualified', 'strong'));
+
+CREATE INDEX IF NOT EXISTS leads_qualification_idx
+  ON leads (qualification_tier, created_at DESC)
+  WHERE qualification_tier <> '';
+
 /* Outbox for offline conversion uploads. A row is written the moment a lead
    reaches a stage; the sender drains it separately so a Google outage costs a
    retry rather than a lost conversion. dedupe_key is the safety rail: moving a

@@ -8,6 +8,7 @@ import {
   isLeadStatus,
   type LeadStatus,
 } from "@/lib/lead-status";
+import { TIER_LABEL, type QualificationTier } from "@/lib/qualification";
 import { removeLead, setLeadNotes, setLeadStatus } from "../lead-actions";
 
 /* Mirrors the TEPA enquiry form field for field: full name, organization,
@@ -34,6 +35,14 @@ export type TableLead = {
   utmSource: string;
   utmMedium: string;
   uploads: TableUpload[];
+  /* The three qualifying answers, and the verdict computed at submit time.
+     tier is '' for leads that predate qualification. */
+  organizationType: string;
+  programCount: string;
+  contactRole: string;
+  qualificationScore: number;
+  qualificationTier: string;
+  qualificationReasons: string[];
 };
 
 export type TableEvent = { id: number; label: string };
@@ -48,6 +57,20 @@ export type TableUpload = {
   valueLabel: string;
   sentLabel: string;
 };
+
+/* Read as a traffic signal, not as brand colour: red stops, amber hesitates,
+   green proceeds. Held to the same greens and reds the upload badges already
+   use so the row does not acquire a second palette. */
+const TIER_TONE: Record<QualificationTier, string> = {
+  disqualified: "bg-[#fdecec] text-[#a32020]",
+  weak: "bg-navy-50 text-ink-500",
+  qualified: "bg-gold-100 text-gold-600",
+  strong: "bg-[#e8f5ee] text-[#1e7f4f]",
+};
+
+function isTier(value: string): value is QualificationTier {
+  return value === "disqualified" || value === "weak" || value === "qualified" || value === "strong";
+}
 
 const UPLOAD_LABEL: Record<TableUpload["status"], string> = {
   sent: "Sent to Google Ads",
@@ -78,6 +101,7 @@ export function LeadsTable({
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | LeadStatus>("all");
+  const [tierFilter, setTierFilter] = useState<"all" | QualificationTier>("all");
   const [openId, setOpenId] = useState<number | null>(null);
 
   const counts = useMemo(() => {
@@ -86,10 +110,25 @@ export function LeadsTable({
     return c;
   }, [leads]);
 
+  const tierCounts = useMemo(() => {
+    const c: Record<string, number> = {
+      all: leads.length,
+      strong: 0,
+      qualified: 0,
+      weak: 0,
+      disqualified: 0,
+    };
+    for (const lead of leads) {
+      if (lead.qualificationTier in c) c[lead.qualificationTier] += 1;
+    }
+    return c;
+  }, [leads]);
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return leads.filter((lead) => {
       if (statusFilter !== "all" && lead.status !== statusFilter) return false;
+      if (tierFilter !== "all" && lead.qualificationTier !== tierFilter) return false;
       if (!needle) return true;
       return [
         lead.fullName,
@@ -101,7 +140,7 @@ export function LeadsTable({
         lead.message,
       ].some((field) => field.toLowerCase().includes(needle));
     });
-  }, [leads, query, statusFilter]);
+  }, [leads, query, statusFilter, tierFilter]);
 
   return (
     <div>
@@ -140,6 +179,32 @@ export function LeadsTable({
             </button>
           ))}
         </div>
+
+        {/* Kept as a second, separate group rather than merged into the stage
+            chips: stage is what a human decided, tier is what the form said.
+            Filtering by both at once — MQL that scored disqualified — is the
+            query that shows whether the stage is being applied honestly. */}
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by qualification">
+          <button
+            type="button"
+            className="dash-chip"
+            data-active={tierFilter === "all"}
+            onClick={() => setTierFilter("all")}
+          >
+            Any fit
+          </button>
+          {(["strong", "qualified", "weak", "disqualified"] as const).map((tier) => (
+            <button
+              key={tier}
+              type="button"
+              className="dash-chip"
+              data-active={tierFilter === tier}
+              onClick={() => setTierFilter(tier)}
+            >
+              {TIER_LABEL[tier]} <span className="opacity-60">{tierCounts[tier]}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -148,6 +213,7 @@ export function LeadsTable({
             <tr>
               <th>Lead</th>
               <th>Contact</th>
+              <th>Fit</th>
               <th>Country</th>
               <th>Received</th>
               <th>Stage</th>
@@ -157,7 +223,7 @@ export function LeadsTable({
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-10 text-center text-sm text-ink-500">
+                <td colSpan={7} className="py-10 text-center text-sm text-ink-500">
                   {leads.length === 0
                     ? "No leads in this range yet. New form enquiries land here the moment they arrive."
                     : "No leads match this search."}
@@ -199,13 +265,37 @@ function LeadRow({
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
+  /* Set when a disqualified lead is being promoted, which swaps the select for
+     an explicit confirm. Judgement has to be able to win over the heuristic —
+     the reviewer may know something the form never asked — so this is a speed
+     bump, not a lock. */
+  const [pendingPromotion, setPendingPromotion] = useState<LeadStatus | null>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function changeStatus(value: string) {
     if (!isLeadStatus(value) || value === lead.status) return;
+
+    /* Promoting a lead the form marked disqualified is the exact move that
+       turned MQL into a rubber stamp, so it is the one that has to be
+       deliberate. Demotions and moves on any other lead go straight through. */
+    const promoting = LEAD_STATUSES.indexOf(value) > LEAD_STATUSES.indexOf(lead.status);
+    if (lead.qualificationTier === "disqualified" && promoting) {
+      setPendingPromotion(value);
+      return;
+    }
+
     startTransition(async () => {
       await setLeadStatus(lead.id, value);
+    });
+  }
+
+  function confirmPromotion() {
+    const target = pendingPromotion;
+    if (!target) return;
+    setPendingPromotion(null);
+    startTransition(async () => {
+      await setLeadStatus(lead.id, target);
     });
   }
 
@@ -271,11 +361,47 @@ function LeadRow({
           <p className="text-ink-700">{lead.email}</p>
           {lead.phone && <p className="text-xs text-ink-500">{lead.phone}</p>}
         </td>
+        <td className="whitespace-nowrap">
+          {isTier(lead.qualificationTier) ? (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[0.6875rem] font-semibold ${TIER_TONE[lead.qualificationTier]}`}
+              title={`Score ${lead.qualificationScore} of 100`}
+            >
+              {TIER_LABEL[lead.qualificationTier]}
+              <span className="opacity-60">{lead.qualificationScore}</span>
+            </span>
+          ) : (
+            <span className="text-xs text-ink-500" title="Submitted before qualification existed">
+              Not scored
+            </span>
+          )}
+        </td>
         <td className="whitespace-nowrap text-ink-700">{lead.countryName || "—"}</td>
         <td className="whitespace-nowrap text-ink-700" title={lead.createdFull}>
           {lead.createdLabel}
         </td>
         <td onClick={(e) => e.stopPropagation()}>
+          {pendingPromotion ? (
+            <span className="inline-flex flex-wrap items-center gap-2">
+              <span className="text-xs text-[#a32020]">
+                Marked disqualified. Move to {STATUS_LABEL[pendingPromotion]} anyway?
+              </span>
+              <button
+                type="button"
+                className="dash-chip !border-[#a32020]/40 !text-[#a32020]"
+                onClick={confirmPromotion}
+              >
+                Yes, move it
+              </button>
+              <button
+                type="button"
+                className="dash-chip"
+                onClick={() => setPendingPromotion(null)}
+              >
+                Cancel
+              </button>
+            </span>
+          ) : (
           <span className="inline-flex items-center gap-2">
             <span
               aria-hidden="true"
@@ -297,6 +423,7 @@ function LeadRow({
               ))}
             </select>
           </span>
+          )}
         </td>
         <td className="text-ink-500">
           <span aria-hidden="true" className="inline-block text-xs">
@@ -307,9 +434,50 @@ function LeadRow({
 
       {open && (
         <tr>
-          <td colSpan={6} className="!border-b-navy-500/12 bg-navy-50/50 !py-5">
+          <td colSpan={7} className="!border-b-navy-500/12 bg-navy-50/50 !py-5">
             <div className="grid gap-6 px-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
               <div className="space-y-5">
+                {/* Why the badge says what it says. Shown as the reviewer's
+                    first read rather than buried, because a tier with no
+                    reasoning attached is just a different rubber stamp. */}
+                {isTier(lead.qualificationTier) && (
+                  <div>
+                    <p className="dash-eyebrow text-navy-500">
+                      Qualification — {TIER_LABEL[lead.qualificationTier]} ({lead.qualificationScore}/100)
+                    </p>
+                    <ul className="mt-1.5 space-y-1">
+                      {lead.qualificationReasons.map((reason, index) => (
+                        <li key={index} className="flex gap-2 text-sm leading-relaxed text-ink-700">
+                          <span aria-hidden="true" className="text-ink-500">
+                            ·
+                          </span>
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-ink-500">
+                      A guide, not a decision. Move the stage on what you know.
+                    </p>
+                  </div>
+                )}
+
+                {(lead.organizationType || lead.programCount || lead.contactRole) && (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <p className="dash-eyebrow text-navy-500">Organization type</p>
+                      <p className="mt-1 text-sm text-ink-700">{lead.organizationType || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="dash-eyebrow text-navy-500">Programs</p>
+                      <p className="mt-1 text-sm text-ink-700">{lead.programCount || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="dash-eyebrow text-navy-500">Role</p>
+                      <p className="mt-1 text-sm text-ink-700">{lead.contactRole || "—"}</p>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <p className="dash-eyebrow text-navy-500">Programs for accreditation</p>
                   <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-ink-700">

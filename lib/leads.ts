@@ -2,6 +2,7 @@ import "server-only";
 import type { Attribution } from "./attribution";
 import { q } from "./db";
 import type { LeadStatus } from "./lead-status";
+import type { Qualification } from "./qualification";
 
 export { isLeadStatus, LEAD_STATUSES, STATUS_LABEL, type LeadStatus } from "./lead-status";
 
@@ -29,6 +30,15 @@ export type LeadRow = {
   utmCampaign: string;
   utmTerm: string;
   utmContent: string;
+  /* The three qualification answers, and the verdict computed from them at
+     insert time. Leads created before qualification existed carry '' and 0,
+     which the dashboard shows as unscored rather than as a poor score. */
+  organizationType: string;
+  programCount: string;
+  contactRole: string;
+  qualificationScore: number;
+  qualificationTier: string;
+  qualificationReasons: string[];
 };
 
 export type LeadEventRow = {
@@ -51,6 +61,12 @@ export type NewLead = {
   website: string;
   message: string;
   attribution: Attribution;
+  /* Optional so the healthcare and clinic routes, whose forms do not yet ask
+     these questions, can keep calling insertLead unchanged. */
+  organizationType?: string;
+  programCount?: string;
+  contactRole?: string;
+  qualification?: Qualification;
 };
 
 const LEAD_COLUMNS = `
@@ -76,7 +92,18 @@ const LEAD_COLUMNS = `
   utm_medium   AS "utmMedium",
   utm_campaign AS "utmCampaign",
   utm_term     AS "utmTerm",
-  utm_content  AS "utmContent"
+  utm_content  AS "utmContent",
+  organization_type   AS "organizationType",
+  program_count       AS "programCount",
+  contact_role        AS "contactRole",
+  qualification_score AS "qualificationScore",
+  qualification_tier  AS "qualificationTier",
+  /* Split in SQL so node-pg hands back a real text[] and the read path needs
+     no mapping step. chr(10) rather than an escape, which would have to
+     survive both the JavaScript template literal and the SQL parser. The CASE
+     is what keeps an unscored lead at [] instead of ['']. */
+  CASE WHEN qualification_reasons = '' THEN ARRAY[]::text[]
+       ELSE string_to_array(qualification_reasons, chr(10)) END AS "qualificationReasons"
 `;
 
 export async function insertLead(lead: NewLead): Promise<number> {
@@ -86,11 +113,15 @@ export async function insertLead(lead: NewLead): Promise<number> {
        (source, full_name, organization, email, country_code, country_name, phone, website, message,
         gclid, gbraid, wbraid,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-        landing_path, referrer, clicked_at)
+        landing_path, referrer, clicked_at,
+        organization_type, program_count, contact_role,
+        qualification_score, qualification_tier, qualification_reasons)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
              $10, $11, $12,
              $13, $14, $15, $16, $17,
-             $18, $19, $20)
+             $18, $19, $20,
+             $21, $22, $23,
+             $24, $25, $26)
      RETURNING id`,
     [
       lead.source,
@@ -113,6 +144,12 @@ export async function insertLead(lead: NewLead): Promise<number> {
       a.landingPath,
       a.referrer,
       a.clickedAt || null,
+      lead.organizationType ?? "",
+      lead.programCount ?? "",
+      lead.contactRole ?? "",
+      lead.qualification?.score ?? 0,
+      lead.qualification?.tier ?? "",
+      (lead.qualification?.reasons ?? []).join("\n"),
     ],
   );
   return rows[0].id;
