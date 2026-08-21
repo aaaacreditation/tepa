@@ -358,49 +358,22 @@
 
    The page carries the consultation form twice, at the very top and the very
    bottom, which leaves a long middle where a visitor who has just been
-   convinced has nothing to press. Every section in between now closes on one
-   of these bands: the sentence that section earned, and the button that
-   answers it. They point at whichever of the two forms is nearer, so nobody
-   is ever thrown back to the top of a page they have almost finished.
+   convinced has nothing to press. Every section in between now closes on a
+   single centred button pointing at whichever of the two forms is nearer, so
+   nobody is ever thrown back to the top of a page they have almost finished.
+   It sits on the section's own ground rather than in a panel: the button is
+   already the loudest thing on the page, and a tinted band behind it only
+   competed with it.
    ========================================================================== */
 
 .cl-cta-row {
   display: flex;
-  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 16px 28px;
   margin-top: 52px;
-  padding: 22px 28px;
-  border: 1px solid var(--red-line);
-  border-radius: var(--r-lg);
-  background: var(--red-soft);
-}
-
-.cl-cta-row p {
-  margin: 0;
-  max-width: 48ch;
-  color: var(--ink-soft);
-  font-family: var(--display);
-  font-size: 1.04rem;
-  font-weight: 500;
-  line-height: 1.5;
-  text-wrap: balance;
 }
 
 .cl-cta-row .cl-btn {
   flex: 0 0 auto;
-}
-
-/* Over navy the tinted panel would read as a stain, so the band darkens into
-   the ground it sits on and is drawn by a hairline instead. */
-.cl-cta-row--navy {
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(0, 29, 51, 0.42);
-}
-
-.cl-cta-row--navy p {
-  color: var(--muted-light);
 }
 
 /* ==========================================================================
@@ -2618,19 +2591,12 @@
     gap: 16px;
   }
 
-  /* Centred once it stacks — a left-aligned sentence over a full-width button
-     leaves the band looking like it lost a column. */
   .cl-cta-row {
     margin-top: 36px;
-    padding: 22px 20px;
-    gap: 18px;
-    text-align: center;
   }
 
-  .cl-cta-row p {
-    font-size: 0.97rem;
-  }
-
+  /* Full width on a phone: a lone centred button with air either side of it
+     reads as smaller than the thing it is asking for. */
   .cl-cta-row .cl-btn {
     width: 100%;
     min-height: 52px;

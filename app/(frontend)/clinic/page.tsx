@@ -442,7 +442,7 @@ export default function ClinicLandingPage() {
           </div>
 
           <div className="cl-wrap">
-            <SectionCta {...sectionCtas.story} tone="navy" />
+            <SectionCta {...sectionCtas.story} />
           </div>
         </section>
 

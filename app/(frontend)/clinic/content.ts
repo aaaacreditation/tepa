@@ -32,9 +32,9 @@ export const nav = [
 
 export const hero = {
   eyebrow: "Clinic Accreditation",
-  titleLead: "Build Greater Trust in Your Clinic Through",
+  titleLead: "Grow Patient Trust and Clinic Revenue Through",
   titleAccent: "Accreditation",
-  title: "Build Greater Trust in Your Clinic Through Accreditation",
+  title: "Grow Patient Trust and Clinic Revenue Through Accreditation",
   lede:
     "AAA accreditation helps clinics demonstrate their commitment to quality, patient safety, professional practice, and continuous improvement. Whether you are exploring accreditation for the first time or preparing to apply, our team can help you understand how it applies to your clinic.",
   photo: "/clinic/hero-domus-team.jpg",
@@ -308,27 +308,22 @@ export const organizations = {
    email together — so every band goes forwards into it. */
 export const sectionCtas = {
   benefits: {
-    note: "Want to know what these outcomes would look like for your own clinic?",
     label: "Book a Free Consultation",
     href: "#closing-form",
   },
   standards: {
-    note: "An advisor can walk you through which of the five areas apply to your scope of services.",
     label: "Talk to an Advisor",
     href: "#closing-form",
   },
   process: {
-    note: "Get a realistic timeline for your clinic before you commit to anything.",
     label: "Start With a Free Consultation",
     href: "#closing-form",
   },
   story: {
-    note: "Your clinic's story could be the next one here.",
     label: "Begin Your Accreditation",
     href: "#closing-form",
   },
   team: {
-    note: "Speak with the team directly — the first conversation is free and carries no obligation.",
     label: "Book a Free Consultation",
     href: "#closing-form",
   },
