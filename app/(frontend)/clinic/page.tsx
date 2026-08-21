@@ -402,7 +402,13 @@ export default function ClinicLandingPage() {
               <p className="cl-story-lede">{story.lede}</p>
 
               <div className="cl-story-id">
-                <span aria-hidden="true">{story.monogram}</span>
+                <Image
+                  src={story.logo}
+                  alt=""
+                  width={600}
+                  height={328}
+                  sizes="88px"
+                />
                 <p>
                   <strong>{story.organization}</strong>
                   <small>{story.location}</small>

@@ -223,7 +223,9 @@ export const story = {
   posterAlt: "The Domus Salutis clinical team holding their AAA accreditation award",
   organization: "Domus Salutis Clinic",
   location: "Italy",
-  monogram: "DS",
+  /* The clinic's own lockup rather than a drawn monogram. It is named in the
+     line beside it, so the mark carries no alt text of its own. */
+  logo: "/healthcare/organizations/domus.jpeg",
   points: [
     "A real clinic accreditation experience",
     "Insights directly from the clinic team",
