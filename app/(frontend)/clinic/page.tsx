@@ -128,7 +128,17 @@ export default function ClinicLandingPage() {
               so it carries no alt text. The clinic in it is credited by name
               in the story section further down the page. */}
           <div className="cl-hero-bg" aria-hidden="true">
-            <Image src={hero.photo} alt="" fill preload sizes="100vw" />
+            {/* Quality above the 75 default: this is the one photograph on the
+                page shown at full viewport width, and at 75 the flat clinic
+                wall behind the team bands rather than graduates. */}
+            <Image
+              src={hero.photo}
+              alt=""
+              fill
+              preload
+              quality={92}
+              sizes="100vw"
+            />
           </div>
           <div className="cl-hero-veil" aria-hidden="true" />
           <div className="cl-hero-grid-bg" aria-hidden="true" />
