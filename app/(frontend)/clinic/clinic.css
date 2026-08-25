@@ -449,46 +449,136 @@
 
 /* ==========================================================================
    Hero
+
+   Two columns that balance themselves. The left carries the promise —
+   eyebrow, headline, lede, two numbers — and beneath it the accredited-clinic
+   photograph; the right carries the way to act on it, the consultation card,
+   with the ISQua plate beneath. The columns stretch to one height and the
+   photograph is the flexible piece: it grows into whatever the form column
+   leaves, so the composition closes on one line at every width instead of
+   being tuned by hand for one.
+
+   Three earlier layouts each broke on the same constraint — a five-field form
+   is taller than a headline, so whatever shared its column with the form was
+   either squeezed into a letterbox or pushed under the fold. Letting the
+   photograph absorb the difference is what removes the constraint.
+
+   Ground: a navy gradient, a faint ruling at the top, three aurora washes
+   drifting on their own clocks, and the wave field rising through the foot.
+   All of it is transform-only motion on composited layers, and all of it
+   stops under prefers-reduced-motion.
    ========================================================================== */
 
 .cl-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  padding: clamp(56px, 6vw, 92px) 0 clamp(48px, 5vw, 72px);
+  padding: clamp(40px, 4.5vw, 68px) 0 clamp(52px, 5.5vw, 84px);
   color: var(--white);
-  /* Still painted, and not only as a fallback: it is what the veil grades
-     down to, and what shows for the moment before the photograph decodes. */
   background: linear-gradient(148deg, var(--navy-hi), var(--navy) 58%, var(--navy-deep));
   border-bottom: 1px solid var(--navy-line);
 }
 
-/* The wave field.
-
-   What replaced the photograph as the hero's ground. Three copies of one
-   path, each sliding exactly half its own width — the path holds two
-   identical periods, so half a width lands the second where the first was and
-   the loop has no seam. Height, tone, speed and direction are all that differ
-   between the layers, and that difference is what reads as depth.
-
-   Masked away at the top so the waves rise out of the navy rather than being
-   laid across it, and kept to the lower half so nothing moves behind the
-   headline. Motion this slow is atmosphere; anything faster would be a
-   distraction sitting next to the one form the page exists to collect. */
-.cl-waves {
+/* Every painted layer lives in this one box, under the content. */
+.cl-hero-bg {
   position: absolute;
-  /* Bottom-anchored to the stage, which ends where the copy and the form do —
-     so the crest lands in the gap above the photograph instead of behind it. */
-  inset: auto 0 0;
-  height: min(74%, 430px);
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  /* Faded at both ends. Each path fills solid from its crest down to the foot
-     of the svg, so without a fade at the bottom the fill simply stops at the
-     stage edge and draws a hard rule across the section. The crest survives
-     the fade; the slab under it does not. */
-  -webkit-mask-image: linear-gradient(transparent, #000 40%, #000 76%, transparent);
-  mask-image: linear-gradient(transparent, #000 40%, #000 76%, transparent);
+}
+
+/* Ruling. Reads as measurement rather than decoration, and fades out before
+   it can reach the photograph, where the same lines would read as dirt. */
+.cl-hero-grid-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+  -webkit-mask-image: linear-gradient(#000, transparent 62%);
+  mask-image: linear-gradient(#000, transparent 62%);
+}
+
+/* Aurora. Three soft radial washes — gold behind the headline, blue behind
+   the form, a cooler one low in the middle — each drifting a few percent on
+   its own period and offset, so they never line up and never visibly repeat.
+   Radial gradients rather than blurred boxes: a filter on an element this
+   size is repainted every frame, a gradient is painted once and moved. */
+.cl-hero-orb {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  will-change: transform;
+  animation: cl-orb-drift var(--orb-time, 28s) ease-in-out infinite alternate;
+  animation-delay: var(--orb-delay, 0s);
+}
+
+.cl-hero-orb--gold {
+  top: -24%;
+  left: -14%;
+  width: min(58vw, 860px);
+  background: radial-gradient(
+    circle,
+    rgba(244, 189, 75, 0.2),
+    rgba(244, 189, 75, 0.06) 40%,
+    transparent 68%
+  );
+  --orb-time: 30s;
+}
+
+.cl-hero-orb--blue {
+  top: 2%;
+  right: -16%;
+  width: min(54vw, 800px);
+  background: radial-gradient(
+    circle,
+    rgba(93, 173, 255, 0.2),
+    rgba(93, 173, 255, 0.05) 42%,
+    transparent 68%
+  );
+  --orb-time: 36s;
+  --orb-delay: -14s;
+}
+
+.cl-hero-orb--teal {
+  bottom: -34%;
+  left: 28%;
+  width: min(50vw, 720px);
+  background: radial-gradient(circle, rgba(126, 214, 205, 0.13), transparent 64%);
+  --orb-time: 42s;
+  --orb-delay: -26s;
+}
+
+@keyframes cl-orb-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    transform: translate3d(5%, 7%, 0) scale(1.12);
+  }
+}
+
+/* The wave field. Three copies of one path, each sliding exactly half its
+   own width — the path holds two identical periods, so half a width lands
+   the second where the first was and the loop has no seam. Height, tone,
+   speed and direction are all that differ between the layers, and that
+   difference is what reads as depth.
+
+   Masked at both ends so the waves rise out of the navy rather than being
+   laid across it, and kept to the lower half so nothing moves behind the
+   headline. Motion this slow is atmosphere; anything faster would be a
+   distraction next to the one form the page exists to collect. */
+.cl-waves {
+  position: absolute;
+  inset: auto 0 0;
+  height: min(56%, 420px);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 38%, #000 78%, transparent);
+  mask-image: linear-gradient(transparent, #000 38%, #000 78%, transparent);
 }
 
 .cl-wave {
@@ -507,13 +597,13 @@
 
 .cl-wave--a {
   height: 100%;
-  color: rgba(255, 255, 255, 0.062);
+  color: rgba(255, 255, 255, 0.06);
   animation-duration: 46s;
 }
 
 .cl-wave--b {
   height: 76%;
-  color: rgba(244, 189, 75, 0.095);
+  color: rgba(244, 189, 75, 0.09);
   animation-duration: 33s;
   animation-direction: reverse;
 }
@@ -534,96 +624,35 @@
   }
 }
 
-/* Two painted layers, both inert: a measurement grid that fades out downward,
-   and one warm gold bloom behind the headline. */
-.cl-hero-grid-bg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  /* Quiet enough to read as ruling rather than as noise: over flat navy this
-     could carry 0.34, but the same lines over a photograph read as dirt on
-     the lens. */
-  opacity: 0.16;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-  background-size: 30px 30px;
-  -webkit-mask-image: linear-gradient(#000, transparent 72%);
-  mask-image: linear-gradient(#000, transparent 72%);
-}
+/* ---- Layout -------------------------------------------------------------- */
 
-.cl-hero-aura {
-  position: absolute;
-  top: -220px;
-  left: -180px;
-  width: 720px;
-  height: 720px;
-  pointer-events: none;
-  background: radial-gradient(circle, rgba(244, 189, 75, 0.14), transparent 68%);
-}
-
-/* The stage the ground layers are measured against. `isolation` keeps the
-   painted layers inside it from reaching the photograph below. */
-.cl-hero-stage {
-  position: relative;
-  isolation: isolate;
-}
-
-.cl-hero .cl-wrap {
-  position: relative;
-  z-index: 1;
-}
-
-/* The hero is one grid with three children. Placement is explicit here so the
-   DOM can stay in phone order — headline, form, picture and proof together —
-   and the single-column fallback needs no reordering at all, just the removal
-   of these rules.
-
-   The form spans both rows so the photograph closes the left column level
-   with its foot: promise and evidence on one side, the way to act on the
-   other. */
 .cl-hero-grid {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(356px, 424px);
-  column-gap: clamp(32px, 4vw, 72px);
-  row-gap: clamp(28px, 3.4vw, 44px);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(384px, 444px);
+  column-gap: clamp(32px, 4.5vw, 72px);
+  align-items: stretch;
 }
+
+.cl-hero-main {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(26px, 3vw, 40px);
+  min-width: 0;
+}
+
+.cl-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---- Copy ---------------------------------------------------------------- */
 
 .cl-hero-copy {
-  grid-column: 1;
-  grid-row: 1;
-  /* Nudged down so the headline starts against the form's heading rather than
-     against the badge sitting above it. */
-  padding-top: clamp(0px, 1.4vw, 22px);
-}
-
-.cl-hero-form {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-}
-
-/* The closing card stands on flat paper; this one stands on a dark field with
-   something moving in it, and the page's ordinary card shadow disappears
-   against navy. A deeper, wider cast plus a hairline of light on the top edge
-   is what keeps it a card sitting on the section rather than a white hole
-   cut out of it. */
-.cl-hero-form .cl-form-card {
-  box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.5) inset,
-    0 32px 80px -28px rgba(0, 12, 24, 0.72),
-    0 12px 28px -18px rgba(0, 12, 24, 0.5);
-}
-
-/* Picture and proof travel as one block: the photograph closes the left
-   column, and the trust chips ride across its foot so the numbers are read
-   against the people they describe. */
-.cl-hero-media {
-  grid-column: 1;
-  grid-row: 2;
-  min-width: 0;
+  max-width: 720px;
 }
 
 /* A pill rather than the dash-and-caps the rest of the page uses. It is the
@@ -670,52 +699,119 @@
   }
 }
 
-/* No text shadow any more. It was there to hold the strokes off a photograph,
-   and there is no photograph behind them now — on flat navy it only softened
-   the type. Set tighter than the page's other headings: at this size the
-   default tracking and 1.22 leading leave the lines drifting apart, and
-   closing both up is what makes a headline read as one block. */
+/* Set tighter than the page's other headings: at this size the default
+   tracking and leading leave the lines drifting apart, and closing both up is
+   what makes a headline read as one block. Sized so three lines and the form
+   card share a fold on an ordinary laptop. */
 .cl-hero-copy h1 {
-  margin: 26px 0 0;
-  max-width: 15ch;
-  font-size: clamp(2.4rem, 4.2vw, 4rem);
+  margin: 22px 0 0;
+  max-width: 20ch;
+  font-size: clamp(2.3rem, 3.7vw, 3.55rem);
   font-weight: 600;
   letter-spacing: -0.032em;
-  line-height: 1.05;
+  line-height: 1.06;
 }
 
 .cl-hero-lede {
-  max-width: 50ch;
-  margin: 24px 0 0;
+  max-width: 60ch;
+  margin: 20px 0 0;
   color: rgba(226, 238, 247, 0.82);
-  font-size: clamp(1.02rem, 1.15vw, 1.14rem);
-  line-height: 1.75;
+  font-size: clamp(0.98rem, 1.05vw, 1.05rem);
+  line-height: 1.7;
   text-wrap: pretty;
 }
 
-/* The photograph inside the composition.
+/* Two numbers set inline under the lede, separated by a hairline, each with
+   its glyph on a small gold tile. No boxes: a glass chip would be one more
+   card on a screen that already has the form and the photograph. */
+.cl-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 0;
+  margin-top: 28px;
+}
 
-   Shown whole rather than shown through: nothing is set over it, so it needs
-   no scrim and no dimming to carry its subjects — only a short grade at the
-   foot of the frame, which is there for the credit chip sitting on it. The
-   letterbox is deliberate — the team's faces sit a third of the way down the
-   frame, so a wide window centred there holds every one of them and drops
-   only floor and ceiling. */
+.cl-hero-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding-right: 26px;
+  margin-right: 26px;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.cl-hero-stat:last-child {
+  padding-right: 0;
+  margin-right: 0;
+  border-right: 0;
+}
+
+.cl-hero-stat-ico {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(244, 189, 75, 0.24);
+  border-radius: 12px;
+  background: rgba(244, 189, 75, 0.12);
+  color: var(--gold);
+}
+
+.cl-hero-stat-ico svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cl-hero-stat p {
+  min-width: 0;
+}
+
+.cl-hero-stat b {
+  display: block;
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.cl-hero-stat small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted-light);
+  font-size: 0.79rem;
+  line-height: 1.25;
+  white-space: pre-line;
+}
+
+/* ---- Photograph ---------------------------------------------------------- */
+
+/* `flex: 1` is the whole trick: the figure takes the height the form column
+   leaves, so the picture is as tall as the composition allows and no taller.
+   The floor keeps it a photograph rather than a strip on a short form. Faces
+   sit a third of the way down the frame, so the crop is centred there. */
 .cl-hero-shot {
   position: relative;
-  height: clamp(250px, 27vw, 420px);
+  flex: 1 1 auto;
+  min-height: clamp(220px, 21vw, 300px);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--r-lg);
+  background: var(--navy-deep);
   box-shadow: 0 40px 90px -36px rgba(0, 10, 20, 0.85);
 }
 
+/* A short grade at the foot of the frame, there for the credit chip. */
 .cl-hero-shot::after {
   content: "";
   position: absolute;
   inset: auto 0 0;
-  height: 42%;
-  background: linear-gradient(transparent, rgba(0, 16, 30, 0.6));
+  height: 44%;
+  background: linear-gradient(transparent, rgba(0, 16, 30, 0.62));
   pointer-events: none;
 }
 
@@ -725,29 +821,84 @@
 }
 
 /* A credit, not a caption. The picture is a named clinic holding a real
-   award, and saying so is the difference between evidence and stock. It sits
-   at the top of the frame, clear of the trust chips riding the bottom edge. */
+   award, and saying so is the difference between evidence and stock. */
 .cl-hero-shot figcaption {
   position: absolute;
   z-index: 1;
-  top: clamp(14px, 1.4vw, 20px);
-  left: clamp(14px, 1.4vw, 22px);
-  padding: 8px 15px;
+  left: clamp(14px, 1.4vw, 18px);
+  bottom: clamp(14px, 1.4vw, 18px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
   color: var(--white);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  background: rgba(0, 20, 36, 0.52);
+  background: rgba(0, 20, 36, 0.55);
   backdrop-filter: blur(16px) saturate(1.3);
   -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  font-size: 0.81rem;
+  font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.015em;
 }
 
+.cl-hero-shot figcaption svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--gold);
+}
+
+/* ---- Form and credential ------------------------------------------------- */
+
+/* The closing card stands on flat paper; this one stands on a dark field with
+   something moving in it, and the page's ordinary card shadow disappears
+   against navy. A deeper, wider cast plus a hairline of light on the top edge
+   is what keeps it a card sitting on the section rather than a white hole
+   cut out of it. */
+.cl-hero-form .cl-form-card {
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 32px 80px -28px rgba(0, 12, 24, 0.72),
+    0 12px 28px -18px rgba(0, 12, 24, 0.5);
+}
+
+/* The ISQua plate closes the form column: the credential that accredits the
+   accreditor, set directly under the thing it vouches for. The artwork is a
+   JPEG with its own white ground, so it gets a white plate rather than a
+   filter — knocking it out to a silhouette would destroy a mark this page is
+   not licensed to redraw. */
+.cl-hero-isqua {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  /* Pushed to the foot of its column, so its bottom edge lines up with the
+     photograph's whatever height the copy beside it runs to. */
+  margin-top: auto;
+  padding: 12px 16px;
+  color: var(--ink-soft);
+  background: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px -26px rgba(0, 8, 16, 0.9);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.cl-hero-isqua img {
+  width: auto;
+  height: 42px;
+  flex: 0 0 auto;
+}
+
+/* ---- Entrance ------------------------------------------------------------ */
+
 /* The hero arrives rather than appearing. Each piece lifts a few pixels into
-   place, one after the next, over less than a third of a second all told —
-   fast enough that nothing is ever waited for, and `both` is safe because the
-   longest any element stays hidden is its own 0.24s delay. */
+   place, one after the next, over about a third of a second all told — fast
+   enough that nothing is ever waited for, and `both` is safe because the
+   longest any element stays hidden is its own delay. */
 @keyframes cl-rise {
   from {
     opacity: 0;
@@ -756,8 +907,9 @@
 }
 
 .cl-hero-copy > *,
+.cl-hero-shot,
 .cl-hero-form,
-.cl-hero-media {
+.cl-hero-isqua {
   animation: cl-rise 0.66s cubic-bezier(0.22, 0.82, 0.28, 1) both;
 }
 
@@ -769,113 +921,20 @@
   animation-delay: 0.13s;
 }
 
-.cl-hero-form {
-  animation-delay: 0.1s;
-}
-
-.cl-hero-media {
+.cl-hero-copy > *:nth-child(4) {
   animation-delay: 0.19s;
 }
 
-/* Trust indicators, riding the foot of the photograph.
-
-   One flexible row that straddles the frame's bottom edge — half on the
-   picture, half on the navy beneath it — so the reach and bench-depth numbers
-   are read against the accredited team behind them, and the ISQua plate sits
-   apart at the right as the credential that accredits the accreditor. */
-.cl-proof {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  gap: 10px;
-  margin-top: -28px;
-  padding-inline: clamp(10px, 1.4vw, 18px);
+.cl-hero-form {
+  animation-delay: 0.12s;
 }
 
-/* The blur here does real work rather than decorating a flat ground: it is
-   what separates each chip from whatever part of the photograph it crosses,
-   and the cast shadow is what keeps it lifted where it overhangs onto navy. */
-.cl-proof-card {
-  min-width: 0;
-  padding: 10px 15px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 16px;
-  background: rgba(0, 24, 43, 0.58);
-  box-shadow: 0 24px 48px -26px rgba(0, 8, 16, 0.9);
-  backdrop-filter: blur(14px) saturate(1.25);
-  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+.cl-hero-shot {
+  animation-delay: 0.22s;
 }
 
-/* The glyph gets its own disc rather than floating loose against the glass —
-   it reads as a deliberate mark at 20px, where a bare stroke icon reads as
-   a scuff. */
-.cl-proof-ico {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: rgba(244, 189, 75, 0.16);
-  color: var(--gold);
-}
-
-.cl-proof-ico svg {
-  width: 19px;
-  height: 19px;
-}
-
-.cl-proof-card p {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.cl-proof-card b {
-  color: var(--white);
-  font-family: var(--display);
-  font-size: 1.55rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.cl-proof-card small {
-  min-width: 0;
-  color: var(--muted-light);
-  font-size: 0.78rem;
-  line-height: 1.3;
-  white-space: pre-line;
-}
-
-/* The ISQua artwork is a JPEG with its own white ground, so it gets a white
-   plate to sit on rather than a filter — knocking it out to a silhouette
-   would destroy a mark this page is not licensed to redraw. Pushed to the far
-   end of the row, it closes the strip the way a signature closes a letter. */
-.cl-proof-card--isqua {
-  margin-left: auto;
-  background: var(--white);
-  border-color: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 24px 48px -26px rgba(0, 8, 16, 0.95);
-}
-
-.cl-proof-card--isqua small {
-  color: var(--ink-soft);
-  font-weight: 600;
-}
-
-.cl-proof-card--isqua img {
-  width: auto;
-  height: 40px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: var(--white);
+.cl-hero-isqua {
+  animation-delay: 0.28s;
 }
 
 /* ==========================================================================
@@ -2373,43 +2432,52 @@
   }
 }
 
-/* The hero's second column can no longer hold a comfortable form. Dropping
-   the explicit placement is the whole change: the children then fall into
-   their DOM order — headline, form, picture and proof together — which is
-   already the phone order. */
+/* Under 1080px the two columns fold into one. The column wrappers give up
+   their boxes (display: contents) so the four pieces become grid children
+   again and can be ordered for a phone: headline, photograph, form, proof.
+   The picture sits between the promise and the form, so the evidence is
+   seen before the visitor is asked for anything. */
 @media (max-width: 1080px) {
   .cl-hero-grid {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 34px;
+    row-gap: 26px;
   }
 
-  .cl-hero-copy,
-  .cl-hero-form,
-  .cl-hero-media {
-    grid-column: 1;
-    grid-row: auto;
+  .cl-hero-main,
+  .cl-hero-side {
+    display: contents;
   }
 
   .cl-hero-copy {
-    padding-top: 0;
-  }
-
-  /* Left to itself the card would stretch the full width and set five
-     fields across a line and a half of whitespace each. */
-  .cl-hero-form {
-    width: 100%;
-    max-width: 580px;
-    margin-inline: auto;
+    order: 1;
+    max-width: none;
   }
 
   .cl-hero-copy h1 {
-    max-width: 20ch;
+    max-width: 18ch;
   }
 
-  /* One column wide the picture has the full frame to itself, so it can take
-     a taller window and show more than the letterbox does beside the copy. */
+  /* One column wide the picture has the full width to itself, so it takes a
+     fixed window rather than flexing against a column that no longer exists. */
   .cl-hero-shot {
-    height: clamp(230px, 42vw, 380px);
+    order: 2;
+    flex: none;
+    min-height: 0;
+    height: clamp(230px, 46vw, 420px);
+  }
+
+  /* Capped so five stacked fields do not stretch into a ribbon on a tablet;
+     the plate under it keeps the same edge. */
+  .cl-hero-form {
+    order: 3;
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .cl-hero-isqua {
+    order: 4;
+    width: 100%;
+    max-width: 640px;
   }
 }
 
@@ -2485,12 +2553,6 @@
   }
 }
 
-@media (max-width: 760px) {
-  .cl-hero-form {
-    max-width: none;
-  }
-}
-
 @media (max-width: 640px) {
   .cl-wrap {
     width: calc(100% - 28px);
@@ -2553,39 +2615,51 @@
     font-size: 0.71rem;
   }
 
-  /* ---- Trust chips ------------------------------------------------------
-     The two numerals share the row evenly; the ISQua plate drops beneath them
-     at full width, logo beside its label. The overlap onto the photograph is
-     eased off so the strip never covers the faces in the frame. */
-  .cl-proof {
-    gap: 10px;
-    margin-top: -22px;
-    padding-inline: 12px;
+  /* ---- Stats --------------------------------------------------------------
+     The two numbers share the row evenly; the hairline between them stays. */
+  .cl-hero-stats {
+    margin-top: 22px;
   }
 
-  .cl-proof-card:not(.cl-proof-card--isqua) {
+  .cl-hero-stat {
     flex: 1 1 0;
-    padding: 11px 13px;
+    gap: 10px;
+    padding-right: 14px;
+    margin-right: 14px;
   }
 
-  .cl-proof-card small {
-    white-space: normal;
+  .cl-hero-stat-ico {
+    width: 36px;
+    height: 36px;
   }
 
-  .cl-proof-ico {
-    width: 34px;
-    height: 34px;
-  }
-
-  .cl-proof-card b {
+  .cl-hero-stat b {
     font-size: 1.45rem;
   }
 
-  .cl-proof-card--isqua {
-    flex: 1 1 100%;
-    justify-content: center;
-    margin-left: 0;
-    gap: 14px;
+  .cl-hero-stat small {
+    font-size: 0.75rem;
+  }
+
+  /* ---- Photograph and plate ---------------------------------------------- */
+  .cl-hero-shot {
+    height: clamp(210px, 58vw, 340px);
+    border-radius: var(--r);
+  }
+
+  .cl-hero-shot figcaption {
+    left: 12px;
+    bottom: 12px;
+    font-size: 0.75rem;
+  }
+
+  .cl-hero-isqua {
+    padding: 10px 14px;
+    font-size: 0.78rem;
+  }
+
+  .cl-hero-isqua img {
+    height: 36px;
   }
 
   .cl-form-card,
@@ -2921,11 +2995,7 @@
     font-size: 1.6rem;
   }
 
-  .cl-proof-card:not(.cl-proof-card--isqua) {
-    padding: 10px 11px;
-  }
-
-  .cl-proof-card b {
+  .cl-hero-stat b {
     font-size: 1.32rem;
   }
 

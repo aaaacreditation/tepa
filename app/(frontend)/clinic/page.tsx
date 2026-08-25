@@ -114,28 +114,31 @@ export default function ClinicLandingPage() {
         {/* ================================================================
             Hero.
 
-            One composition holds all three things a visitor needs — the
-            promise, the way to act on it, and the evidence that it is real.
-            The copy leads, the form stands beside it as the brightest object
-            on the screen, and the accredited-clinic photograph closes the left
-            column with the trust chips floating across its foot, so the
-            numbers are read against the people they describe.
+            Two columns that balance themselves. Left: the promise — eyebrow,
+            headline, lede, two numbers — and beneath it the accredited-clinic
+            photograph. Right: the consultation form, with the ISQua plate
+            under it. The columns are stretched to one height and the
+            photograph is the piece that flexes, so it takes whatever room
+            the form column leaves rather than being sized by hand.
 
-            The grid's children are placed explicitly at desktop widths, which
-            leaves the DOM free to carry the phone order instead: headline,
-            form, then picture and proof together. On a phone the form is the
-            second thing a visitor meets rather than the last.
+            The two column wrappers dissolve on narrow screens (display:
+            contents) and the four pieces reorder for a phone: headline,
+            photograph, form, proof — the evidence is seen before the visitor
+            is asked for anything.
             ================================================================ */}
         <section id="top" className="cl-hero">
-          {/* The stage carries the painted ground — ruling, aura and the wave
-              field — behind everything, isolated so none of it reaches past
-              the section edge. */}
-          <div className="cl-hero-stage">
-            <div className="cl-hero-grid-bg" aria-hidden="true" />
-            <div className="cl-hero-aura" aria-hidden="true" />
+          {/* The painted ground: ruling, three aurora washes and the wave
+              field, all inert, all under the content. */}
+          <div className="cl-hero-bg" aria-hidden="true">
+            <div className="cl-hero-grid-bg" />
+            <div className="cl-hero-orb cl-hero-orb--gold" />
+            <div className="cl-hero-orb cl-hero-orb--blue" />
+            <div className="cl-hero-orb cl-hero-orb--teal" />
             <HeroWaves />
+          </div>
 
-            <div className="cl-wrap cl-hero-grid">
+          <div className="cl-wrap cl-hero-grid">
+            <div className="cl-hero-main">
               <div className="cl-hero-copy">
                 <p className="cl-hero-eyebrow">{hero.eyebrow}</p>
                 <h1>
@@ -143,35 +146,17 @@ export default function ClinicLandingPage() {
                   <span className="cl-underline">{hero.titleAccent}</span>
                 </h1>
                 <p className="cl-hero-lede">{hero.lede}</p>
-              </div>
 
-              <div id="consultation" className="cl-hero-form">
-                <ConsultationForm />
-              </div>
-
-              {/* The photograph, shown rather than shown through, with the
-                  trust strip riding its bottom edge. It carries alt text and
-                  a credit: it is a named clinic holding a real award, which
-                  is the whole reason it earns the room. */}
-              <div className="cl-hero-media">
-                <figure className="cl-hero-shot">
-                  <Image
-                    src={hero.photo}
-                    alt={hero.photoAlt}
-                    fill
-                    preload
-                    quality={92}
-                    sizes="(max-width: 1080px) 100vw, 720px"
-                  />
-                  <figcaption>{hero.photoCaption}</figcaption>
-                </figure>
-
-                <ul className="cl-proof" aria-label="Accreditation trust indicators">
+                {/* Two numbers, inline rather than boxed: reach, and the
+                    depth of the assessor bench. The third credential — who
+                    accredits the accreditor — sits under the form instead,
+                    beside the thing it is there to vouch for. */}
+                <ul className="cl-hero-stats" aria-label="Accreditation trust indicators">
                   {hero.proof.map((item) => {
                     const Icon = ICONS[item.icon];
                     return (
-                      <li className="cl-proof-card" key={item.label}>
-                        <span className="cl-proof-ico">
+                      <li className="cl-hero-stat" key={item.label}>
+                        <span className="cl-hero-stat-ico">
                           <Icon />
                         </span>
                         <p>
@@ -181,18 +166,45 @@ export default function ClinicLandingPage() {
                       </li>
                     );
                   })}
-
-                  <li className="cl-proof-card cl-proof-card--isqua">
-                    <Image
-                      src="/healthcare/isqua-eea.jpg"
-                      alt="ISQua External Evaluation Association"
-                      width={800}
-                      height={221}
-                    />
-                    <small>{hero.isquaNote}</small>
-                  </li>
                 </ul>
               </div>
+
+              {/* The photograph, shown whole. It is a named clinic holding a
+                  real award, which is the reason it earns the room, and the
+                  credit says so. */}
+              <figure className="cl-hero-shot">
+                <Image
+                  src={hero.photo}
+                  alt={hero.photoAlt}
+                  fill
+                  preload
+                  quality={90}
+                  sizes="(max-width: 1080px) 100vw, 760px"
+                />
+                <figcaption>
+                  <IconCheck />
+                  {hero.photoCaption}
+                </figcaption>
+              </figure>
+            </div>
+
+            {/* A plain div rather than an aside: the wrapper is dissolved with
+                display: contents on narrow screens, which drops a landmark's
+                role in some browsers, so it never carries one. */}
+            <div className="cl-hero-side">
+              <div id="consultation" className="cl-hero-form">
+                <ConsultationForm />
+              </div>
+
+              <p className="cl-hero-isqua">
+                <Image
+                  src="/healthcare/isqua-eea.jpg"
+                  alt="ISQua External Evaluation Association"
+                  width={800}
+                  height={221}
+                />
+                <span>{hero.isquaNote}</span>
+              </p>
             </div>
           </div>
         </section>
