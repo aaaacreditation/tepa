@@ -114,24 +114,22 @@ export default function ClinicLandingPage() {
         {/* ================================================================
             Hero.
 
-            The photograph used to be the ground the whole section stood on,
-            which meant it had to be dark enough to carry white text and was
-            therefore never really visible. It has its own place now, below
-            the fold line and shown whole, and the ground it left behind is a
-            navy field with a wave running through it — so the copy sits on
-            something built for copy, and the picture is a picture.
+            One composition holds all three things a visitor needs — the
+            promise, the way to act on it, and the evidence that it is real.
+            The copy leads, the form stands beside it as the brightest object
+            on the screen, and the accredited-clinic photograph closes the left
+            column with the trust chips floating across its foot, so the
+            numbers are read against the people they describe.
 
             The grid's children are placed explicitly at desktop widths, which
             leaves the DOM free to carry the phone order instead: headline,
-            form, proof, photograph. On a phone the form is the second thing a
-            visitor meets rather than the last.
+            form, then picture and proof together. On a phone the form is the
+            second thing a visitor meets rather than the last.
             ================================================================ */}
         <section id="top" className="cl-hero">
-          {/* The ground and the copy share a stage, and the photograph sits
-              outside it. That is what puts the wave crest where it belongs:
-              anchored to the foot of the copy and running into the top edge of
-              the picture, rather than to the foot of the section, where the
-              picture would simply cover it. */}
+          {/* The stage carries the painted ground — ruling, aura and the wave
+              field — behind everything, isolated so none of it reaches past
+              the section edge. */}
           <div className="cl-hero-stage">
             <div className="cl-hero-grid-bg" aria-hidden="true" />
             <div className="cl-hero-aura" aria-hidden="true" />
@@ -151,51 +149,51 @@ export default function ClinicLandingPage() {
                 <ConsultationForm />
               </div>
 
-              <ul className="cl-proof" aria-label="Accreditation trust indicators">
-                {hero.proof.map((item) => {
-                  const Icon = ICONS[item.icon];
-                  return (
-                    <li className="cl-proof-card" key={item.label}>
-                      <span className="cl-proof-ico">
-                        <Icon />
-                      </span>
-                      <p>
-                        <b>{item.value}</b>
-                        <small>{item.label}</small>
-                      </p>
-                    </li>
-                  );
-                })}
-
-                <li className="cl-proof-card cl-proof-card--isqua">
+              {/* The photograph, shown rather than shown through, with the
+                  trust strip riding its bottom edge. It carries alt text and
+                  a credit: it is a named clinic holding a real award, which
+                  is the whole reason it earns the room. */}
+              <div className="cl-hero-media">
+                <figure className="cl-hero-shot">
                   <Image
-                    src="/healthcare/isqua-eea.jpg"
-                    alt="ISQua External Evaluation Association"
-                    width={800}
-                    height={221}
+                    src={hero.photo}
+                    alt={hero.photoAlt}
+                    fill
+                    preload
+                    quality={92}
+                    sizes="(max-width: 1080px) 100vw, 720px"
                   />
-                  <small>{hero.isquaNote}</small>
-                </li>
-              </ul>
-            </div>
-          </div>
+                  <figcaption>{hero.photoCaption}</figcaption>
+                </figure>
 
-          {/* The photograph, shown rather than shown through. It carries alt
-              text and a credit now: as a ground it was atmosphere, and here it
-              is a named clinic holding a real award, which is the whole reason
-              it earns the room. */}
-          <div className="cl-wrap">
-            <figure className="cl-hero-shot">
-              <Image
-                src={hero.photo}
-                alt={hero.photoAlt}
-                fill
-                preload
-                quality={92}
-                sizes="(max-width: 1000px) 100vw, 1240px"
-              />
-              <figcaption>{hero.photoCaption}</figcaption>
-            </figure>
+                <ul className="cl-proof" aria-label="Accreditation trust indicators">
+                  {hero.proof.map((item) => {
+                    const Icon = ICONS[item.icon];
+                    return (
+                      <li className="cl-proof-card" key={item.label}>
+                        <span className="cl-proof-ico">
+                          <Icon />
+                        </span>
+                        <p>
+                          <b>{item.value}</b>
+                          <small>{item.label}</small>
+                        </p>
+                      </li>
+                    );
+                  })}
+
+                  <li className="cl-proof-card cl-proof-card--isqua">
+                    <Image
+                      src="/healthcare/isqua-eea.jpg"
+                      alt="ISQua External Evaluation Association"
+                      width={800}
+                      height={221}
+                    />
+                    <small>{hero.isquaNote}</small>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
 
