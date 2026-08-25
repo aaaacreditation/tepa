@@ -62,6 +62,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "Malformed request." }, { status: 400 });
   }
 
+  /* Bots fill hidden fields. Accept quietly so they do not learn anything.
+     The form already drops these client side; this catches whatever posts to
+     the route directly, which is what a scraper that found the endpoint does. */
+  if (clean(payload.company_website_confirm)) {
+    return Response.json({ ok: true });
+  }
+
   /* Mirrors the client checks in components/ConsultationForm.tsx; keep the two
      in step. Five fields, exactly what the approved consultation form asks
      for — every extra one is a lead the campaign does not get. */

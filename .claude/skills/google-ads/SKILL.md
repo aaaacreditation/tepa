@@ -28,7 +28,8 @@ is the operational runbook.
 | TEPA actions (`/tepa`) | Enquiry `7703930540` (PRIMARY), MQL `7703235731`, SQL `7703235734`, Customer `7703235737` |
 | Clinic actions (`/clinic`) | Enquiry `7733332536`, MQL `7733332539`, SQL `7733332542`, Customer `7733332545` — all secondary |
 | Clinic custom goal | **Clinic Funnel** `6458833046`, holds Clinic Enquiry; used by `Clinic - USA`, `Clinic Accreditation \|\| Search`, `Clinic Accreditation \|\| P-max` |
-| Healthcare (`/healthcare`) | no actions yet — its leads are not reported until `--source=healthcare` is run |
+| Healthcare actions (`/healthcare`) | Enquiry `7733155436`, MQL `7733165471`, SQL `7733165474`, Customer `7733165477` — all secondary; "always use default value", Customer 5000 |
+| Healthcare custom goal | **Healthcare Funnel** `6458835017`, holds Healthcare Enquiry — attach campaigns with `--source=healthcare --campaigns=Healthcare --create` |
 
 Conversion actions live in the operating account, not the MCC. In the Google Ads
 UI you must switch into *American Accreditation Association* to see them, then

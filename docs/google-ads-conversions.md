@@ -169,7 +169,7 @@ Current state of the account:
 | --- | --- | --- |
 | `/tepa` | `TEPA Enquiry` primary, campaign-level "Submit lead form" goals | 7703930540 / 7703235731 / 7703235734 / 7703235737 |
 | `/clinic` | custom goal **Clinic Funnel** (6458833046) on `Clinic - USA`, `Clinic Accreditation \|\| Search`, `Clinic Accreditation \|\| P-max` | 7733332536 / 7733332539 / 7733332542 / 7733332545, all secondary |
-| `/healthcare` | not set up yet — `npm run ads:actions -- --source=healthcare --campaigns=Healthcare --create` | — |
+| `/healthcare` | custom goal **Healthcare Funnel** (6458835017); attach its campaigns with `npm run ads:actions -- --source=healthcare --campaigns=Healthcare --create` | 7733155436 / 7733165471 / 7733165474 / 7733165477, all secondary. These use "always use default value" in Google Ads, Customer at 5000 — `GOOGLE_ADS_VALUE_CUSTOMER_HEALTHCARE=5000` keeps the dashboard in step |
 
 To find an action's numeric ID: open it in Google Ads and read `ctId=` from the
 page URL.
@@ -200,10 +200,10 @@ GOOGLE_ADS_ACTION_LEAD_CLINIC=7733332536
 GOOGLE_ADS_ACTION_MQL_CLINIC=7733332539
 GOOGLE_ADS_ACTION_SQL_CLINIC=7733332542
 GOOGLE_ADS_ACTION_CUSTOMER_CLINIC=7733332545
-GOOGLE_ADS_ACTION_LEAD_HEALTHCARE=
-GOOGLE_ADS_ACTION_MQL_HEALTHCARE=
-GOOGLE_ADS_ACTION_SQL_HEALTHCARE=
-GOOGLE_ADS_ACTION_CUSTOMER_HEALTHCARE=
+GOOGLE_ADS_ACTION_LEAD_HEALTHCARE=7733155436
+GOOGLE_ADS_ACTION_MQL_HEALTHCARE=7733165471
+GOOGLE_ADS_ACTION_SQL_HEALTHCARE=7733165474
+GOOGLE_ADS_ACTION_CUSTOMER_HEALTHCARE=7733165477
 
 # Value per stage. Defaults: 0 / 50 / 250 / 2000. Also accepts the suffix, so a
 # clinic customer can be worth more than a training one; values do fall back
