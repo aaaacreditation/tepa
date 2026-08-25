@@ -30,6 +30,12 @@ export const SOURCES: Record<string, LandingPageSource> = {
   },
 };
 
+/* The landing page that existed before there was a registry. Its Google Ads
+   configuration keeps the unsuffixed variable names it has always used
+   (GOOGLE_ADS_ACTION_LEAD); every later page reads only its own suffixed ones
+   (GOOGLE_ADS_ACTION_LEAD_CLINIC). See lib/conversions.ts. */
+export const DEFAULT_SOURCE = "tepa";
+
 export function getSource(key: string): LandingPageSource | null {
   return SOURCES[key] ?? null;
 }

@@ -1,7 +1,7 @@
 # Google Ads conversion tracking
 
-Reports the TEPA funnel back to Google Ads: the enquiry when it arrives, and
-each pipeline stage as someone moves a lead through the dashboard.
+Reports each landing page's funnel back to Google Ads: the enquiry when it
+arrives, and each pipeline stage as someone moves a lead through the dashboard.
 
 Run `npm run ads:check` at any point. It verifies each step below and names the
 one that is broken.
@@ -43,10 +43,12 @@ Two consequences that trip people up:
 | Visitor clicks a Calendly link | gtag in the browser | Happens before any form fill |
 | Lead moved to MQL / SQL / Customer | Server upload to Data Manager | Happens days later, with no browser present |
 
-This is shared by every landing page. `/tepa` and `/healthcare` each mount
-`AttributionCapture` and `GoogleTag` from `app/(frontend)/components`, post to
-their own enquiry route, and write a lead tagged with their source key. What
-differs per page is only which conversion actions the stages report into.
+This is shared by every landing page. `/tepa`, `/healthcare` and `/clinic` each
+mount `AttributionCapture` and `GoogleTag` from `app/(frontend)/components`,
+post to their own enquiry route (`/api/<source>/enquiry`), and write a lead
+tagged with their source key. What differs per page is only which conversion
+actions the stages report into — and those must not be shared, see
+[One set of actions per landing page](#one-set-of-actions-per-landing-page).
 
 The pipeline stages are the reason this exists. A form fill is a weak signal —
 some enquiries are students, some are competitors. Telling Google which ones
@@ -103,17 +105,18 @@ let the script do it:
 ```bash
 npm run ads:actions                                  # TEPA, show what is missing
 npm run ads:actions -- --create                      # TEPA, create them
-npm run ads:actions -- --source=healthcare --create  # the healthcare page
+npm run ads:actions -- --source=clinic --campaigns=Clinic          # /clinic, preview
+npm run ads:actions -- --source=clinic --campaigns=Clinic --create # /clinic, apply
 ```
 
 Suggested setup:
 
-| Stage | TEPA action | Healthcare action | Count | Value |
-| --- | --- | --- | --- | --- |
-| Lead | TEPA Enquiry | Healthcare Enquiry | One | 0 (or your cost per lead) |
-| MQL | TEPA MQL | Healthcare MQL | One | 50 |
-| SQL | TEPA SQL | Healthcare SQL | One | 250 |
-| Customer | TEPA Customer | Healthcare Customer | One | 2000 |
+| Stage | TEPA action | Healthcare action | Clinic action | Count | Value |
+| --- | --- | --- | --- | --- | --- |
+| Lead | TEPA Enquiry | Healthcare Enquiry | Clinic Enquiry | One | 0 (or your cost per lead) |
+| MQL | TEPA MQL | Healthcare MQL | Clinic MQL | One | 50 |
+| SQL | TEPA SQL | Healthcare SQL | Clinic SQL | One | 250 |
+| Customer | TEPA Customer | Healthcare Customer | Clinic Customer | One | 2000 |
 
 Set **Count: One** on all of them — one organization accrediting is one
 conversion, not one per program.
@@ -123,12 +126,50 @@ conversion, not one per program.
 Each landing page in `lib/sources.ts` reports into its own actions, named with
 the suffixed environment variables below. A campaign then bids on the funnel it
 actually paid for. Point two landing pages at one action and Smart Bidding
-cannot tell them apart: the healthcare campaign optimises partly against TEPA's
-leads and vice versa. `npm run ads:check` warns when that is the case.
+cannot tell them apart: the clinic campaign optimises partly against TEPA's
+leads and vice versa.
 
-Only the *Customer* action normally belongs in the **Primary** conversion goal
-used for bidding. Keep the rest as **Secondary** so they are observed but do not
-distort optimisation.
+There is **no fallback** from a suffixed variable to the shared one. A page
+whose variables are blank reports nothing, and `npm run ads:check` says so with
+a WARN, rather than quietly pooling into TEPA's actions.
+
+#### How the pages are kept apart in bidding
+
+Separate actions are not enough on their own, because of how Google picks what
+a campaign bids on:
+
+- The live TEPA campaigns use **campaign-level goals chosen by category**
+  ("Submit lead form"). Google feeds *every primary action in that category*
+  into their bidding. So for TEPA the `primary_for_goal` flag is the control —
+  exactly one stage is primary at a time — and any *other* page's action that
+  was created primary in the same category would be picked up by TEPA the
+  moment it existed.
+- Campaigns left on **account-default goals** bid on every primary action in the
+  account, TEPA Enquiry included.
+
+So every landing page after TEPA is isolated the other way round:
+
+1. All four of its actions are created **secondary**, which keeps them out of
+   every category goal in the account.
+2. A **custom conversion goal** named `<Page> Funnel` holds the stage being bid
+   on (the enquiry to begin with). Google optimises for whatever is in a custom
+   goal regardless of the primary flag.
+3. The page's campaigns are pointed at that goal (`--campaigns=<part of the
+   campaign name>`), which moves them off account-default goals.
+
+Both directions are then sealed: TEPA never sees clinic actions, and clinic
+campaigns never see TEPA's. `ads:actions` does all three steps and re-reads the
+account afterwards to confirm they landed. Walking the ladder (`--primary=mql`)
+swaps the action the custom goal holds, so the same command works for every
+page.
+
+Current state of the account:
+
+| Page | Bidding steered by | Actions |
+| --- | --- | --- |
+| `/tepa` | `TEPA Enquiry` primary, campaign-level "Submit lead form" goals | 7703930540 / 7703235731 / 7703235734 / 7703235737 |
+| `/clinic` | custom goal **Clinic Funnel** (6458833046) on `Clinic - USA`, `Clinic Accreditation \|\| Search`, `Clinic Accreditation \|\| P-max` | 7733332536 / 7733332539 / 7733332542 / 7733332545, all secondary |
+| `/healthcare` | not set up yet — `npm run ads:actions -- --source=healthcare --campaigns=Healthcare --create` | — |
 
 To find an action's numeric ID: open it in Google Ads and read `ctId=` from the
 page URL.
@@ -151,16 +192,22 @@ GOOGLE_ADS_ACTION_MQL=987654321
 GOOGLE_ADS_ACTION_SQL=987654322
 GOOGLE_ADS_ACTION_CUSTOMER=987654323
 
-# Per landing page. A suffixed variable wins over the shared one above; with
-# none set the page falls back to the shared action. The suffix is the source
-# key from lib/sources.ts, uppercased.
+# Per landing page. The suffix is the source key from lib/sources.ts,
+# uppercased. Only the suffixed variable is read for these pages — a blank one
+# means that stage is not reported for that page. It never falls back to the
+# TEPA action above.
+GOOGLE_ADS_ACTION_LEAD_CLINIC=7733332536
+GOOGLE_ADS_ACTION_MQL_CLINIC=7733332539
+GOOGLE_ADS_ACTION_SQL_CLINIC=7733332542
+GOOGLE_ADS_ACTION_CUSTOMER_CLINIC=7733332545
 GOOGLE_ADS_ACTION_LEAD_HEALTHCARE=
-GOOGLE_ADS_ACTION_MQL_HEALTHCARE=987654331
-GOOGLE_ADS_ACTION_SQL_HEALTHCARE=987654332
-GOOGLE_ADS_ACTION_CUSTOMER_HEALTHCARE=987654333
+GOOGLE_ADS_ACTION_MQL_HEALTHCARE=
+GOOGLE_ADS_ACTION_SQL_HEALTHCARE=
+GOOGLE_ADS_ACTION_CUSTOMER_HEALTHCARE=
 
 # Value per stage. Defaults: 0 / 50 / 250 / 2000. Also accepts the suffix, so a
-# healthcare customer can be worth more than a training one.
+# clinic customer can be worth more than a training one; values do fall back
+# to the shared number.
 GOOGLE_ADS_VALUE_MQL=50
 GOOGLE_ADS_VALUE_SQL=250
 GOOGLE_ADS_VALUE_CUSTOMER=2000
@@ -173,8 +220,14 @@ CONVERSIONS_CRON_SECRET=<random string>
 NEXT_PUBLIC_GOOGLE_ADS_ID=AW-123456789
 NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM=AbC-D_efGh            # /tepa
 NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM_HEALTHCARE=IjK-L_mnOp # /healthcare
+NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM_CLINIC=QrS-T_uvWx     # /clinic
 NEXT_PUBLIC_GOOGLE_ADS_LABEL_CALENDLY=XyZ-1_23456       # /tepa only
 ```
+
+Production reads the same variables from `/opt/tepa/app/.env` on the server
+(see the `aaa_lp_deployement` skill). Server-side `GOOGLE_ADS_*` values are
+read at runtime, so after editing that file a `systemctl restart tepa.service`
+is enough; only `NEXT_PUBLIC_*` values need a rebuild.
 
 > **Do not set both `NEXT_PUBLIC_GOOGLE_ADS_LABEL_FORM` and
 > `GOOGLE_ADS_ACTION_LEAD` against the same conversion action.** They are two

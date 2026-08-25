@@ -25,10 +25,42 @@ is the operational runbook.
 | Operating account | `6578203282` — American Accreditation Association (USD) |
 | Manager (MCC) | `3446752292` — Clicksalesmedia LLC |
 | Conversion ID | `AW-10792220218` |
+| TEPA actions (`/tepa`) | Enquiry `7703930540` (PRIMARY), MQL `7703235731`, SQL `7703235734`, Customer `7703235737` |
+| Clinic actions (`/clinic`) | Enquiry `7733332536`, MQL `7733332539`, SQL `7733332542`, Customer `7733332545` — all secondary |
+| Clinic custom goal | **Clinic Funnel** `6458833046`, holds Clinic Enquiry; used by `Clinic - USA`, `Clinic Accreditation \|\| Search`, `Clinic Accreditation \|\| P-max` |
+| Healthcare (`/healthcare`) | no actions yet — its leads are not reported until `--source=healthcare` is run |
 
 Conversion actions live in the operating account, not the MCC. In the Google Ads
 UI you must switch into *American Accreditation Association* to see them, then
 **Goals → Conversions → Summary**.
+
+## How the landing pages are kept apart
+
+Each page has its own actions and **there is no fallback**: a page with blank
+`GOOGLE_ADS_ACTION_*_<PAGE>` variables reports nothing (WARN in `ads:check`)
+rather than pooling into TEPA's actions.
+
+Separate actions alone would not isolate *bidding*. The live TEPA campaigns
+use campaign-level goals picked by category ("Submit lead form"), and Google
+feeds every **primary** action in that category into them — so a "Clinic
+Enquiry" created primary would be bid on by TEPA the moment it existed. Every
+page after TEPA is therefore isolated the other way round: all four of its
+actions stay **secondary** (invisible to category goals) and its campaigns bid
+on a **custom conversion goal** `<Page> Funnel` that holds the current rung.
+Google optimises for whatever is inside a custom goal regardless of the primary
+flag. `ads:actions` does all of it and re-reads the account to verify:
+
+```bash
+npm run ads:actions -- --source=clinic --campaigns=Clinic            # preview
+npm run ads:actions -- --source=clinic --campaigns=Clinic --create   # apply
+```
+
+`--campaigns=<text>` points every campaign whose name contains the text at the
+page's goal. Preview first; it lists each campaign with what it bids on today.
+To undo for one campaign: Google Ads → campaign settings → Goals → account
+default (API: `goalConfigLevel=CUSTOMER`).
+
+`docs/google-ads-conversions.md` has the full explanation.
 
 ## Step 1 — always start here
 
@@ -95,8 +127,10 @@ Warn the user never to click **Revoke access** in the Playground — it kills ev
 token for this OAuth client, including their ClickSalesMedia app.
 
 After updating `.env.local`, re-run `npm run ads:check` to confirm, and remind
-the user to update `GOOGLE_ADS_REFRESH_TOKEN` in **Vercel** too. A token fixed
-locally changes nothing in production.
+the user that production reads `/opt/tepa/app/.env` on the Hetzner server (see
+the `aaa_lp_deployement` skill) — update `GOOGLE_ADS_REFRESH_TOKEN` there and
+`systemctl restart tepa.service`. A token fixed locally changes nothing in
+production. The same goes for any new `GOOGLE_ADS_ACTION_*` id.
 
 ## Step 4 — changing which stage is the primary goal
 
@@ -112,8 +146,10 @@ npm run ads:actions -- --primary=mql             # preview, changes nothing
 npm run ads:actions -- --primary=mql --create    # apply
 ```
 
-Valid stages: `lead`, `mql`, `sql`, `customer`. The named stage becomes PRIMARY
-and every other stage is demoted to secondary in the same pass.
+Valid stages: `lead`, `mql`, `sql`, `customer`. For TEPA the named stage becomes
+PRIMARY and every other stage is demoted to secondary in the same pass. For an
+isolated page (`--source=clinic`) the named stage becomes the one action inside
+its custom goal and every action stays secondary — same ladder, same command.
 
 **Always run the preview first and show the user the diff before applying.**
 This changes bidding on a live account.
@@ -165,7 +201,12 @@ recording fake conversions. Never leave it set in production.
   and would count every enquiry twice. The form is currently reported
   server-side; `LABEL_FORM` is intentionally blank.
 - `GOOGLE_ADS_DEVELOPER_TOKEN` is used only by `ads:actions` locally. It is not
-  needed in Vercel and the app never reads it.
+  needed on the server and the app never reads it.
 - Creating or repointing conversion actions writes to a live ad account.
   Preview first, and confirm with the user before `--create`.
 - `ads:actions` matches by name, so re-running never creates duplicates.
+- **Never make a Clinic or Healthcare action primary.** The live TEPA campaigns
+  bid on the "Submit lead form" category and would pick it up immediately.
+  Those pages bid through their custom goal instead.
+- `--campaigns` changes what a campaign bids on. Only pass it with a match that
+  names that page's campaigns, and show the preview before `--create`.

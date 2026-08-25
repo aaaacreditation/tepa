@@ -65,29 +65,36 @@ console.log("\n2. Conversion actions");
 const STAGES = ["lead", "mql", "sql", "customer"];
 const DEFAULT_VALUE = { lead: 0, mql: 50, sql: 250, customer: 2000 };
 
-/* Mirrors lib/sources.ts and lib/conversions.ts: a landing page reports into
-   its own suffixed action when one is set and falls back to the shared one
-   otherwise, so both are resolved here exactly the way the app resolves them. */
+/* Mirrors lib/sources.ts and lib/conversions.ts: the first landing page reads
+   the unsuffixed variables, every other page reads only its own suffixed ones,
+   and there is no fallback between them for the action id. Resolved here
+   exactly the way the app resolves them, so what this prints is what the app
+   will do. */
 const LANDING_PAGES = [
   { key: "tepa", label: "TEPA", envSuffix: "" },
   { key: "healthcare", label: "Healthcare", envSuffix: "_HEALTHCARE" },
   { key: "clinic", label: "Clinic", envSuffix: "_CLINIC" },
 ];
 
-const envForPage = (base, page) =>
-  (page.envSuffix && env(`${base}${page.envSuffix}`)) || env(base);
+const actionForPage = (stage, page) =>
+  env(`GOOGLE_ADS_ACTION_${stage.toUpperCase()}${page.envSuffix}`);
+
+/* Values are only a weight, so those do still fall back to the shared one. */
+const valueForPage = (stage, page) =>
+  (page.envSuffix && env(`GOOGLE_ADS_VALUE_${stage.toUpperCase()}${page.envSuffix}`)) ||
+  env(`GOOGLE_ADS_VALUE_${stage.toUpperCase()}`);
 
 const configured = [];
 
 for (const page of LANDING_PAGES) {
   console.log(dim(`      ${page.label} (/${page.key})`));
+  let any = false;
 
   for (const stage of STAGES) {
-    const base = `GOOGLE_ADS_ACTION_${stage.toUpperCase()}`;
-    const action = envForPage(base, page);
-    const rawValue = envForPage(`GOOGLE_ADS_VALUE_${stage.toUpperCase()}`, page);
+    const key = `GOOGLE_ADS_ACTION_${stage.toUpperCase()}${page.envSuffix}`;
+    const action = actionForPage(stage, page);
+    const rawValue = valueForPage(stage, page);
     const value = rawValue === "" ? DEFAULT_VALUE[stage] : Number(rawValue);
-    const scoped = page.envSuffix && env(`${base}${page.envSuffix}`);
 
     if (!action) {
       console.log(
@@ -97,38 +104,52 @@ for (const page of LANDING_PAGES) {
     }
     if (!/^\d+$/.test(action)) {
       fail(
-        `${base}${scoped ? page.envSuffix : ""} should be the numeric conversion action ID, got "${action}"`,
+        `${key} should be the numeric conversion action ID, got "${action}"`,
         "Google Ads > Goals > Conversions > the action > the ctId number in the page URL",
       );
       continue;
     }
+    any = true;
+    console.log(ok(`${stage.padEnd(9)} action ${action}, value ${value}`));
+    configured.push({ page: page.key, stage, action, value });
+  }
+
+  /* A page with nothing set is not an error — it may not be live — but it is
+     the one state that used to be silently covered by the shared action, so
+     it is called out rather than left in dim text. */
+  if (!any && page.envSuffix) {
     console.log(
-      ok(
-        `${stage.padEnd(9)} action ${action}, value ${value}` +
-          (scoped ? "" : dim("  (shared)")),
+      warn(
+        `${page.label} has no conversion actions, so its leads are not reported at all.\n` +
+          `      Fix: npm run ads:actions -- --source=${page.key} --create`,
       ),
     );
-    configured.push({ page: page.key, stage, action, value });
   }
 }
 
 /* Two landing pages reporting into one action is legal but it means Smart
    Bidding cannot tell the campaigns apart, so say so rather than let it pass
-   as a working setup. */
-const shared = STAGES.filter((stage) => {
-  const ids = LANDING_PAGES.map((page) =>
-    envForPage(`GOOGLE_ADS_ACTION_${stage.toUpperCase()}`, page),
-  ).filter(Boolean);
-  return ids.length > 1 && new Set(ids).size === 1;
-});
-if (shared.length > 0) {
-  console.log(
-    warn(
-      `Every landing page reports ${shared.join(", ")} into the same conversion action.\n` +
-        "      Each campaign will optimise against the others' leads.\n" +
-        "      Fix: npm run ads:actions -- --source=healthcare --create",
-    ),
-  );
+   as a working setup. Checked per action id so one page having its own set
+   does not hide two others still sharing. */
+for (const stage of STAGES) {
+  const pagesByAction = new Map();
+  for (const page of LANDING_PAGES) {
+    const id = actionForPage(stage, page);
+    if (id) pagesByAction.set(id, [...(pagesByAction.get(id) ?? []), page]);
+  }
+  for (const [id, pages] of pagesByAction) {
+    if (pages.length < 2) continue;
+    console.log(
+      warn(
+        `${pages.map((p) => p.label).join(" and ")} report ${stage} into the same action ${id}.\n` +
+          "      Each campaign will optimise against the others' leads.\n" +
+          `      Fix: ${pages
+            .filter((p) => p.envSuffix)
+            .map((p) => `npm run ads:actions -- --source=${p.key} --create`)
+            .join(" ; ")}`,
+      ),
+    );
+  }
 }
 
 if (configured.length === 0) {
@@ -218,71 +239,92 @@ if (!SEND_TEST) {
 } else if (!accessToken || !customerId || configured.length === 0) {
   console.log(dim("      Skipped — needs a working token, a customer ID, and one stage configured"));
 } else {
-  const target = configured[0];
+  /* One event per landing page, against the first stage it has configured,
+     so a page whose actions were set up separately is proven separately. */
+  const targets = LANDING_PAGES.map((page) =>
+    configured.find((c) => c.page === page.key),
+  ).filter(Boolean);
   const account = { accountType: "GOOGLE_ADS", accountId: customerId };
-  const payload = {
-    destinations: [
-      {
-        operatingAccount: account,
-        loginAccount: loginCustomerId
-          ? { accountType: "GOOGLE_ADS", accountId: loginCustomerId }
-          : account,
-        productDestinationId: target.action,
-      },
-    ],
-    encoding: "HEX",
-    events: [
-      {
-        transactionId: "setup-check-0",
-        eventTimestamp: new Date().toISOString(),
-        eventSource: "WEB",
-        /* Mirror what lib/google-data-manager.ts actually sends, click id and
-           all, so this proves the production payload shape rather than a
-           simplified one that happens to validate. */
-        adIdentifiers: { gclid: "SETUP_CHECK_NOT_A_REAL_CLICK" },
-        userData: {
-          userIdentifiers: [
-            {
-              emailAddress: createHash("sha256")
-                .update("setup-check@example.com", "utf8")
-                .digest("hex"),
-            },
-          ],
+
+  for (const target of targets) {
+    const payload = {
+      destinations: [
+        {
+          operatingAccount: account,
+          loginAccount: loginCustomerId
+            ? { accountType: "GOOGLE_ADS", accountId: loginCustomerId }
+            : account,
+          productDestinationId: target.action,
         },
-        conversionValue: 0,
-        currency: (env("GOOGLE_ADS_CURRENCY") || "USD").toUpperCase(),
-      },
-    ],
-    consent: { adUserData: "CONSENT_GRANTED", adPersonalization: "CONSENT_GRANTED" },
-    /* Nothing is recorded. Google parses and authorises, then discards. */
-    validateOnly: true,
-  };
+      ],
+      encoding: "HEX",
+      events: [
+        {
+          transactionId: `setup-check-${target.page}`,
+          eventTimestamp: new Date().toISOString(),
+          eventSource: "WEB",
+          /* Mirror what lib/google-data-manager.ts actually sends, click id
+             and all, so this proves the production payload shape rather than
+             a simplified one that happens to validate. */
+          adIdentifiers: { gclid: "SETUP_CHECK_NOT_A_REAL_CLICK" },
+          userData: {
+            userIdentifiers: [
+              {
+                emailAddress: createHash("sha256")
+                  .update("setup-check@example.com", "utf8")
+                  .digest("hex"),
+              },
+            ],
+          },
+          conversionValue: 0,
+          currency: (env("GOOGLE_ADS_CURRENCY") || "USD").toUpperCase(),
+        },
+      ],
+      consent: { adUserData: "CONSENT_GRANTED", adPersonalization: "CONSENT_GRANTED" },
+      /* Nothing is recorded. Google parses and authorises, then discards. */
+      validateOnly: true,
+    };
 
-  try {
-    const response = await fetch("https://datamanager.googleapis.com/v1/events:ingest", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-    const text = await response.text();
+    try {
+      const response = await fetch("https://datamanager.googleapis.com/v1/events:ingest", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const text = await response.text();
 
-    if (response.ok) {
-      console.log(ok(`Data Manager accepted a validateOnly event for stage "${target.stage}"`));
-      if (text.trim() && text.trim() !== "{}") console.log(dim(`      ${text.slice(0, 400)}`));
-    } else {
-      fail(`Data Manager rejected the event (HTTP ${response.status})`, text.slice(0, 500));
-      if (response.status === 403) {
+      if (response.ok) {
         console.log(
-          dim("      403 usually means the account is not linked to the Cloud project,"),
+          ok(`${target.page}: Data Manager accepted a validateOnly event for stage "${target.stage}"`),
         );
-        console.log(dim("      or the Data Manager API is not enabled on that project."));
+        if (text.trim() && text.trim() !== "{}") console.log(dim(`      ${text.slice(0, 400)}`));
+      } else if (/NOT_FOUND|Resource not found/i.test(text)) {
+        /* A freshly created action can take hours to reach Data Manager. The
+           app treats this as retryable, so it is a wait, not a failure. */
+        console.log(
+          warn(
+            `${target.page}: Data Manager does not know action ${target.action} yet (HTTP ${response.status}).\n` +
+              "      New conversion actions take a few hours to propagate; uploads retry until it does.",
+          ),
+        );
+      } else {
+        fail(
+          `${target.page}: Data Manager rejected the event (HTTP ${response.status})`,
+          text.slice(0, 500),
+        );
+        if (response.status === 403) {
+          console.log(
+            dim("      403 usually means the account is not linked to the Cloud project,"),
+          );
+          console.log(dim("      or the Data Manager API is not enabled on that project."));
+        }
       }
+    } catch (error) {
+      fail(`${target.page}: could not reach the Data Manager API: ${error.message}`);
     }
-  } catch (error) {
-    fail(`Could not reach the Data Manager API: ${error.message}`);
   }
 }
 
@@ -319,7 +361,7 @@ if (!gtagId) {
     }
     console.log(ok(`${page.label} form submit conversion label set`));
 
-    if (envForPage("GOOGLE_ADS_ACTION_LEAD", page)) {
+    if (actionForPage("lead", page)) {
       console.log(
         warn(
           `Both ${key} and a lead conversion action are set for ${page.label}.\n` +

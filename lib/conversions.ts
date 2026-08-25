@@ -7,6 +7,7 @@ import {
   readConfig,
 } from "./google-data-manager";
 import { LEAD_STATUSES, type LeadStatus } from "./lead-status";
+import { DEFAULT_SOURCE } from "./sources";
 
 /* Pipeline stage changes reported back to Google Ads as offline conversions.
 
@@ -74,18 +75,34 @@ export function validateOnly(): boolean {
   return process.env.GOOGLE_ADS_VALIDATE_ONLY === "true";
 }
 
-/* Landing pages may report into their own conversion actions by suffixing the
-   variable with the source key — GOOGLE_ADS_ACTION_LEAD_HEALTHCARE — which is
-   what lets each campaign bid on its own funnel instead of a pooled one. With
-   no suffixed variable set the shared action is used, so a single landing page
-   setup needs no extra configuration. */
-function envForSource(base: string, source?: string): string | undefined {
-  if (source) {
-    const suffix = source.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
-    const scoped = process.env[`${base}_${suffix}`];
+/* Each landing page reports into its own conversion actions, named by
+   suffixing the variable with the source key — GOOGLE_ADS_ACTION_LEAD_CLINIC.
+   The first page keeps the unsuffixed names it has always used.
+
+   There is deliberately no fallback from a suffixed variable to the shared
+   one. The live TEPA campaigns bid on whatever lands in TEPA's actions, so a
+   page quietly pooling into them because its own variable was left blank would
+   have Smart Bidding optimising TEPA against clinic leads — the exact conflict
+   separate actions exist to prevent. An unconfigured stage is skipped and
+   says so (nothing queued, WARN in ads:check) rather than misreported. */
+function envSuffix(source: string): string {
+  return `_${source.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}`;
+}
+
+function actionIdFor(stage: ConversionStage, source: string): string {
+  const key =
+    source === DEFAULT_SOURCE ? ENV_ACTION[stage] : `${ENV_ACTION[stage]}${envSuffix(source)}`;
+  return (process.env[key] ?? "").trim();
+}
+
+/* Values are only a weight, so a page without its own may share the default
+   page's number, and both fall back to the built in defaults. */
+function valueFor(stage: ConversionStage, source: string): string | undefined {
+  if (source !== DEFAULT_SOURCE) {
+    const scoped = process.env[`${ENV_VALUE[stage]}${envSuffix(source)}`];
     if (scoped !== undefined && scoped.trim()) return scoped;
   }
-  return process.env[base];
+  return process.env[ENV_VALUE[stage]];
 }
 
 /* A stage is only reported when it has a conversion action id. Leaving one
@@ -94,19 +111,19 @@ function envForSource(base: string, source?: string): string | undefined {
    browser, and reporting it here too would count it twice. */
 export function stageConfig(
   stage: ConversionStage,
-  source?: string,
+  source: string = DEFAULT_SOURCE,
 ): StageConfig | null {
-  const conversionActionId = (envForSource(ENV_ACTION[stage], source) ?? "").trim();
+  const conversionActionId = actionIdFor(stage, source);
   if (!conversionActionId) return null;
 
-  const raw = envForSource(ENV_VALUE[stage], source);
+  const raw = valueFor(stage, source);
   const parsed = raw === undefined ? Number.NaN : Number(raw);
   const value = Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_VALUES[stage];
 
   return { stage, conversionActionId, value };
 }
 
-export function configuredStages(source?: string): StageConfig[] {
+export function configuredStages(source: string = DEFAULT_SOURCE): StageConfig[] {
   return LEAD_STATUSES.map((stage) => stageConfig(stage, source)).filter(
     (s): s is StageConfig => s !== null,
   );
@@ -294,7 +311,10 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
         `UPDATE conversion_uploads
          SET status = 'skipped', last_error = $2
          WHERE id = $1`,
-        [job.id, `No conversion action configured for stage "${job.stage}".`],
+        [
+          job.id,
+          `No conversion action configured for stage "${job.stage}" on /${job.source}.`,
+        ],
       );
       result.skipped += 1;
       continue;
