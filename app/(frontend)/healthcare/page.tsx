@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { EnquiryForm } from "./components/EnquiryForm";
 import { GalleryMarquee } from "./components/GalleryMarquee";
-import { ICONS, IconArrow, IconCheckCircle } from "../components/Icons";
+import { HeroWaves } from "./components/HeroWaves";
+import { ICONS, IconArrow, IconCheck, IconCheckCircle } from "../components/Icons";
 import { MobileCta } from "./components/MobileCta";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
@@ -38,10 +39,10 @@ export const metadata: Metadata = {
     siteName: site.org,
     images: [
       {
-        url: "/healthcare/gallery/gallery-6.jpeg",
+        url: hero.photo,
         width: 1400,
-        height: 932,
-        alt: "Hospital leadership receiving the AAA accreditation plaque",
+        height: 933,
+        alt: hero.photoAlt,
       },
     ],
   },
@@ -49,7 +50,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${title} | ${site.org}`,
     description,
-    images: ["/healthcare/gallery/gallery-6.jpeg"],
+    images: [hero.photo],
   },
   robots: { index: true, follow: true },
 };
@@ -99,74 +100,103 @@ export default function HealthcareLandingPage() {
       <SiteHeader />
 
       <main>
+        {/* ================================================================
+            Hero — the same composition as /clinic, carrying this page's copy.
+
+            Two columns that balance themselves. Left: the promise — eyebrow,
+            headline, lede, three numbers — and beneath it a photograph of an
+            accredited organization holding its award. Right: the enquiry
+            form, with the ISQua plate under it. The columns are stretched to
+            one height and the photograph is the piece that flexes, so it
+            takes whatever room the form column leaves rather than being
+            sized by hand.
+
+            The two column wrappers dissolve on narrow screens (display:
+            contents) and the four pieces reorder for a phone: headline,
+            photograph, form, proof — the evidence is seen before the visitor
+            is asked for anything.
+            ================================================================ */}
         <section id="top" className="hc-hero">
-          {/* Decorative background stack, painted under the content. The photo
-              sits at 30% behind the middle of the hero and is masked to fade
-              out on every edge, so it reads as part of the gradient rather
-              than as a rectangle dropped on top of it. */}
-          <div className="hc-hero-aura hc-hero-aura--a" aria-hidden="true" />
-          <div className="hc-hero-aura hc-hero-aura--b" aria-hidden="true" />
-          <div className="hc-rings" aria-hidden="true" />
-          <div className="hc-hero-photo" aria-hidden="true">
-            <Image
-              src="/healthcare/certificate-handover.jpg"
-              alt=""
-              fill
-              priority
-              sizes="(max-width: 1040px) 100vw, 1180px"
-            />
+          {/* The painted ground: ruling, three aurora washes and the wave
+              field, all inert, all under the content. */}
+          <div className="hc-hero-bg" aria-hidden="true">
+            <div className="hc-hero-grid-bg" />
+            <div className="hc-hero-orb hc-hero-orb--gold" />
+            <div className="hc-hero-orb hc-hero-orb--blue" />
+            <div className="hc-hero-orb hc-hero-orb--teal" />
+            <HeroWaves />
           </div>
-          <div className="hc-hero-scrim" aria-hidden="true" />
 
           <div className="hc-shell hc-hero-grid">
-            <div className="hc-hero-copy">
-              <p className="hc-label hc-label--light reveal">{hero.eyebrow}</p>
-              <h1 className="hc-hero-title reveal">
-                {hero.titleLead}{" "}
-                <span className="hc-hero-accent">{hero.titleAccent}</span>
-              </h1>
-              <p className="hc-hero-lede reveal">{hero.lede}</p>
+            <div className="hc-hero-main">
+              <div className="hc-hero-copy">
+                <p className="hc-hero-eyebrow">{hero.eyebrow}</p>
+                <h1>
+                  {hero.titleLead}{" "}
+                  <span className="hc-underline">{hero.titleAccent}</span>
+                </h1>
+                <p className="hc-hero-lede">{hero.lede}</p>
 
-              {/* No booking button: the form beside this copy is the only
-                  thing a visitor is asked to do. */}
-              <div className="hc-hero-actions reveal">
-                <a href="#standards" className="hc-link">
-                  {hero.secondaryCta}
-                  <IconArrow className="hc-icon" />
-                </a>
+                {/* Three numbers, inline rather than boxed. The fourth
+                    credential — who assesses the standards — sits under the
+                    form instead, beside the thing it is there to vouch for. */}
+                <ul className="hc-hero-stats" aria-label="Accreditation trust indicators">
+                  {hero.proof.map((item) => {
+                    const Icon = ICONS[item.icon];
+                    return (
+                      <li className="hc-hero-stat" key={item.label}>
+                        <span className="hc-hero-stat-ico">
+                          <Icon />
+                        </span>
+                        <p>
+                          <b>{item.value}</b>
+                          <small>{item.label}</small>
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
 
-              <dl className="hc-hero-stats reveal">
-                {hero.stats.map((stat) => (
-                  <div className="hc-hero-stat" key={stat.label}>
-                    <dt>{stat.value}</dt>
-                    <dd>{stat.label}</dd>
-                  </div>
-                ))}
-              </dl>
+              {/* The photograph, shown whole. It is a named organization
+                  holding a real award, which is the reason it earns the
+                  room, and the credit says so. */}
+              <figure className="hc-hero-shot">
+                <Image
+                  src={hero.photo}
+                  alt={hero.photoAlt}
+                  fill
+                  preload
+                  quality={92}
+                  sizes="(max-width: 1040px) 100vw, 760px"
+                />
+                <figcaption>
+                  <IconCheck />
+                  {hero.photoCaption}
+                </figcaption>
+              </figure>
             </div>
 
-            <div id="enquire" className="hc-hero-form reveal">
-              <EnquiryForm />
+            {/* A plain div rather than an aside: the wrapper is dissolved with
+                display: contents on narrow screens, which drops a landmark's
+                role in some browsers, so it never carries one. */}
+            <div className="hc-hero-side">
+              <div id="enquire" className="hc-hero-form">
+                <EnquiryForm />
+              </div>
+
+              <p className="hc-hero-isqua">
+                <Image
+                  src="/healthcare/isqua-eea.jpg"
+                  alt="ISQua External Evaluation Association"
+                  width={800}
+                  height={221}
+                />
+                <span>{hero.isquaNote}</span>
+              </p>
             </div>
           </div>
         </section>
-
-        <div className="hc-isqua">
-          <div className="hc-shell hc-isqua-inner">
-            <Image
-              src="/healthcare/isqua-eea.jpg"
-              alt="ISQua External Evaluation Association"
-              width={800}
-              height={221}
-            />
-            <p>
-              <strong>AAA Healthcare Accreditation Standards</strong> have been
-              assessed by ISQua EEA, confirming alignment with international best
-              practice requirements.
-            </p>
-          </div>
-        </div>
 
         <section id="about" className="hc-section hc-section--mist">
           <div className="hc-dots hc-dots--tr" aria-hidden="true" />
@@ -452,7 +482,11 @@ export default function HealthcareLandingPage() {
             {/* Second copy of the hero form, so every CTA below the fold has a
                 form to land on without sending the visitor back to the top. */}
             <div id="apply-form" className="hc-apply-form reveal">
-              <EnquiryForm badge={applyForm.badge} title={applyForm.title} />
+              <EnquiryForm
+                badge={applyForm.badge}
+                title={applyForm.title}
+                layout="stack"
+              />
             </div>
           </div>
         </section>

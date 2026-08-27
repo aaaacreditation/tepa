@@ -48,14 +48,25 @@ function readAttribution() {
 
 type EnquiryFormProps = {
   /* The page renders this form twice; the heading is the only thing that
-     differs between the hero copy and the closing section. */
+     differs between the hero and the closing section. */
   badge?: string;
   title?: string;
+  lede?: string;
+  /* Both placements are a normal vertical form — one field per row, submit
+     underneath. The value only picks the trim: `panel` is the hero card
+     sitting beside the headline, `stack` is the closing card. */
+  layout?: "panel" | "stack";
 };
 
+/* The same card /clinic uses, carrying the healthcare enquiry: seven fields
+   the surveyor needs to pick the applicable standards, plus an optional note
+   on scope. It posts to /api/healthcare/enquiry, which stores the lead under
+   the "healthcare" source and queues the Healthcare Enquiry conversion. */
 export function EnquiryForm({
   badge = formCopy.badge,
   title = formCopy.title,
+  lede = formCopy.lede,
+  layout = "panel",
 }: EnquiryFormProps) {
   const uid = useId();
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
@@ -69,6 +80,8 @@ export function EnquiryForm({
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
 
+    /* Mirrors the server checks in app/api/healthcare/enquiry/route.ts; keep
+       the two in step. */
     const next: Errors = {};
     if (!data.fullName?.trim()) next.fullName = "Please tell us your name.";
     if (!data.organization?.trim()) next.organization = "Please add your facility name.";
@@ -114,7 +127,8 @@ export function EnquiryForm({
       }
 
       /* Only after the server confirmed the lead was stored. Firing on submit
-         would count enquiries that never actually arrived. */
+         would count enquiries that never actually arrived. A blank label is a
+         no-op: the server upload is what counts the lead today. */
       trackConversion(HEALTHCARE_FORM_LABEL, {
         email: data.email?.trim(),
         phone: data.phone?.trim(),
@@ -130,33 +144,36 @@ export function EnquiryForm({
 
   if (status === "sent") {
     return (
-      <div className="hc-form-card hc-form-success" role="status">
-        <span className="hc-success-icon">
+      <div className={`hc-form-card hc-form-card--${layout} hc-form-done`} role="status">
+        <span className="hc-form-tick">
           <IconCheck />
         </span>
-        <p className="hc-form-badge">Thank you</p>
         <h2>{formCopy.successTitle}</h2>
         <p>{formCopy.successBody}</p>
-        <p>
-          Need it sooner? Email <a href={`mailto:${site.email}`}>{site.email}</a>
+        <p className="hc-form-done-mail">
+          Need it sooner? Email <a href={`mailto:${site.email}`}>{site.email}</a> or
+          call <a href={site.phoneHref}>{site.phoneLabel}</a>.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="hc-form-card">
-      <p className="hc-form-badge">{badge}</p>
-      <h2>{title}</h2>
+    <div className={`hc-form-card hc-form-card--${layout}`}>
+      <div className="hc-form-intro">
+        <p className="hc-form-badge">{badge}</p>
+        <h2>{title}</h2>
+        <p className="hc-form-lede">{lede}</p>
+      </div>
 
       <form onSubmit={onSubmit} noValidate className="hc-form">
-        <div className="hc-form-row">
+        <div className="hc-form-fields">
           <Field
             id={fieldId("fullName")}
             name="fullName"
             label="Full name"
             autoComplete="name"
-            placeholder="Dr. Jane Okafor"
+            placeholder="Full name"
             error={errors.fullName}
           />
           <Field
@@ -164,21 +181,17 @@ export function EnquiryForm({
             name="organization"
             label="Facility name"
             autoComplete="organization"
-            placeholder="Riverside Medical Centre"
+            placeholder="Facility name"
             error={errors.organization}
           />
-        </div>
-
-        <Select
-          id={fieldId("facilityType")}
-          name="facilityType"
-          label="Facility type"
-          placeholder="Select a facility type"
-          options={facilityTypes.map((type) => [type, type])}
-          error={errors.facilityType}
-        />
-
-        <div className="hc-form-row">
+          <Select
+            id={fieldId("facilityType")}
+            name="facilityType"
+            label="Facility type"
+            placeholder="Facility type"
+            options={facilityTypes.map((type) => [type, type])}
+            error={errors.facilityType}
+          />
           <Field
             id={fieldId("email")}
             name="email"
@@ -186,27 +199,24 @@ export function EnquiryForm({
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder="name@facility.com"
+            placeholder="Work email"
             error={errors.email}
           />
           <Field
             id={fieldId("phone")}
             name="phone"
-            label="Phone"
+            label="Phone or WhatsApp"
             type="tel"
             inputMode="tel"
             autoComplete="tel"
-            placeholder="With country code"
+            placeholder="Phone or WhatsApp (with country code)"
             error={errors.phone}
           />
-        </div>
-
-        <div className="hc-form-row">
           <Select
             id={fieldId("country")}
             name="country"
             label="Country"
-            placeholder="Select a country"
+            placeholder="Country"
             options={countries.map(([code, name]) => [code, name])}
             error={errors.country}
           />
@@ -216,19 +226,18 @@ export function EnquiryForm({
             label="Website"
             inputMode="url"
             autoComplete="url"
-            placeholder="facility.com"
+            placeholder="Website"
             error={errors.website}
           />
-        </div>
-
-        <div className="hc-field">
-          <label htmlFor={fieldId("message")}>Scope of services (optional)</label>
-          <textarea
-            id={fieldId("message")}
-            name="message"
-            rows={3}
-            placeholder="Departments, bed count, specialties, and any accreditation you already hold"
-          />
+          <div className="hc-field">
+            <label htmlFor={fieldId("message")}>Scope of services (optional)</label>
+            <textarea
+              id={fieldId("message")}
+              name="message"
+              rows={3}
+              placeholder="Scope of services (optional): departments, bed count, specialties, accreditation you already hold"
+            />
+          </div>
         </div>
 
         <div aria-hidden="true" className="hc-honeypot">
@@ -242,34 +251,36 @@ export function EnquiryForm({
           />
         </div>
 
-        {status === "failed" ? (
-          <p role="alert" className="hc-form-error">
-            {message || formCopy.errorGeneric}
+        <div className="hc-form-action">
+          {status === "failed" ? (
+            <p role="alert" className="hc-form-error">
+              {message || formCopy.errorGeneric}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={status === "sending"}
+            className="hc-button hc-button--primary"
+          >
+            {status === "sending" ? (
+              <>
+                <span className="hc-spinner" aria-hidden="true" />
+                {formCopy.submitting}
+              </>
+            ) : (
+              <>
+                {formCopy.submit}
+                <IconArrow className="hc-icon" />
+              </>
+            )}
+          </button>
+
+          <p className="hc-form-note">
+            <IconLock />
+            {formCopy.note}
           </p>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={status === "sending"}
-          className="hc-button hc-button--primary hc-form-submit"
-        >
-          {status === "sending" ? (
-            <>
-              <span className="hc-spinner" aria-hidden="true" />
-              {formCopy.submitting}
-            </>
-          ) : (
-            <>
-              {formCopy.submit}
-              <IconArrow className="hc-icon" />
-            </>
-          )}
-        </button>
-
-        <p className="hc-form-note">
-          <IconLock />
-          {formCopy.note}
-        </p>
+        </div>
       </form>
     </div>
   );
@@ -286,6 +297,9 @@ type FieldProps = {
   error?: string;
 };
 
+/* The visible label is the placeholder, as on /clinic, but a real label is
+   still rendered and visually hidden — a placeholder disappears the moment
+   someone types, and it is not a label to a screen reader at all. */
 function Field({
   id,
   name,

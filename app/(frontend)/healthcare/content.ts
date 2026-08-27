@@ -38,13 +38,23 @@ export const hero = {
   title: "Accreditation designed for sustainable healthcare excellence",
   lede:
     "Internationally aligned standards supporting patient safety, clinical excellence, and organizational performance — for hospitals, clinics, and specialty centres worldwide.",
-  secondaryCta: "See what we evaluate",
-  stats: [
-    { value: "53+", label: "Countries worldwide" },
-    { value: "100+", label: "Surveyors" },
-    { value: "ISQua", label: "Standards assessed by ISQua EEA" },
-    { value: "24/7", label: "Continuous support" },
+  /* An accredited organization holding its award, shown whole beneath the
+     promise the way /clinic shows Domus Salutis. Shared with the gallery
+     rather than duplicated: same people, same photograph. */
+  photo: "/healthcare/gallery/gallery-7.jpeg",
+  photoAlt:
+    "Two Global Medical City clinicians holding their AAA healthcare accreditation plaque",
+  photoCaption: "Global Medical City · Cairo, Egypt",
+  /* Three numbers, each answering a different objection: reach, depth of the
+     surveyor bench, and whether anyone picks up. The fourth credential — who
+     assesses the standards themselves — sits under the form as the ISQua
+     plate, beside the thing it is there to vouch for. */
+  proof: [
+    { icon: "globe", value: "53+", label: "Countries\nworldwide" },
+    { icon: "users", value: "100+", label: "Surveyors" },
+    { icon: "support", value: "24/7", label: "Continuous\nsupport" },
   ],
+  isquaNote: "Healthcare Standards\nAssessed by ISQua EEA",
 } as const;
 
 export const about = {
@@ -343,9 +353,14 @@ export const facilityTypes = [
   "Other healthcare organization",
 ] as const;
 
+/* The hero form and the closing form are the same component. Only the heading
+   changes, so a visitor who read the whole page is not asked the identical
+   question twice. */
 export const formCopy = {
   badge: "Free Eligibility Check",
   title: "Find out which standards apply to your facility",
+  lede:
+    "Tell us a little about your facility, and a surveyor will come back with the standards that apply to your scope of services.",
   note: "No obligation. A surveyor responds with your applicable standards within 48 hours.",
   submit: "Check my eligibility",
   submitting: "Sending",

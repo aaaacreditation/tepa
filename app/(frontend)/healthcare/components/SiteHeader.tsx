@@ -13,7 +13,7 @@ export function SiteHeader() {
             alt={site.org}
             width={595}
             height={200}
-            priority
+            preload
             unoptimized
           />
         </a>

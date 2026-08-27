@@ -1,44 +1,93 @@
 /* /healthcare design system.
 
-   A sibling of tepa.css rather than a copy of it: same architecture (one
-   scoped stylesheet, hand written, no utility framework) and the same body
-   typeface, but its own palette, section rhythm and ornament language.
+   Sibling to clinic.css rather than a copy of it: the same architecture (one
+   scoped stylesheet, hand written, no utility framework), the same palette
+   and the same hero, so the two healthcare pages read as one organisation.
+   The sections below the hero keep this page's own structure — the about
+   split, the world map, the standards ledger, the gallery marquee, the
+   eligibility card — recoloured into that palette.
 
-   Where TEPA is editorial — navy and gold, huge serif headlines, diagonal
-   hatching — this page reads as a clinical standards document: AAA healthcare
-   blue with an aqua accent, ruled section labels, concentric ring and dot grid
-   ornaments, and a ledger for the standards rather than numbered cards. */
+   That palette is AAA navy and gold: deep navy grounds, gold reserved for the
+   things that matter, and generous white between sections. Red is the only
+   colour you can press. Gold points at things; it is never a background for
+   body copy, only for the hairlines, labels and glyphs that lead the eye.
+
+   The page is set entirely in Poppins. A geometric sans with a tall x-height
+   holds a 3rem hero and a 0.9rem card body from one family, so hierarchy is
+   carried by weight and size rather than by a second typeface.
+
+   The page has one job — collect the enquiry — so the form is styled as the
+   brightest object on the screen at every size, and nothing else competes with
+   the gold. */
 
 .hc {
-  --deep: #041a2e;
-  --navy: #062a4a;
-  --blue-900: #0a4373;
-  --blue-800: #0d5088;
-  --blue-700: #12609f;
-  --blue-500: #2477b8;
-  --aqua-700: #0d7f8d;
-  --aqua-600: #12929f;
-  --aqua-500: #16a6b6;
-  --aqua-400: #3fc3d0;
-  --aqua-300: #6fd6de;
-  --aqua-200: #a9e7ec;
-  --mist: #f1f6fa;
-  --paper: #fafcfe;
-  --line: #dce7ef;
-  --line-strong: #c4d6e3;
-  --ink: #0e2233;
-  --ink-soft: #29465e;
+  /* Navy, from the darkest ground up to the link blue. */
+  --navy-deep: #001d33;
+  --navy: #002747;
+  --navy-mid: #002f56;
+  --navy-hi: #003763;
+  --navy-lift: #0a4d80;
+  --navy-line: #17527d;
+
+  /* Gold. The accent does the pointing; it is never a background for body
+     copy, only for the one hairline across the form. */
+  --gold: #f4bd4b;
+  --gold-hi: #ffd472;
+  --gold-deep: #c9922a;
+  --gold-ink: #7a5405;
+  --gold-soft: #fff7e6;
+  --gold-line: #ecd7a2;
+
+  /* Red. Every call to action on the page is red on white, so the scale is
+     built around that pairing: --red is the lightest tone a label ever sits
+     on (5.9:1 against white) and the gradient only travels downwards from
+     there, which keeps the contrast floor at the top edge of the button
+     rather than somewhere in the middle of it. --red-hi is the hover tone and
+     still clears 5:1. */
+  --red: #c8102e;
+  --red-hi: #d81e34;
+  --red-deep: #9d0c22;
+  --red-ink: #7a0617;
+  --red-soft: #fff1f3;
+  --red-line: #f4c9d0;
+
+  --ink: #0b2f51;
+  --ink-soft: #294761;
   --muted: #56697c;
+  --muted-light: rgba(226, 237, 245, 0.78);
+  --line: #dfe6ec;
+  --line-strong: #c8d5df;
+  --mist: #f2f6f9;
+  --paper: #f7fafc;
+  --white: #fff;
   --danger: #b0483d;
-  --display: var(--font-newsreader), Georgia, "Times New Roman", serif;
-  --sans: var(--font-jakarta), Arial, sans-serif;
-  --radius: 16px;
-  --radius-sm: 10px;
+
+  --shadow-sm: 0 8px 22px -14px rgba(0, 39, 71, 0.4);
+  --shadow: 0 18px 44px -26px rgba(0, 39, 71, 0.45);
+  --shadow-lg: 0 34px 80px -40px rgba(0, 30, 53, 0.55);
+
+  --r-lg: 26px;
+  --r: 18px;
+  --r-sm: 12px;
+  --r-btn: 12px;
+
+  --sans: var(--font-poppins), "Segoe UI", system-ui, -apple-system, Arial,
+    sans-serif;
+  /* Both aliases resolve to Poppins. They are kept apart so the display and
+     body roles stay nameable at every call site. */
+  --display: var(--sans);
+  --body: var(--sans);
+
   min-width: 0;
   overflow-x: clip;
   color: var(--ink);
-  background: #fff;
-  font-family: var(--sans);
+  background: var(--white);
+  font-family: var(--body);
+  /* Poppins sets a touch wide for running text at these sizes. */
+  letter-spacing: -0.004em;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .hc *,
@@ -48,8 +97,8 @@
 }
 
 .hc ::selection {
-  color: #fff;
-  background: var(--aqua-600);
+  color: var(--navy-deep);
+  background: var(--gold);
 }
 
 .hc [id] {
@@ -58,6 +107,48 @@
 
 .hc img {
   max-width: 100%;
+}
+
+/* The element resets are wrapped in :where() so they carry zero specificity.
+   Written plainly, `.hc p` (0,1,1) outranks a component class like `.hc-lede`
+   (0,1,0) and silently eats its margins. */
+:where(.hc) h1,
+:where(.hc) h2,
+:where(.hc) h3,
+:where(.hc) h4 {
+  margin: 0;
+  color: inherit;
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.22;
+  text-wrap: balance;
+}
+
+/* Geometric letterforms open up as they scale, so the two display sizes are
+   tracked in rather than left at the small-heading default. */
+:where(.hc) h1 {
+  letter-spacing: -0.034em;
+  line-height: 1.1;
+}
+
+:where(.hc) h2 {
+  letter-spacing: -0.028em;
+  line-height: 1.15;
+}
+
+:where(.hc) figure {
+  margin: 0;
+}
+
+:where(.hc) a {
+  color: inherit;
+}
+
+.hc :focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .hc-shell {
@@ -81,35 +172,37 @@
 
 .hc-section--paper {
   background: var(--paper);
+  border-block: 1px solid var(--line);
 }
 
 .hc-section--white {
-  background: #fff;
+  background: var(--white);
 }
 
 .hc-section--navy {
-  color: #fff;
+  color: var(--white);
   background:
-    radial-gradient(circle at 78% 12%, rgba(22, 166, 182, 0.22), transparent 30rem),
-    radial-gradient(circle at 8% 92%, rgba(36, 119, 184, 0.28), transparent 32rem),
-    linear-gradient(160deg, var(--deep), var(--blue-900) 62%, #062f52);
+    radial-gradient(circle at 82% 8%, rgba(244, 189, 75, 0.14), transparent 30rem),
+    radial-gradient(circle at 8% 92%, rgba(93, 173, 255, 0.16), transparent 32rem),
+    linear-gradient(155deg, var(--navy-hi), var(--navy) 62%, var(--navy-deep));
 }
 
-/* The ornament: a dot grid patch masked into a soft circle. Quieter than
-   TEPA's diagonal hatch and it reads as measurement rather than decoration. */
+/* The ornament: a dot grid patch masked into a soft circle. It reads as
+   measurement rather than decoration, and it is the one piece of this page's
+   own language that survives into the shared palette. */
 .hc-dots {
   position: absolute;
   width: 460px;
   height: 460px;
   pointer-events: none;
-  background-image: radial-gradient(circle, rgba(10, 67, 115, 0.22) 1.2px, transparent 1.2px);
+  background-image: radial-gradient(circle, rgba(0, 39, 71, 0.2) 1.2px, transparent 1.2px);
   background-size: 26px 26px;
   -webkit-mask-image: radial-gradient(circle, #000, transparent 70%);
   mask-image: radial-gradient(circle, #000, transparent 70%);
 }
 
 .hc-dots--light {
-  background-image: radial-gradient(circle, rgba(169, 231, 236, 0.3) 1.2px, transparent 1.2px);
+  background-image: radial-gradient(circle, rgba(244, 189, 75, 0.28) 1.2px, transparent 1.2px);
 }
 
 .hc-dots--tr {
@@ -122,22 +215,6 @@
   left: -150px;
 }
 
-/* Concentric rings, drawn with one repeating gradient instead of a stack of
-   elements so the hero stays a single painted layer. */
-.hc-rings {
-  position: absolute;
-  width: 940px;
-  height: 940px;
-  pointer-events: none;
-  background: repeating-radial-gradient(
-    circle at center,
-    transparent 0 74px,
-    rgba(111, 214, 222, 0.14) 74px 75px
-  );
-  -webkit-mask-image: radial-gradient(circle, #000 20%, transparent 66%);
-  mask-image: radial-gradient(circle, #000 20%, transparent 66%);
-}
-
 /* ==========================================================================
    Section headings
    ========================================================================== */
@@ -147,40 +224,44 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  color: var(--aqua-700);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
+  color: var(--gold-ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   line-height: 1.4;
   text-transform: uppercase;
 }
 
 .hc-label::before {
   content: "";
-  width: 28px;
+  width: 26px;
   height: 2px;
   flex: 0 0 auto;
-  background: currentcolor;
+  background: var(--gold-deep);
 }
 
 .hc-label--light {
-  color: var(--aqua-300);
+  color: var(--gold);
+}
+
+.hc-label--light::before {
+  background: var(--gold);
 }
 
 .hc-title {
   max-width: 20ch;
   margin: 18px 0 0;
-  color: var(--blue-900);
+  color: var(--ink);
   font-family: var(--display);
-  font-size: clamp(2.15rem, 3.6vw, 3.35rem);
-  font-weight: 500;
-  letter-spacing: -0.022em;
-  line-height: 1.08;
+  font-size: clamp(2.05rem, 3.5vw, 3.1rem);
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  line-height: 1.15;
   text-wrap: balance;
 }
 
 .hc-title--light {
-  color: #fff;
+  color: var(--white);
 }
 
 .hc-title--wide {
@@ -189,15 +270,15 @@
 
 .hc-lede {
   max-width: 68ch;
-  margin: 20px 0 0;
+  margin: 18px 0 0;
   color: var(--muted);
-  font-size: 1.03rem;
-  line-height: 1.75;
+  font-size: 1.05rem;
+  line-height: 1.72;
   text-wrap: pretty;
 }
 
 .hc-lede--light {
-  color: rgba(224, 238, 246, 0.8);
+  color: var(--muted-light);
 }
 
 .hc-heading--center {
@@ -218,87 +299,52 @@
   margin-inline: auto;
 }
 
-/* ==========================================================================
-   Buttons and links
-   ========================================================================== */
+/* The one decorated phrase in the hero headline. Drawn as a background so it
+   sits behind the descenders instead of clipping them the way an underline
+   would, and so it survives a line break in the middle of the phrase. */
+.hc-underline {
+  background: linear-gradient(var(--gold), var(--gold)) 0 calc(100% - 6px) / 100% 4px
+    no-repeat;
+}
 
-.hc-button {
+/* Icon tiles.
+
+   A navy squircle carrying a gold Lucide glyph — the page's two brand colours
+   in the one element. The inset highlight is what stops a flat navy square
+   reading as a hole punched in the card: it puts a single pixel of light on
+   the top edge, the way a physical enamel badge catches it.
+
+   The hover state swaps the two colours over. It is driven from the parent
+   card so the whole card is the target, not the tile inside it. */
+.hc-tile {
   display: inline-flex;
-  min-height: 50px;
+  width: 46px;
+  height: 46px;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 13px 26px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
+  flex: 0 0 auto;
+  border-radius: 15px;
+  background: linear-gradient(148deg, var(--navy-hi), var(--navy-deep));
+  color: var(--gold);
+  box-shadow:
+    0 12px 24px -14px rgba(0, 39, 71, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
   transition:
-    transform 180ms ease,
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    color 180ms ease;
+    background 0.24s ease,
+    color 0.24s ease,
+    transform 0.24s ease;
 }
 
-.hc-button:hover {
+.hc-tile svg {
+  width: 23px;
+  height: 23px;
+}
+
+.hc-benefit-card:hover .hc-tile,
+.hc-mv-card:hover .hc-tile {
+  background: linear-gradient(148deg, var(--gold-hi), var(--gold));
+  color: var(--navy-deep);
   transform: translateY(-2px);
-}
-
-.hc-button--primary {
-  color: #fff;
-  background: linear-gradient(135deg, var(--blue-800), var(--blue-900) 60%, #073a64);
-  box-shadow: 0 14px 30px rgba(10, 67, 115, 0.24);
-}
-
-.hc-button--primary:hover {
-  box-shadow: 0 18px 38px rgba(10, 67, 115, 0.32);
-}
-
-.hc-button--aqua {
-  color: #04303a;
-  background: linear-gradient(135deg, var(--aqua-300), var(--aqua-500));
-  box-shadow: 0 14px 32px rgba(18, 146, 159, 0.3);
-}
-
-.hc-button--aqua:hover {
-  box-shadow: 0 18px 40px rgba(18, 146, 159, 0.4);
-}
-
-.hc-button--outline {
-  color: var(--blue-900);
-  border-color: var(--line-strong);
-  background: #fff;
-}
-
-.hc-button--outline:hover {
-  border-color: var(--blue-700);
-  background: #f2f8fd;
-}
-
-.hc-button--outline-light {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.34);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.hc-button--outline-light:hover {
-  border-color: var(--aqua-300);
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.hc-button:focus-visible,
-.hc-link:focus-visible,
-.hc-masthead a:focus-visible,
-.hc-masthead button:focus-visible,
-.hc-footer a:focus-visible,
-.hc-flip:focus-visible {
-  outline: 3px solid var(--aqua-400);
-  outline-offset: 3px;
 }
 
 .hc-icon {
@@ -307,27 +353,77 @@
   flex: 0 0 auto;
 }
 
-.hc-link {
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.hc-button {
   display: inline-flex;
+  min-height: 50px;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  color: var(--aqua-300);
-  font-size: 0.875rem;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 26px;
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  font-family: var(--body);
+  font-size: 0.97rem;
   font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
   text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    color 0.16s ease;
 }
 
-.hc-link--navy {
-  color: var(--blue-700);
+.hc-button:hover {
+  transform: translateY(-2px);
 }
 
-.hc-link .hc-icon {
-  transition: transform 180ms ease;
+.hc-button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+  transform: none;
 }
 
-.hc-link:hover .hc-icon {
-  transform: translateX(4px);
+/* The page has one button you can press, and it is red — the same red as
+   every call to action on /clinic. Gold stays the accent: it points at things. */
+.hc-button--primary {
+  color: var(--white);
+  background: linear-gradient(160deg, var(--red), var(--red-deep));
+  box-shadow: 0 14px 30px -16px rgba(157, 12, 34, 0.9);
+}
+
+.hc-button--primary:hover {
+  background: linear-gradient(160deg, var(--red-hi), var(--red));
+  box-shadow: 0 18px 34px -16px rgba(157, 12, 34, 0.95);
+}
+
+/* On navy the shadow does nothing — a dark glow on a dark ground — so the
+   button is separated from it by a light rim instead. */
+.hc-section--navy .hc-button--primary,
+.hc-apply .hc-button--primary {
+  box-shadow:
+    0 14px 30px -16px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* The one secondary action on the page — the standards overview, which opens
+   the main site — is a quiet outline, so it never ranks against the red. */
+.hc-button--outline {
+  color: var(--navy);
+  border-color: var(--line-strong);
+  background: var(--white);
+}
+
+.hc-button--outline:hover {
+  border-color: var(--gold-deep);
+  background: var(--gold-soft);
 }
 
 /* ==========================================================================
@@ -338,336 +434,841 @@
   position: sticky;
   z-index: 60;
   top: 0;
-  border-bottom: 1px solid rgba(220, 231, 239, 0.9);
+  border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: saturate(150%) blur(10px);
+  backdrop-filter: saturate(1.4) blur(10px);
 }
 
 .hc-masthead-inner {
   display: flex;
-  height: 78px;
+  min-height: 78px;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  gap: 28px;
 }
 
 .hc-brand {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
+  line-height: 0;
 }
 
 .hc-brand img {
   width: auto;
-  height: 50px;
+  height: 46px;
   object-fit: contain;
 }
 
 .hc-nav {
+  flex: 1 1 auto;
   display: flex;
-  align-items: center;
-  gap: 26px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 22px;
 }
 
 .hc-nav a {
-  position: relative;
-  padding: 4px 0;
+  padding: 6px 0;
   color: var(--ink-soft);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;
-  transition: color 160ms ease;
-}
-
-.hc-nav a::after {
-  content: "";
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--aqua-500);
-  transition: width 200ms ease;
+  border-bottom: 2px solid transparent;
+  transition: color 0.16s ease, border-color 0.16s ease;
 }
 
 .hc-nav a:hover {
-  color: var(--blue-900);
-}
-
-.hc-nav a:hover::after {
-  width: 100%;
+  color: var(--navy-mid);
+  border-bottom-color: var(--gold);
 }
 
 .hc-masthead-cta {
-  display: inline-flex;
-  min-height: 42px;
-  align-items: center;
-  padding: 10px 20px;
-  color: #fff;
-  border-radius: 8px;
-  background: var(--blue-900);
-  font-size: 0.82rem;
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  border-radius: var(--r-btn);
+  color: var(--white);
+  background: var(--red);
+  font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
-  transition: background-color 180ms ease;
+  white-space: nowrap;
+  transition: background 0.16s ease, transform 0.16s ease;
 }
 
 .hc-masthead-cta:hover {
-  background: var(--blue-700);
+  background: var(--red-hi);
+  transform: translateY(-1px);
 }
 
 /* ==========================================================================
    Hero
+
+   The composition /clinic uses. Two columns that balance themselves. The
+   left carries the promise — eyebrow, headline, lede, three numbers — and
+   beneath it the photograph of an accredited organization; the right carries
+   the way to act on it, the enquiry card, with the ISQua plate beneath. The
+   columns stretch to one height and the photograph is the flexible piece: it
+   grows into whatever the form column leaves, so the composition closes on
+   one line at every width instead of being tuned by hand for one.
+
+   This form is three fields taller than the clinic's, which is exactly the
+   case the layout was built for: the picture absorbs the difference rather
+   than the copy being padded out to meet the card.
+
+   Ground: a navy gradient, a faint ruling at the top, three aurora washes
+   drifting on their own clocks, and the wave field rising through the foot.
+   All of it is transform-only motion on composited layers, and all of it
+   stops under prefers-reduced-motion.
    ========================================================================== */
 
 .hc-hero {
   position: relative;
+  isolation: isolate;
   overflow: hidden;
-  padding: 92px 0 88px;
-  color: #fff;
-  /* Only the flat base lives here. The two glows that used to be radial
-     gradients on this rule are now their own layers, because a transform on an
-     element is composited on the GPU while an animated background-position
-     repaints the whole hero every frame. */
-  background: linear-gradient(155deg, var(--deep) 4%, var(--blue-900) 58%, #05375f);
+  padding: clamp(40px, 4.5vw, 68px) 0 clamp(52px, 5.5vw, 84px);
+  color: var(--white);
+  background: linear-gradient(148deg, var(--navy-hi), var(--navy) 58%, var(--navy-deep));
+  border-bottom: 1px solid var(--navy-line);
 }
 
-.hc-hero-aura {
+/* Every painted layer lives in this one box, under the content. */
+.hc-hero-bg {
   position: absolute;
-  z-index: 0;
-  width: 46rem;
-  height: 46rem;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.hc-hero-aura--a {
-  top: -17rem;
-  right: -9rem;
-  background: radial-gradient(circle, rgba(22, 166, 182, 0.3), transparent 68%);
-  animation: hcAuraA 26s ease-in-out infinite alternate;
-}
-
-.hc-hero-aura--b {
-  bottom: -20rem;
-  left: -12rem;
-  background: radial-gradient(circle, rgba(13, 80, 136, 0.62), transparent 70%);
-  animation: hcAuraB 34s ease-in-out infinite alternate;
-}
-
-@keyframes hcAuraA {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(-5rem, 4rem, 0) scale(1.14);
-  }
-}
-
-@keyframes hcAuraB {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(6rem, -3rem, 0) scale(1.1);
-  }
-}
-
-.hc-hero .hc-rings {
-  z-index: 0;
-  top: -300px;
-  right: -260px;
-  animation: hcRingBreathe 20s ease-in-out infinite;
-}
-
-/* Concentric circles are rotationally symmetric, so they can only be animated
-   by scale — a slow sonar breath rather than a spin that would look static. */
-@keyframes hcRingBreathe {
-  0%,
-  100% {
-    opacity: 0.9;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.45;
-    transform: scale(1.07);
-  }
-}
-
-/* The certificate handover photo, at the 30% the brief asked for. */
-.hc-hero-photo {
-  position: absolute;
-  z-index: 0;
-  top: 50%;
-  left: 50%;
-  width: min(1180px, 94%);
-  height: 116%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  opacity: 0.3;
-  /* Soft-edged on every side, so the photo has no visible boundary. */
-  -webkit-mask-image: radial-gradient(ellipse at center, #000 22%, transparent 70%);
-  mask-image: radial-gradient(ellipse at center, #000 22%, transparent 70%);
-}
-
-.hc-hero-photo img {
-  object-fit: cover;
-  /* Warm photo over a cold gradient reads as a stain; desaturating it lets the
-     image register as texture without fighting the palette. */
-  filter: saturate(0.4) contrast(1.03);
-  /* Zoomed toward the certificate rather than centred. Centred puts the two
-     faces directly behind the headline, where a half-legible face is far more
-     distracting than the texture is worth. */
-  transform-origin: 66% 82%;
-  animation: hcKenBurns 36s ease-in-out infinite alternate;
-}
-
-@keyframes hcKenBurns {
-  from {
-    transform: scale(1.2);
-  }
-  to {
-    transform: scale(1.34);
-  }
-}
-
-/* Sits above the photo at full strength: the photo's own 30% would apply to a
-   scrim nested inside it, which is the opposite of what protects the text. */
-.hc-hero-scrim {
-  position: absolute;
-  z-index: 0;
   inset: 0;
+  z-index: 0;
+  overflow: hidden;
   pointer-events: none;
-  background:
-    linear-gradient(
-      98deg,
-      rgba(4, 26, 46, 0.9) 4%,
-      rgba(4, 26, 46, 0.66) 30%,
-      rgba(4, 26, 46, 0.18) 52%,
-      transparent 72%
-    ),
-    linear-gradient(180deg, rgba(4, 26, 46, 0.42), transparent 26%),
-    linear-gradient(0deg, rgba(4, 26, 46, 0.52), transparent 34%);
 }
+
+/* Ruling. Reads as measurement rather than decoration, and fades out before
+   it can reach the photograph, where the same lines would read as dirt. */
+.hc-hero-grid-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+  -webkit-mask-image: linear-gradient(#000, transparent 62%);
+  mask-image: linear-gradient(#000, transparent 62%);
+}
+
+/* Aurora. Three soft radial washes — gold behind the headline, blue behind
+   the form, a cooler one low in the middle — each drifting a few percent on
+   its own period and offset, so they never line up and never visibly repeat.
+   Radial gradients rather than blurred boxes: a filter on an element this
+   size is repainted every frame, a gradient is painted once and moved. */
+.hc-hero-orb {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  will-change: transform;
+  animation: hc-orb-drift var(--orb-time, 28s) ease-in-out infinite alternate;
+  animation-delay: var(--orb-delay, 0s);
+}
+
+.hc-hero-orb--gold {
+  top: -24%;
+  left: -14%;
+  width: min(58vw, 860px);
+  background: radial-gradient(
+    circle,
+    rgba(244, 189, 75, 0.2),
+    rgba(244, 189, 75, 0.06) 40%,
+    transparent 68%
+  );
+  --orb-time: 30s;
+}
+
+.hc-hero-orb--blue {
+  top: 2%;
+  right: -16%;
+  width: min(54vw, 800px);
+  background: radial-gradient(
+    circle,
+    rgba(93, 173, 255, 0.2),
+    rgba(93, 173, 255, 0.05) 42%,
+    transparent 68%
+  );
+  --orb-time: 36s;
+  --orb-delay: -14s;
+}
+
+.hc-hero-orb--teal {
+  bottom: -34%;
+  left: 28%;
+  width: min(50vw, 720px);
+  background: radial-gradient(circle, rgba(126, 214, 205, 0.13), transparent 64%);
+  --orb-time: 42s;
+  --orb-delay: -26s;
+}
+
+@keyframes hc-orb-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    transform: translate3d(5%, 7%, 0) scale(1.12);
+  }
+}
+
+/* The wave field. Three copies of one path, each sliding exactly half its
+   own width — the path holds two identical periods, so half a width lands
+   the second where the first was and the loop has no seam. Height, tone,
+   speed and direction are all that differ between the layers, and that
+   difference is what reads as depth.
+
+   Masked at both ends so the waves rise out of the navy rather than being
+   laid across it, and kept to the lower half so nothing moves behind the
+   headline. Motion this slow is atmosphere; anything faster would be a
+   distraction next to the one form the page exists to collect. */
+.hc-waves {
+  position: absolute;
+  inset: auto 0 0;
+  height: min(56%, 420px);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 38%, #000 78%, transparent);
+  mask-image: linear-gradient(transparent, #000 38%, #000 78%, transparent);
+}
+
+.hc-wave {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  /* Twice the container, so translating by half of itself moves the layer by
+     exactly one period of the curve. */
+  width: 200%;
+  animation: hc-wave-drift linear infinite;
+}
+
+.hc-wave path {
+  fill: currentcolor;
+}
+
+.hc-wave--a {
+  height: 100%;
+  color: rgba(255, 255, 255, 0.06);
+  animation-duration: 46s;
+}
+
+.hc-wave--b {
+  height: 76%;
+  color: rgba(244, 189, 75, 0.09);
+  animation-duration: 33s;
+  animation-direction: reverse;
+}
+
+.hc-wave--c {
+  height: 54%;
+  color: rgba(93, 173, 255, 0.085);
+  animation-duration: 23s;
+}
+
+@keyframes hc-wave-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* ---- Layout -------------------------------------------------------------- */
 
 .hc-hero-grid {
   position: relative;
   z-index: 1;
   display: grid;
-  align-items: start;
-  grid-template-columns: minmax(0, 1.04fr) minmax(400px, 0.8fr);
-  gap: 60px;
+  grid-template-columns: minmax(0, 1fr) minmax(384px, 444px);
+  column-gap: clamp(32px, 4.5vw, 72px);
+  align-items: stretch;
 }
 
-.hc-hero-title {
-  max-width: 17ch;
-  margin: 20px 0 0;
-  font-family: var(--display);
-  font-size: clamp(2.5rem, 4.6vw, 4rem);
-  font-weight: 500;
-  letter-spacing: -0.028em;
-  line-height: 1.04;
-  text-wrap: balance;
+.hc-hero-main {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(26px, 3vw, 40px);
+  min-width: 0;
 }
 
-.hc-hero-accent {
-  background: linear-gradient(102deg, var(--aqua-200), var(--aqua-400) 55%, #7cc6ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+.hc-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---- Copy ---------------------------------------------------------------- */
+
+.hc-hero-copy {
+  max-width: 720px;
+}
+
+/* A pill rather than the dash-and-caps the rest of the page uses. It is the
+   first thing above the headline and the only label on a field of navy, so it
+   wants an edge to hold it; the dot pulses once every four seconds, which is
+   enough to say the page is alive and not enough to watch. */
+.hc-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 16px 8px 13px;
+  color: var(--gold);
+  border: 1px solid rgba(244, 189, 75, 0.32);
+  border-radius: 999px;
+  background: rgba(244, 189, 75, 0.09);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.hc-hero-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: hc-pulse 4s ease-out infinite;
+}
+
+@keyframes hc-pulse {
+  0%,
+  70%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 189, 75, 0.5);
+  }
+
+  35% {
+    box-shadow: 0 0 0 7px rgba(244, 189, 75, 0);
+  }
+}
+
+/* Set tighter than the page's other headings: at this size the default
+   tracking and leading leave the lines drifting apart, and closing both up is
+   what makes a headline read as one block. Sized so three lines and the form
+   card share a fold on an ordinary laptop. */
+.hc-hero-copy h1 {
+  margin: 22px 0 0;
+  max-width: 20ch;
+  font-size: clamp(2.3rem, 3.7vw, 3.55rem);
+  font-weight: 600;
+  letter-spacing: -0.032em;
+  line-height: 1.06;
 }
 
 .hc-hero-lede {
-  max-width: 54ch;
-  margin: 24px 0 0;
-  color: rgba(216, 234, 245, 0.82);
-  font-size: 1.06rem;
-  line-height: 1.72;
+  max-width: 60ch;
+  margin: 20px 0 0;
+  color: rgba(226, 238, 247, 0.82);
+  font-size: clamp(0.98rem, 1.05vw, 1.05rem);
+  line-height: 1.7;
+  text-wrap: pretty;
 }
 
-.hc-hero-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 18px;
-  margin-top: 26px;
-}
-
+/* Three numbers set inline under the lede, separated by hairlines, each with
+   its glyph on a small gold tile. No boxes: a glass chip would be one more
+   card on a screen that already has the form and the photograph. */
 .hc-hero-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin: 42px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 0;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .hc-hero-stat {
-  padding: 18px 16px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  transition:
-    background-color 200ms ease,
-    border-color 200ms ease,
-    transform 200ms ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding-right: 26px;
+  margin-right: 26px;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.hc-hero-stat:hover {
-  border-color: rgba(111, 214, 222, 0.4);
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-3px);
+.hc-hero-stat:last-child {
+  padding-right: 0;
+  margin-right: 0;
+  border-right: 0;
 }
 
-.hc-hero-stat dt {
-  color: #fff;
+.hc-hero-stat-ico {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(244, 189, 75, 0.24);
+  border-radius: 12px;
+  background: rgba(244, 189, 75, 0.12);
+  color: var(--gold);
+}
+
+.hc-hero-stat-ico svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hc-hero-stat p {
+  min-width: 0;
+  margin: 0;
+}
+
+.hc-hero-stat b {
+  display: block;
+  color: var(--white);
   font-family: var(--display);
-  font-size: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
-.hc-hero-stat dd {
-  margin: 8px 0 0;
-  color: rgba(190, 219, 235, 0.82);
-  font-size: 0.75rem;
-  line-height: 1.45;
+.hc-hero-stat small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted-light);
+  font-size: 0.79rem;
+  line-height: 1.25;
+  white-space: pre-line;
 }
 
-/* ISQua strip: the single strongest credibility marker, so it gets its own
-   band rather than being buried inside a card. */
-.hc-isqua {
+/* ---- Photograph ---------------------------------------------------------- */
+
+/* `flex: 1` is the whole trick: the figure takes the height the form column
+   leaves, so the picture is as tall as the composition allows and no taller.
+   The floor keeps it a photograph rather than a strip on a short form. Faces
+   sit a third of the way down the frame, so the crop is centred there. */
+.hc-hero-shot {
   position: relative;
-  z-index: 1;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--line);
-  background: #fff;
+  flex: 1 1 auto;
+  min-height: clamp(220px, 21vw, 300px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-lg);
+  background: var(--navy-deep);
+  box-shadow: 0 40px 90px -36px rgba(0, 10, 20, 0.85);
 }
 
-.hc-isqua-inner {
+/* A short grade at the foot of the frame, there for the credit chip. */
+.hc-hero-shot::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 44%;
+  background: linear-gradient(transparent, rgba(0, 16, 30, 0.62));
+  pointer-events: none;
+}
+
+.hc-hero-shot img {
+  object-fit: cover;
+  object-position: 50% 30%;
+}
+
+/* A credit, not a caption. The picture is a named organization holding a
+   real award, and saying so is the difference between evidence and stock. */
+.hc-hero-shot figcaption {
+  position: absolute;
+  z-index: 1;
+  left: clamp(14px, 1.4vw, 18px);
+  bottom: clamp(14px, 1.4vw, 18px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(0, 20, 36, 0.55);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.015em;
+}
+
+.hc-hero-shot figcaption svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--gold);
+}
+
+/* ---- Form and credential ------------------------------------------------- */
+
+/* The closing card stands on flat navy; this one stands on a dark field with
+   something moving in it, and the page's ordinary card shadow disappears
+   against it. A deeper, wider cast plus a hairline of light on the top edge
+   is what keeps it a card sitting on the section rather than a white hole
+   cut out of it. */
+.hc-hero-form .hc-form-card {
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 32px 80px -28px rgba(0, 12, 24, 0.72),
+    0 12px 28px -18px rgba(0, 12, 24, 0.5);
+}
+
+/* The ISQua plate closes the form column: the body that assessed the
+   standards, set directly under the thing it vouches for. The artwork is a
+   JPEG with its own white ground, so it gets a white plate rather than a
+   filter — knocking it out to a silhouette would destroy a mark this page is
+   not licensed to redraw. */
+.hc-hero-isqua {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 22px;
+  gap: 14px;
+  /* Pushed to the foot of its column, so its bottom edge lines up with the
+     photograph's whatever height the copy beside it runs to. */
+  margin: auto 0 0;
+  padding: 12px 16px;
+  color: var(--ink-soft);
+  background: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px -26px rgba(0, 8, 16, 0.9);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: pre-line;
 }
 
-.hc-isqua img {
+.hc-hero-isqua img {
   width: auto;
   height: 42px;
   flex: 0 0 auto;
-  object-fit: contain;
 }
 
-.hc-isqua p {
-  max-width: 78ch;
+/* ---- Entrance ------------------------------------------------------------ */
+
+/* The hero arrives rather than appearing. Each piece lifts a few pixels into
+   place, one after the next, over about a third of a second all told — fast
+   enough that nothing is ever waited for, and `both` is safe because the
+   longest any element stays hidden is its own delay. */
+@keyframes hc-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+}
+
+.hc-hero-copy > *,
+.hc-hero-shot,
+.hc-hero-form,
+.hc-hero-isqua {
+  animation: hc-rise 0.66s cubic-bezier(0.22, 0.82, 0.28, 1) both;
+}
+
+.hc-hero-copy > *:nth-child(2) {
+  animation-delay: 0.07s;
+}
+
+.hc-hero-copy > *:nth-child(3) {
+  animation-delay: 0.13s;
+}
+
+.hc-hero-copy > *:nth-child(4) {
+  animation-delay: 0.19s;
+}
+
+.hc-hero-form {
+  animation-delay: 0.12s;
+}
+
+.hc-hero-shot {
+  animation-delay: 0.22s;
+}
+
+.hc-hero-isqua {
+  animation-delay: 0.28s;
+}
+
+/* ==========================================================================
+   Enquiry form
+
+   One ordinary vertical form, used in both placements: heading, then one
+   field per row, then the button. `panel` is the card standing beside the
+   hero headline and `stack` is the closing card; they differ only in trim.
+
+   The healthcare enquiry asks seven things plus an optional note, which is
+   three rows more than the clinic consultation. They stay one to a row all
+   the same: a pair of half-width fields in a 400px card is too short to show
+   what the visitor typed, and a single column is slower to scan but faster
+   to complete, which is the trade this page wants.
+   ========================================================================== */
+
+.hc-form-card {
+  position: relative;
+  overflow: hidden;
+  padding: 28px 28px 26px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* A hairline of gold across the very top of the card. It is the one piece of
+   ornament the form carries, and it ties the white card back to the navy it
+   sits on. */
+.hc-form-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-hi), var(--gold-deep));
+}
+
+.hc-form-card--stack {
+  padding: 32px 32px 30px;
+}
+
+.hc-form-badge {
+  display: inline-block;
   margin: 0;
-  color: var(--ink-soft);
-  font-size: 0.86rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: var(--gold-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hc-form-intro h2 {
+  margin: 12px 0 0;
+  font-size: clamp(1.3rem, 1.5vw, 1.5rem);
+  line-height: 1.24;
+}
+
+.hc-form-lede {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
   line-height: 1.6;
 }
 
-.hc-isqua strong {
-  color: var(--blue-900);
+.hc-form {
+  margin-top: 20px;
+}
+
+/* One field per row, at every width. */
+.hc-form-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.hc-field {
+  min-width: 0;
+}
+
+/* The placeholder is the visible label, as on /clinic. A real label is
+   still rendered and hidden here — a placeholder vanishes the moment someone
+   types, and it is not a label to a screen reader at all. */
+.hc-field > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hc-field input,
+.hc-field select,
+.hc-field textarea {
+  display: block;
+  width: 100%;
+  height: 52px;
+  padding: 0 15px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-family: var(--body);
+  font-size: 0.95rem;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+/* The one free-text field. Three lines is enough for a scope note and short
+   enough that the card stays a form rather than becoming a letter. */
+.hc-field textarea {
+  height: auto;
+  min-height: 84px;
+  padding: 13px 15px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.hc-field select {
+  appearance: none;
+  padding-right: 40px;
+  /* Chevron drawn in the background so the control keeps one border radius
+     across every platform's native select. */
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 23px, calc(100% - 14px) 23px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+/* A select with nothing chosen shows its placeholder option, which browsers
+   paint in the control's own text colour; matching it to the input
+   placeholders keeps the two kinds of empty field reading the same. */
+.hc-field select:has(option[value=""]:checked) {
+  color: #8798a7;
+}
+
+.hc-field input::placeholder,
+.hc-field textarea::placeholder {
+  color: #8798a7;
+  opacity: 1;
+}
+
+.hc-field input:focus,
+.hc-field select:focus,
+.hc-field textarea:focus {
+  outline: none;
+  background: var(--white);
+  border-color: var(--navy-lift);
+  box-shadow: 0 0 0 3px rgba(10, 77, 128, 0.15);
+}
+
+.hc-field input:focus-visible,
+.hc-field select:focus-visible,
+.hc-field textarea:focus-visible {
+  outline: none;
+}
+
+.hc-field [aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.hc-field-error {
+  margin: 6px 0 0;
+  color: var(--danger);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.hc-honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.hc-form-action {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.hc-form-action .hc-button {
+  width: 100%;
+  min-height: 56px;
+  font-size: 0.97rem;
+}
+
+.hc-form-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.hc-form-note svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--gold-deep);
+}
+
+.hc-form-error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: #fbeae7;
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.hc-spinner {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: hc-spin 0.7s linear infinite;
+}
+
+@keyframes hc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hc-form-done {
+  display: block;
+  text-align: center;
+}
+
+.hc-form-tick {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-line);
+  color: var(--gold-ink);
+}
+
+.hc-form-tick svg {
+  width: 30px;
+  height: 30px;
+}
+
+.hc-form-done h2 {
+  font-size: 1.55rem;
+}
+
+.hc-form-done p {
+  max-width: 52ch;
+  margin: 12px auto 0;
+  color: var(--muted);
+  font-size: 0.97rem;
+  line-height: 1.65;
+}
+
+.hc-form-done-mail a {
+  color: var(--navy-lift);
+  font-weight: 600;
 }
 
 /* ==========================================================================
@@ -702,9 +1303,9 @@
   overflow: hidden;
   padding: 30px 30px 30px 34px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: #fff;
-  box-shadow: 0 18px 44px rgba(10, 67, 115, 0.07);
+  border-radius: var(--r);
+  background: var(--white);
+  box-shadow: 0 18px 44px rgba(0, 39, 71, 0.07);
 }
 
 .hc-mv-card::before {
@@ -714,7 +1315,7 @@
   bottom: 0;
   left: 0;
   width: 4px;
-  background: linear-gradient(180deg, var(--aqua-400), var(--blue-700));
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold-deep));
 }
 
 .hc-mv-head {
@@ -723,31 +1324,13 @@
   gap: 14px;
 }
 
-.hc-tile {
-  display: inline-flex;
-  width: 42px;
-  height: 42px;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  color: #fff;
-  border-radius: 12px;
-  background: linear-gradient(140deg, var(--blue-700), var(--blue-900));
-  box-shadow: 0 8px 18px rgba(10, 67, 115, 0.22);
-}
-
-.hc-tile svg {
-  width: 21px;
-  height: 21px;
-}
-
 .hc-mv-card h3 {
   margin: 0;
-  color: var(--blue-900);
+  color: var(--navy);
   font-family: var(--display);
   font-size: 1.3rem;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 
 .hc-mv-card p {
@@ -811,8 +1394,8 @@
   overflow: hidden;
   padding: 30px 28px 32px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: #fff;
+  border-radius: var(--r);
+  background: var(--white);
   transition:
     transform 220ms ease,
     box-shadow 220ms ease,
@@ -826,13 +1409,13 @@
   left: 0;
   width: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--aqua-400), var(--blue-700));
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-hi), var(--gold-deep));
   transition: width 320ms ease;
 }
 
 .hc-benefit-card:hover {
-  border-color: rgba(18, 146, 159, 0.28);
-  box-shadow: 0 22px 50px rgba(10, 67, 115, 0.1);
+  border-color: var(--gold-line);
+  box-shadow: 0 22px 50px rgba(0, 39, 71, 0.1);
   transform: translateY(-4px);
 }
 
@@ -842,7 +1425,7 @@
 
 .hc-benefit-card h3 {
   margin: 22px 0 0;
-  color: var(--blue-900);
+  color: var(--navy);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -860,7 +1443,7 @@
   position: absolute;
   top: 24px;
   right: 26px;
-  color: rgba(10, 67, 115, 0.14);
+  color: rgba(0, 39, 71, 0.14);
   font-family: var(--display);
   font-size: 1.6rem;
   font-weight: 600;
@@ -901,7 +1484,7 @@
 }
 
 .hc-ledger-index {
-  color: var(--aqua-300);
+  color: var(--gold);
   font-family: var(--display);
   font-size: 1.15rem;
   font-weight: 600;
@@ -914,7 +1497,7 @@
   align-items: center;
   gap: 15px;
   margin: 0;
-  color: #fff;
+  color: var(--white);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -924,8 +1507,9 @@
 .hc-ledger-title .hc-tile {
   width: 40px;
   height: 40px;
-  border: 1px solid rgba(169, 231, 236, 0.26);
-  background: rgba(22, 166, 182, 0.18);
+  border: 1px solid rgba(244, 189, 75, 0.26);
+  border-radius: 12px;
+  background: rgba(244, 189, 75, 0.14);
   box-shadow: none;
 }
 
@@ -948,8 +1532,8 @@
   padding: 22px;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 24px 60px rgba(10, 67, 115, 0.09);
+  background: var(--white);
+  box-shadow: 0 24px 60px rgba(0, 39, 71, 0.09);
 }
 
 .hc-process-figure img {
@@ -1049,7 +1633,7 @@
   flex: 0 0 auto;
   border-radius: 14px;
   background: #dbe6ee;
-  box-shadow: 0 12px 28px rgba(10, 67, 115, 0.12);
+  box-shadow: 0 12px 28px rgba(0, 39, 71, 0.12);
 }
 
 .hc-marquee-item img {
@@ -1089,7 +1673,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #fff;
+  color: var(--white);
   font-size: 0.97rem;
   font-weight: 600;
   line-height: 1.5;
@@ -1099,20 +1683,20 @@
   width: 21px;
   height: 21px;
   flex: 0 0 auto;
-  color: var(--aqua-300);
+  color: var(--gold);
 }
 
 .hc-eligibility-card {
   padding: 36px 34px;
   color: var(--ink);
   border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 30px 70px rgba(2, 18, 33, 0.34);
+  background: var(--white);
+  box-shadow: 0 30px 70px rgba(0, 18, 33, 0.34);
 }
 
 .hc-eligibility-card h3 {
   margin: 0;
-  color: var(--blue-900);
+  color: var(--navy);
   font-family: var(--display);
   font-size: 1.6rem;
   font-weight: 600;
@@ -1158,8 +1742,8 @@
   flex-direction: column;
   padding: 26px 22px 24px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: #fff;
+  border-radius: var(--r);
+  background: var(--white);
   text-align: center;
   transition:
     transform 220ms ease,
@@ -1167,7 +1751,7 @@
 }
 
 .hc-org-card:hover {
-  box-shadow: 0 20px 44px rgba(10, 67, 115, 0.12);
+  box-shadow: 0 20px 44px rgba(0, 39, 71, 0.12);
   transform: translateY(-4px);
 }
 
@@ -1178,7 +1762,7 @@
   height: 108px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: #fff;
+  background: var(--white);
 }
 
 .hc-org-logo img {
@@ -1190,7 +1774,7 @@
 
 .hc-org-card h3 {
   margin: 20px 0 0;
-  color: var(--blue-900);
+  color: var(--navy);
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.35;
@@ -1225,7 +1809,7 @@
   height: 354px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius);
+  border-radius: var(--r);
   outline-offset: 4px;
   background: none;
   font: inherit;
@@ -1260,7 +1844,7 @@
   position: absolute;
   overflow: hidden;
   inset: 0;
-  border-radius: var(--radius);
+  border-radius: var(--r);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
@@ -1271,7 +1855,7 @@
   flex-direction: column;
   padding: 26px 22px 24px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--white);
   text-align: center;
 }
 
@@ -1284,7 +1868,7 @@
   flex: 0 0 auto;
   border: 4px solid var(--mist);
   border-radius: 50%;
-  background: var(--blue-900);
+  background: var(--navy);
 }
 
 .hc-portrait img {
@@ -1297,7 +1881,7 @@
 .hc-flip-name {
   display: block;
   margin-top: 22px;
-  color: var(--blue-900);
+  color: var(--navy);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -1307,7 +1891,7 @@
 .hc-flip-role {
   display: block;
   margin-top: 8px;
-  color: var(--aqua-700);
+  color: var(--gold-ink);
   font-size: 0.79rem;
   font-weight: 600;
   line-height: 1.5;
@@ -1326,19 +1910,19 @@
   display: flex;
   flex-direction: column;
   padding: 26px 22px;
-  color: #fff;
-  background: linear-gradient(160deg, var(--blue-900), var(--deep));
+  color: var(--white);
+  background: linear-gradient(160deg, var(--navy-hi), var(--navy-deep));
   transform: rotateY(180deg);
 }
 
 .hc-flip-back .hc-flip-name {
   margin-top: 0;
-  color: #fff;
+  color: var(--white);
   font-size: 1rem;
 }
 
 .hc-flip-back .hc-flip-role {
-  color: var(--aqua-300);
+  color: var(--gold);
 }
 
 .hc-flip-bio {
@@ -1352,7 +1936,7 @@
   font-size: 0.8rem;
   line-height: 1.62;
   scrollbar-width: thin;
-  scrollbar-color: rgba(169, 231, 236, 0.45) transparent;
+  scrollbar-color: rgba(244, 189, 75, 0.45) transparent;
 }
 
 .hc-flip-bio::-webkit-scrollbar {
@@ -1361,7 +1945,7 @@
 
 .hc-flip-bio::-webkit-scrollbar-thumb {
   border-radius: 3px;
-  background: rgba(169, 231, 236, 0.45);
+  background: rgba(244, 189, 75, 0.45);
 }
 
 /* ==========================================================================
@@ -1372,10 +1956,10 @@
   position: relative;
   overflow: hidden;
   padding: 104px 0;
-  color: #fff;
+  color: var(--white);
   background:
-    radial-gradient(circle at 15% 10%, rgba(22, 166, 182, 0.22), transparent 30rem),
-    linear-gradient(150deg, var(--blue-900), var(--deep) 72%);
+    radial-gradient(circle at 12% 10%, rgba(244, 189, 75, 0.16), transparent 32rem),
+    linear-gradient(150deg, var(--navy-hi), var(--navy) 60%, var(--navy-deep));
 }
 
 .hc-apply-grid {
@@ -1398,7 +1982,7 @@
 }
 
 .hc-apply-email a {
-  color: var(--aqua-300);
+  color: var(--gold);
   text-decoration: none;
 }
 
@@ -1428,7 +2012,7 @@
   left: 0;
   padding: 34px 24px 20px;
   color: rgba(226, 240, 248, 0.86);
-  background: linear-gradient(0deg, rgba(4, 26, 46, 0.94), transparent);
+  background: linear-gradient(0deg, rgba(0, 29, 51, 0.94), transparent);
   font-size: 0.8rem;
   line-height: 1.55;
 }
@@ -1436,232 +2020,9 @@
 .hc-apply-photo figcaption span {
   display: block;
   margin-bottom: 4px;
-  color: #fff;
+  color: var(--white);
   font-size: 0.92rem;
   font-weight: 700;
-}
-
-/* ==========================================================================
-   Enquiry form
-   ========================================================================== */
-
-.hc-form-card {
-  overflow: hidden;
-  padding: 32px;
-  color: var(--ink);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 20px;
-  background: linear-gradient(150deg, #fff, #f7fbfd);
-  box-shadow: 0 34px 80px rgba(2, 18, 33, 0.36);
-}
-
-.hc-form-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 6px 12px;
-  color: var(--aqua-700);
-  border: 1px solid rgba(18, 146, 159, 0.24);
-  border-radius: 999px;
-  background: rgba(22, 166, 182, 0.08);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
-
-.hc-form-card h2 {
-  margin: 14px 0 0;
-  color: var(--blue-900);
-  font-family: var(--display);
-  font-size: clamp(1.5rem, 2.1vw, 1.85rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-
-.hc-form {
-  display: grid;
-  gap: 14px;
-  margin-top: 22px;
-}
-
-.hc-form-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.hc-field label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--ink-soft);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.hc-field input,
-.hc-field select,
-.hc-field textarea {
-  display: block;
-  width: 100%;
-  min-height: 46px;
-  padding: 11px 14px;
-  color: var(--ink);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  outline: none;
-  background: #fff;
-  font: inherit;
-  font-size: 0.84rem;
-  line-height: 1.4;
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-}
-
-.hc-field textarea {
-  min-height: 82px;
-  resize: vertical;
-}
-
-.hc-field input::placeholder,
-.hc-field textarea::placeholder {
-  color: #93a5b5;
-  opacity: 1;
-}
-
-.hc-field input:focus,
-.hc-field select:focus,
-.hc-field textarea:focus {
-  border-color: var(--aqua-500);
-  box-shadow: 0 0 0 3px rgba(22, 166, 182, 0.16);
-}
-
-.hc-field input[aria-invalid="true"],
-.hc-field select[aria-invalid="true"] {
-  border-color: var(--danger);
-}
-
-.hc-field-error {
-  margin: 5px 2px 0;
-  color: #98392f;
-  font-size: 0.7rem;
-  line-height: 1.4;
-}
-
-.hc-form-error {
-  margin: 0;
-  padding: 10px 12px;
-  color: #8f362d;
-  border-radius: var(--radius-sm);
-  background: #fbeeec;
-  font-size: 0.76rem;
-  line-height: 1.5;
-}
-
-.hc-form-submit {
-  width: 100%;
-  margin-top: 2px;
-  border: 0;
-}
-
-.hc-form-submit:disabled {
-  cursor: wait;
-  opacity: 0.7;
-  transform: none;
-}
-
-.hc-form-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0;
-  color: #64798c;
-  font-size: 0.7rem;
-  line-height: 1.55;
-}
-
-.hc-form-note svg {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
-  margin-top: 2px;
-  color: var(--aqua-600);
-}
-
-.hc-honeypot {
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.hc-spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: hcSpin 800ms linear infinite;
-}
-
-@keyframes hcSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.hc-form-success {
-  display: flex;
-  min-height: 520px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  padding: 44px 34px;
-  text-align: center;
-}
-
-.hc-success-icon {
-  display: inline-flex;
-  width: 62px;
-  height: 62px;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 22px;
-  color: #fff;
-  border-radius: 50%;
-  background: linear-gradient(140deg, var(--aqua-400), var(--aqua-700));
-  box-shadow: 0 14px 30px rgba(18, 146, 159, 0.3);
-}
-
-.hc-success-icon svg {
-  width: 28px;
-  height: 28px;
-}
-
-.hc-form-success h2 {
-  margin: 12px 0 0;
-}
-
-.hc-form-success p {
-  max-width: 44ch;
-  margin: 16px 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.7;
-}
-
-.hc-form-success a {
-  color: var(--blue-700);
-  font-weight: 600;
 }
 
 /* ==========================================================================
@@ -1671,7 +2032,7 @@
 .hc-footer {
   padding: 72px 0 26px;
   color: rgba(214, 232, 243, 0.76);
-  background: var(--deep);
+  background: var(--navy-deep);
 }
 
 .hc-footer-grid {
@@ -1682,7 +2043,7 @@
 
 .hc-footer h2 {
   margin: 0 0 18px;
-  color: #fff;
+  color: var(--white);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -1724,9 +2085,9 @@
 }
 
 .hc-footer-socials a:hover {
-  color: #04303a;
+  color: var(--navy-deep);
   border-color: transparent;
-  background: var(--aqua-300);
+  background: var(--gold);
 }
 
 .hc-footer-socials svg {
@@ -1749,7 +2110,7 @@
 
 .hc-footer-links a:hover,
 .hc-footer-contact a:hover {
-  color: var(--aqua-300);
+  color: var(--gold);
 }
 
 .hc-footer-contact {
@@ -1773,7 +2134,7 @@
   height: 17px;
   flex: 0 0 auto;
   margin-top: 3px;
-  color: var(--aqua-400);
+  color: var(--gold);
 }
 
 .hc-footer-bottom {
@@ -1793,7 +2154,7 @@
 }
 
 .hc-footer-bottom a {
-  color: var(--aqua-300);
+  color: var(--gold);
   text-decoration: none;
 }
 
@@ -1833,7 +2194,6 @@
     width: min(1100px, calc(100% - 40px));
   }
 
-  .hc-hero-grid,
   .hc-apply-grid {
     grid-template-columns: minmax(0, 1fr) minmax(360px, 0.85fr);
     gap: 40px;
@@ -1854,24 +2214,51 @@
     display: none;
   }
 
-  /* One column means the copy runs the full width, so the scrim can no longer
-     be a left-to-right wipe — it would cover the photo entirely. It becomes a
-     vertical one instead: heavy behind the headline and lede, opening up around
-     the stat tiles where there is no small text to protect. */
-  .hc-hero-photo {
-    top: 40%;
-    width: 130%;
-    height: min(62%, 620px);
+  /* Under 1040px the hero's two columns fold into one. The column wrappers
+     give up their boxes (display: contents) so the four pieces become grid
+     children again and can be ordered for a phone: headline, photograph,
+     form, proof. The picture sits between the promise and the form, so the
+     evidence is seen before the visitor is asked for anything. */
+  .hc-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 26px;
   }
 
-  .hc-hero-scrim {
-    background: linear-gradient(
-      180deg,
-      rgba(4, 26, 46, 0.9) 14%,
-      rgba(4, 26, 46, 0.58) 34%,
-      rgba(4, 26, 46, 0.32) 56%,
-      rgba(4, 26, 46, 0.78) 92%
-    );
+  .hc-hero-main,
+  .hc-hero-side {
+    display: contents;
+  }
+
+  .hc-hero-copy {
+    order: 1;
+    max-width: none;
+  }
+
+  .hc-hero-copy h1 {
+    max-width: 18ch;
+  }
+
+  /* One column wide the picture has the full width to itself, so it takes a
+     fixed window rather than flexing against a column that no longer exists. */
+  .hc-hero-shot {
+    order: 2;
+    flex: none;
+    min-height: 0;
+    height: clamp(230px, 46vw, 420px);
+  }
+
+  /* Capped so eight stacked fields do not stretch into a ribbon on a tablet;
+     the plate under it keeps the same edge. */
+  .hc-hero-form {
+    order: 3;
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .hc-hero-isqua {
+    order: 4;
+    width: 100%;
+    max-width: 640px;
   }
 
   .hc-benefit-grid,
@@ -1880,19 +2267,16 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hc-hero-grid,
   .hc-about-grid,
   .hc-eligibility-grid,
   .hc-apply-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .hc-hero-grid,
   .hc-apply-grid {
     gap: 48px;
   }
 
-  .hc-hero-title,
   .hc-title {
     max-width: 22ch;
   }
@@ -1918,23 +2302,106 @@
   }
 
   .hc-hero {
-    padding: 56px 0 64px;
+    padding: 36px 0 46px;
   }
 
   .hc-masthead-inner {
-    height: 68px;
+    min-height: 66px;
+    gap: 14px;
   }
 
   .hc-brand img {
-    height: 42px;
+    height: 38px;
   }
 
+  .hc-masthead-cta {
+    padding: 10px 14px;
+    font-size: 0.8rem;
+  }
+
+  /* ---- Type -------------------------------------------------------------
+     Every display size is set in vw between a floor and a ceiling, so the
+     steps between them hold from a 320px phone to a 720px one instead of
+     collapsing into each other at the bottom of the range. */
+  .hc-hero-copy h1 {
+    max-width: none;
+    font-size: clamp(1.85rem, 8.4vw, 2.5rem);
+    letter-spacing: -0.032em;
+    line-height: 1.14;
+  }
+
+  .hc-title {
+    font-size: clamp(1.5rem, 6.6vw, 2.05rem);
+    letter-spacing: -0.026em;
+    line-height: 1.2;
+  }
+
+  .hc-hero-lede,
+  .hc-lede {
+    font-size: 0.94rem;
+    line-height: 1.68;
+  }
+
+  .hc-label {
+    font-size: 0.71rem;
+  }
+
+  /* ---- Stats --------------------------------------------------------------
+     The three numbers share the row evenly; the hairlines between them stay. */
   .hc-hero-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 22px;
   }
 
-  .hc-eligibility-list,
-  .hc-form-row {
+  .hc-hero-stat {
+    flex: 1 1 0;
+    gap: 10px;
+    padding-right: 12px;
+    margin-right: 12px;
+  }
+
+  .hc-hero-stat-ico {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hc-hero-stat b {
+    font-size: 1.45rem;
+  }
+
+  .hc-hero-stat small {
+    font-size: 0.75rem;
+  }
+
+  /* ---- Photograph and plate ---------------------------------------------- */
+  .hc-hero-shot {
+    height: clamp(210px, 58vw, 340px);
+    border-radius: var(--r);
+  }
+
+  .hc-hero-shot figcaption {
+    left: 12px;
+    bottom: 12px;
+    font-size: 0.75rem;
+  }
+
+  .hc-hero-isqua {
+    padding: 10px 14px;
+    font-size: 0.78rem;
+  }
+
+  .hc-hero-isqua img {
+    height: 36px;
+  }
+
+  /* A 16px control is the smallest iOS will render without zooming the whole
+     page on focus, which on a form this long throws the layout sideways. */
+  .hc-field input,
+  .hc-field select,
+  .hc-field textarea {
+    font-size: 1rem;
+  }
+
+  .hc-eligibility-list {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -1945,6 +2412,11 @@
   }
 
   .hc-form-card,
+  .hc-form-card--stack {
+    padding: 22px 18px 20px;
+    border-radius: var(--r);
+  }
+
   .hc-eligibility-card {
     padding: 26px 22px;
   }
@@ -1987,7 +2459,7 @@
 
   .hc-mobile-cta .hc-button {
     width: 100%;
-    box-shadow: 0 16px 36px rgba(2, 18, 33, 0.34);
+    box-shadow: 0 16px 36px rgba(0, 18, 33, 0.34);
   }
 
   .hc-flip {
@@ -2010,14 +2482,20 @@
     transform: none;
   }
 
-  /* Pin the hero's moving layers to their resting composition. Only the image
-     inside .hc-hero-photo is reset — the wrapper's transform is its centring,
-     not an animation. */
-  .hc-hero-aura,
-  .hc-hero .hc-rings,
-  .hc-hero-photo img {
+  /* Pin the hero's moving layers to their resting composition, and let the
+     pieces that would otherwise rise into place simply be there. */
+  .hc-hero-orb,
+  .hc-wave,
+  .hc-hero-eyebrow::before {
     animation: none !important;
     transform: none;
+  }
+
+  .hc-hero-copy > *,
+  .hc-hero-shot,
+  .hc-hero-form,
+  .hc-hero-isqua {
+    animation: none;
   }
 
   /* An endlessly moving strip is exactly what this setting asks us to stop.

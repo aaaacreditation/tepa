@@ -329,6 +329,8 @@ export const ICONS = {
   userCheck: IconUserCheck,
   building: IconBuilding,
   chart: IconChart,
+  users: IconUsers,
+  support: IconSupport,
 } as const;
 
 export type IconName = keyof typeof ICONS;
