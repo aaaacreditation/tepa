@@ -128,12 +128,6 @@ export default async function SourceDashboard({
     utmSource: lead.utmSource,
     utmMedium: lead.utmMedium,
     uploads: uploadsByLead[lead.id] ?? [],
-    qualificationScore: lead.qualificationScore,
-    /* '' for every lead created before qualification existed. The table reads
-       that as unscored and shows no badge, rather than showing a verdict the
-       scorer never actually reached. */
-    qualificationTier: lead.qualificationTier,
-    qualificationReasons: lead.qualificationReasons ?? [],
   }));
 
   const eventsByLead: Record<number, TableEvent[]> = {};

@@ -7,7 +7,6 @@ import {
 } from "@/lib/attribution";
 import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
-import { type Qualification, scoreLead } from "@/lib/qualification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +34,6 @@ export type Enquiry = {
   receivedAt: string;
   source: string;
   attribution: Attribution;
-  qualification: Qualification;
 };
 
 /* Small in memory throttle. Enough to blunt casual abuse on a single instance;
@@ -113,19 +111,6 @@ export async function POST(request: Request) {
 
   const message = clean(payload.message);
 
-  /* Scored here, at submit, and stored on the row. Doing it on read would mean
-     a later change to the weights quietly rewriting verdicts a reviewer had
-     already worked from. This only informs the dashboard — nothing about the
-     tier changes what is reported to Google Ads. */
-  const qualification = scoreLead({
-    fullName,
-    organization,
-    email,
-    website,
-    message,
-    countryCode: country,
-  });
-
   const enquiry: Enquiry = {
     fullName,
     organization,
@@ -138,7 +123,6 @@ export async function POST(request: Request) {
     receivedAt: new Date().toISOString(),
     source: "tepa",
     attribution,
-    qualification,
   };
 
   try {
@@ -170,7 +154,6 @@ async function deliver(enquiry: Enquiry) {
     website: enquiry.website,
     message: enquiry.message,
     attribution: enquiry.attribution,
-    qualification: enquiry.qualification,
   });
   console.info("[tepa/enquiry]", JSON.stringify(enquiry));
 

@@ -71,16 +71,7 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS clicked_at    TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS leads_gclid_idx ON leads (gclid) WHERE gclid <> '';
 
-/* Qualification. The score and tier are computed once at insert time by
-   lib/qualification.ts rather than on every dashboard render, so a change to
-   the scoring never silently rewrites the history a reviewer has already acted
-   on. Every column carries the same '' / 0 default as its neighbours, so the
-   leads that predate this still read without a null check and land on tier ''
-   — which the dashboard renders as "not scored" rather than as a judgement it
-   never made. Reasons are newline joined: short sentences for a human to read,
-   never queried.
-
-   organization_type, program_count and contact_role backed three extra form
+/* organization_type, program_count and contact_role backed three extra form
    questions that were removed for making the form too long. They are kept
    rather than dropped: the columns are empty and cost nothing, dropping them
    is irreversible, and re-adding the questions later would otherwise mean
@@ -88,20 +79,14 @@ CREATE INDEX IF NOT EXISTS leads_gclid_idx ON leads (gclid) WHERE gclid <> '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS organization_type     TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS program_count         TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_role          TEXT NOT NULL DEFAULT '';
-ALTER TABLE leads ADD COLUMN IF NOT EXISTS qualification_score   INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE leads ADD COLUMN IF NOT EXISTS qualification_tier    TEXT NOT NULL DEFAULT '';
-ALTER TABLE leads ADD COLUMN IF NOT EXISTS qualification_reasons TEXT NOT NULL DEFAULT '';
 
-/* Dropped and re-added by name so the pair stays re-runnable, the same way the
-   conversion_uploads status check is handled below. '' is a member because
-   pre-qualification rows keep it. */
-ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_qualification_tier_check;
-ALTER TABLE leads ADD  CONSTRAINT leads_qualification_tier_check
-  CHECK (qualification_tier IN ('', 'disqualified', 'weak', 'qualified', 'strong'));
-
-CREATE INDEX IF NOT EXISTS leads_qualification_idx
-  ON leads (qualification_tier, created_at DESC)
-  WHERE qualification_tier <> '';
+/* The form-fit scorer that filled qualification_score / _tier / _reasons was
+   removed: its verdict contradicted the stage a human had set — a lead sitting
+   at SQL still wore a "Weak" fit badge — and a label that argues with the
+   pipeline is worse than no label. The columns are deliberately not dropped;
+   they keep their defaults, nothing reads or writes them, and the rows already
+   scored keep what they had. The index and check constraint that came with
+   them are left in place on existing databases for the same reason. */
 
 /* Outbox for offline conversion uploads. A row is written the moment a lead
    reaches a stage; the sender drains it separately so a Google outage costs a
