@@ -47,11 +47,6 @@ function readAttribution() {
 }
 
 type EnquiryFormProps = {
-  /* The page renders this form twice; the heading is the only thing that
-     differs between the hero and the closing section. */
-  badge?: string;
-  title?: string;
-  lede?: string;
   /* Both placements are a normal vertical form — one field per row, submit
      underneath. The value only picks the trim: `panel` is the hero card
      sitting beside the headline, `stack` is the closing card. */
@@ -62,12 +57,7 @@ type EnquiryFormProps = {
    the surveyor needs to pick the applicable standards, plus an optional note
    on scope. It posts to /api/healthcare/enquiry, which stores the lead under
    the "healthcare" source and queues the Healthcare Enquiry conversion. */
-export function EnquiryForm({
-  badge = formCopy.badge,
-  title = formCopy.title,
-  lede = formCopy.lede,
-  layout = "panel",
-}: EnquiryFormProps) {
+export function EnquiryForm({ layout = "panel" }: EnquiryFormProps) {
   const uid = useId();
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const [errors, setErrors] = useState<Errors>({});
@@ -160,12 +150,6 @@ export function EnquiryForm({
 
   return (
     <div className={`hc-form-card hc-form-card--${layout}`}>
-      <div className="hc-form-intro">
-        <p className="hc-form-badge">{badge}</p>
-        <h2>{title}</h2>
-        <p className="hc-form-lede">{lede}</p>
-      </div>
-
       <form onSubmit={onSubmit} noValidate className="hc-form">
         <div className="hc-form-fields">
           <Field

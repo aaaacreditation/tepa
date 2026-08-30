@@ -11,7 +11,6 @@ import { TeamGrid } from "./components/TeamGrid";
 import {
   about,
   apply,
-  applyForm,
   benefits,
   eligibility,
   gallery,
@@ -482,11 +481,7 @@ export default function HealthcareLandingPage() {
             {/* Second copy of the hero form, so every CTA below the fold has a
                 form to land on without sending the visitor back to the top. */}
             <div id="apply-form" className="hc-apply-form reveal">
-              <EnquiryForm
-                badge={applyForm.badge}
-                title={applyForm.title}
-                layout="stack"
-              />
+              <EnquiryForm layout="stack" />
             </div>
           </div>
         </section>

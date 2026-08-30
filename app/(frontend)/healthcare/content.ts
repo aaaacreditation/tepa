@@ -353,26 +353,15 @@ export const facilityTypes = [
   "Other healthcare organization",
 ] as const;
 
-/* The hero form and the closing form are the same component. Only the heading
-   changes, so a visitor who read the whole page is not asked the identical
-   question twice. */
+/* The hero form and the closing form are the same component, and both open
+   straight on the first field: the section around each one already says what
+   the form is for, so a heading inside the card only repeats it. */
 export const formCopy = {
-  badge: "Free Eligibility Check",
-  title: "Find out which standards apply to your facility",
-  lede:
-    "Tell us a little about your facility, and a surveyor will come back with the standards that apply to your scope of services.",
   note: "No obligation. A surveyor responds with your applicable standards within 48 hours.",
-  submit: "Check my eligibility",
+  submit: "Book a Consultation",
   submitting: "Sending",
   successTitle: "Enquiry received",
   successBody:
     "Thank you. A surveyor will review your facility and be in touch within 48 hours with the standards that apply to your scope of services.",
   errorGeneric: "Something went wrong on our side. Please try again, or email us directly.",
-} as const;
-
-/* The closing section repeats the hero form. Only the heading changes, so a
-   visitor who read the whole page is not asked the identical question twice. */
-export const applyForm = {
-  badge: "Start your application",
-  title: "Tell us about your facility",
 } as const;
