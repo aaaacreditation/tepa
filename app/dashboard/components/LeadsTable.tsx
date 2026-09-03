@@ -2,6 +2,8 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import {
+  DESTINATION_LABEL,
+  type Destination,
   LEAD_STATUSES,
   STAGE_COLORS,
   STATUS_LABEL,
@@ -38,10 +40,12 @@ export type TableLead = {
 
 export type TableEvent = { id: number; label: string };
 
-/* One offline conversion upload to Google Ads for a single pipeline stage. */
+/* One offline conversion upload to an ad platform for a single pipeline
+   stage. A stage has one row per platform. */
 export type TableUpload = {
   id: number;
   stage: LeadStatus;
+  destination: Destination;
   status: "pending" | "sending" | "sent" | "failed" | "skipped";
   attempts: number;
   lastError: string;
@@ -50,7 +54,7 @@ export type TableUpload = {
 };
 
 const UPLOAD_LABEL: Record<TableUpload["status"], string> = {
-  sent: "Sent to Google Ads",
+  sent: "Sent",
   sending: "Sending",
   pending: "Queued",
   failed: "Failed",
@@ -440,10 +444,10 @@ function LeadRow({
                 </div>
 
                 <div>
-                  <p className="dash-eyebrow text-navy-500">Google Ads conversions</p>
+                  <p className="dash-eyebrow text-navy-500">Ad platform conversions</p>
                   {lead.uploads.length === 0 ? (
                     <p className="mt-1.5 text-xs text-ink-500">
-                      Nothing queued. Stages only report when a conversion action is configured
+                      Nothing queued. Stages only report to a platform that is configured
                       for them.
                     </p>
                   ) : (
@@ -452,6 +456,9 @@ function LeadRow({
                         <li key={upload.id} className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-ink-700">
                             {STATUS_LABEL[upload.stage]}
+                          </span>
+                          <span className="text-ink-500">
+                            {DESTINATION_LABEL[upload.destination]}
                           </span>
                           <span
                             className={`rounded px-1.5 py-0.5 font-medium ${UPLOAD_TONE[upload.status]}`}

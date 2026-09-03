@@ -4,7 +4,9 @@ import { useId, useState } from "react";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
 import { countries } from "@/lib/countries";
 import { formCopy, site } from "../content";
+import { SOURCES } from "@/lib/sources";
 import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
+import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
 import { IconArrow, IconCheck } from "./Icons";
 
 type RequiredField = "fullName" | "organization" | "email" | "phone" | "country" | "website";
@@ -89,13 +91,16 @@ export function EnquiryForm({
     }
 
     setStatus("sending");
+    /* Minted here so the pixel's Lead below and the server's Conversions API
+       call carry the same id, and Meta counts one enquiry rather than two. */
+    const metaEventId = newMetaEventId();
     try {
       const response = await fetch("/api/tepa/enquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         /* The server reads the click id from the cookie; this copy is the
            fallback for browsers that dropped it before submit. */
-        body: JSON.stringify({ ...data, attribution: readAttribution() }),
+        body: JSON.stringify({ ...data, attribution: readAttribution(), metaEventId }),
       });
       const body = await response.json().catch(() => ({}));
 
@@ -108,6 +113,17 @@ export function EnquiryForm({
       /* Only after the server confirmed the lead was stored. Firing on submit
          would count enquiries that never actually arrived. */
       trackConversion(FORM_LABEL, { email: data.email?.trim(), phone: data.phone?.trim() });
+      metaTrack(
+        "Lead",
+        { content_name: SOURCES.tepa.name, content_category: "tepa" },
+        metaEventId,
+        {
+          email: data.email,
+          phone: data.phone,
+          fullName: data.fullName,
+          country: data.country,
+        },
+      );
 
       form.reset();
       setStatus("sent");

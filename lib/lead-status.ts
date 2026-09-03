@@ -19,6 +19,15 @@ export const STAGE_COLORS: Record<LeadStatus, string> = {
   customer: "#0b2440",
 };
 
+/* The ad platforms a stage is reported to. */
+export const DESTINATIONS = ["google", "meta"] as const;
+export type Destination = (typeof DESTINATIONS)[number];
+
+export const DESTINATION_LABEL: Record<Destination, string> = {
+  google: "Google Ads",
+  meta: "Meta",
+};
+
 export function isLeadStatus(value: string): value is LeadStatus {
   return (LEAD_STATUSES as readonly string[]).includes(value);
 }

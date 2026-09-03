@@ -1,6 +1,8 @@
 import { Poppins } from "next/font/google";
 import { AttributionCapture } from "../components/AttributionCapture";
 import { GoogleTag } from "../components/GoogleTag";
+import { MetaPixel } from "../components/MetaPixel";
+import { MetaViewContent } from "../components/MetaViewContent";
 import { RevealController } from "../components/RevealController";
 import "./healthcare.css";
 
@@ -25,10 +27,13 @@ export default function HealthcareLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className={`hc flex-1 ${poppins.variable}`}>
-      {/* Both render nothing. Attribution capture has to run on every visit so
-          the click id is stored before the visitor navigates away. */}
+      {/* None of these render anything. Attribution capture has to run on
+          every visit so the click id is stored before the visitor navigates
+          away. */}
       <AttributionCapture />
       <GoogleTag />
+      <MetaPixel />
+      <MetaViewContent contentCategory="healthcare" />
       <RevealController scope=".hc" />
       {children}
     </div>

@@ -172,7 +172,8 @@ already there when the next stage is promoted. There is no cold start.
 ## Step 5 — conversions not arriving
 
 Failed uploads are visible per lead in the dashboard, in the lead detail panel
-under **Google Ads conversions**. Check the outbox directly with:
+under **Ad platform conversions**, tagged *Google Ads* (Meta rows sit beside
+them; see the `meta-ads` skill). Check the outbox directly with:
 
 ```sql
 SELECT stage, status, attempts, left(last_error, 120) AS error, created_at

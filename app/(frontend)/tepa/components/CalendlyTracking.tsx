@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { CALENDLY_LABEL, trackConversion } from "../../components/GoogleTag";
+import { META_PIXEL_ENABLED, metaTrack } from "../../components/MetaPixel";
 
 /* Counts clicks on the Calendly booking links.
 
@@ -16,7 +17,7 @@ import { CALENDLY_LABEL, trackConversion } from "../../components/GoogleTag";
    the page is actually working. */
 export function CalendlyTracking() {
   useEffect(() => {
-    if (!CALENDLY_LABEL) return;
+    if (!CALENDLY_LABEL && !META_PIXEL_ENABLED) return;
 
     /* Same visitor clicking twice is one intent, not two conversions. */
     let fired = false;
@@ -34,6 +35,9 @@ export function CalendlyTracking() {
 
       fired = true;
       trackConversion(CALENDLY_LABEL);
+      /* Schedule is Meta's standard event for booking an appointment. Browser
+         only, like the Google conversion: the click never reaches the server. */
+      metaTrack("Schedule", { content_name: "Calendly call", content_category: "tepa" });
     }
 
     /* Capture phase so the conversion is recorded even if something downstream

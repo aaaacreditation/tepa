@@ -3,22 +3,39 @@ import { q } from "./db";
 import {
   GoogleAdsError,
   ingestEvent,
-  isConfigured,
   readConfig,
+  type GoogleAdsConfig,
 } from "./google-data-manager";
-import { LEAD_STATUSES, type LeadStatus } from "./lead-status";
-import { DEFAULT_SOURCE } from "./sources";
+import {
+  type Destination,
+  LEAD_STATUSES,
+  type LeadStatus,
+} from "./lead-status";
+import {
+  MetaCapiError,
+  metaEventFor,
+  readMetaConfig,
+  sendMetaEvent,
+  type MetaConfig,
+} from "./meta-capi";
+import { DEFAULT_SOURCE, getSource } from "./sources";
 
-/* Pipeline stage changes reported back to Google Ads as offline conversions.
+/* Pipeline stage changes reported back to the ad platforms as offline
+   conversions: Google Ads through the Data Manager API, Meta through the
+   Conversions API.
 
    The flow is deliberately two steps. A status change writes a row to the
    conversion_uploads outbox inside the same request that moved the lead, then
-   a sender drains the outbox. Uploading inline would mean a Google outage, an
-   expired token, or a slow response either blocks the dashboard or silently
+   a sender drains the outbox. Uploading inline would mean a platform outage,
+   an expired token, or a slow response either blocks the dashboard or silently
    loses the conversion. With the outbox the row survives, the dashboard shows
    it as failed, and it can be retried.
 
-   Value telling Smart Bidding what each stage is worth is the point of the
+   Each stage is queued once per platform and every row lives on its own, so a
+   Meta outage cannot hold up Google's upload and a token fixed for one never
+   needs the other's rows retried.
+
+   Value telling the bidding what each stage is worth is the point of the
    exercise: a customer must outweigh a raw lead or the bidding cannot learn. */
 
 export type ConversionStage = LeadStatus;
@@ -33,6 +50,7 @@ export type UploadRow = {
   id: number;
   leadId: number;
   stage: ConversionStage;
+  destination: Destination;
   status: "pending" | "sending" | "sent" | "failed" | "skipped";
   attempts: number;
   lastError: string;
@@ -84,7 +102,10 @@ export function validateOnly(): boolean {
    page quietly pooling into them because its own variable was left blank would
    have Smart Bidding optimising TEPA against clinic leads — the exact conflict
    separate actions exist to prevent. An unconfigured stage is skipped and
-   says so (nothing queued, WARN in ads:check) rather than misreported. */
+   says so (nothing queued, WARN in ads:check) rather than misreported.
+
+   Meta needs none of this: one pixel serves every page and Events Manager
+   tells them apart by URL and content_category. */
 function envSuffix(source: string): string {
   return `_${source.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}`;
 }
@@ -105,22 +126,26 @@ function valueFor(stage: ConversionStage, source: string): string | undefined {
   return process.env[ENV_VALUE[stage]];
 }
 
-/* A stage is only reported when it has a conversion action id. Leaving one
-   unset is the supported way to opt a stage out, which matters for 'lead':
-   most setups already count the form submit with the gtag snippet in the
-   browser, and reporting it here too would count it twice. */
+/* What a stage is worth. The numbers live under the GOOGLE_ADS_VALUE_* names
+   they were born with, but a value is a statement about the business, not a
+   platform setting, so Meta reports the same one. */
+export function stageValue(stage: ConversionStage, source: string = DEFAULT_SOURCE): number {
+  const raw = valueFor(stage, source);
+  const parsed = raw === undefined ? Number.NaN : Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_VALUES[stage];
+}
+
+/* A stage is only reported to Google when it has a conversion action id.
+   Leaving one unset is the supported way to opt a stage out, which matters
+   for 'lead': most setups already count the form submit with the gtag snippet
+   in the browser, and reporting it here too would count it twice. */
 export function stageConfig(
   stage: ConversionStage,
   source: string = DEFAULT_SOURCE,
 ): StageConfig | null {
   const conversionActionId = actionIdFor(stage, source);
   if (!conversionActionId) return null;
-
-  const raw = valueFor(stage, source);
-  const parsed = raw === undefined ? Number.NaN : Number(raw);
-  const value = Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_VALUES[stage];
-
-  return { stage, conversionActionId, value };
+  return { stage, conversionActionId, value: stageValue(stage, source) };
 }
 
 export function configuredStages(source: string = DEFAULT_SOURCE): StageConfig[] {
@@ -133,10 +158,14 @@ export function configuredStages(source: string = DEFAULT_SOURCE): StageConfig[]
    Enqueue
    ========================================================================== */
 
-/* One row per lead and stage, forever. Demoting a lead and promoting it again
-   re-enters the same key, and ON CONFLICT DO NOTHING makes that a no-op rather
-   than a second conversion for the same milestone. */
-const dedupeKey = (leadId: number, stage: ConversionStage) => `${leadId}:${stage}`;
+/* One row per lead, stage and platform, forever. Demoting a lead and
+   promoting it again re-enters the same key, and ON CONFLICT DO NOTHING makes
+   that a no-op rather than a second conversion for the same milestone.
+
+   Google's key is unprefixed because it doubles as the transaction id Google
+   deduplicates on; rows already sent under it must keep matching. */
+const dedupeKey = (leadId: number, stage: ConversionStage, destination: Destination) =>
+  destination === "google" ? `${leadId}:${stage}` : `${destination}:${leadId}:${stage}`;
 
 /* Which conversion action a stage reports into depends on the landing page the
    lead came from, and the caller does not always know it — the dashboard moves
@@ -148,31 +177,65 @@ async function leadSource(leadId: number): Promise<string | null> {
   return rows.length > 0 ? rows[0].source : null;
 }
 
+export type EnqueueOptions = {
+  /* The id the pixel fired the browser half of the enquiry with. Only the
+     lead stage has one; Meta collapses the two halves on it. */
+  metaEventId?: string;
+};
+
 export async function enqueueConversion(
   leadId: number,
   stage: ConversionStage,
   occurredAt: Date = new Date(),
   knownSource?: string,
+  options: EnqueueOptions = {},
 ): Promise<boolean> {
   const source = knownSource ?? (await leadSource(leadId));
   if (source === null) return false;
 
-  const config = stageConfig(stage, source);
-  if (!config) return false;
+  const rows: Array<{ destination: Destination; value: number; eventId: string }> = [];
 
-  const rows = await q<{ id: number }>(
-    `INSERT INTO conversion_uploads (lead_id, stage, dedupe_key, value, currency, occurred_at)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (dedupe_key) DO NOTHING
-     RETURNING id`,
-    [leadId, stage, dedupeKey(leadId, stage), config.value, currency(), occurredAt],
-  );
-  return rows.length > 0;
+  const google = stageConfig(stage, source);
+  if (google) rows.push({ destination: "google", value: google.value, eventId: "" });
+
+  /* Meta queues whenever its token is present and the stage's event is not
+     switched off; there is no per page action to be missing. */
+  if (readMetaConfig().ok && metaEventFor(stage)) {
+    const browserId = stage === "lead" ? options.metaEventId : undefined;
+    rows.push({
+      destination: "meta",
+      value: stageValue(stage, source),
+      eventId: browserId || dedupeKey(leadId, stage, "meta"),
+    });
+  }
+
+  let queued = false;
+  for (const row of rows) {
+    const inserted = await q<{ id: number }>(
+      `INSERT INTO conversion_uploads
+         (lead_id, stage, dedupe_key, value, currency, occurred_at, destination, event_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (dedupe_key) DO NOTHING
+       RETURNING id`,
+      [
+        leadId,
+        stage,
+        dedupeKey(leadId, stage, row.destination),
+        row.value,
+        currency(),
+        occurredAt,
+        row.destination,
+        row.eventId,
+      ],
+    );
+    if (inserted.length > 0) queued = true;
+  }
+  return queued;
 }
 
 /* Promotions can skip steps: dragging a lead straight to customer still passed
-   through mql and sql in business terms, and Google needs each milestone to
-   learn the funnel. Backfilling the intermediate stages keeps the reported
+   through mql and sql in business terms, and the platforms need each milestone
+   to learn the funnel. Backfilling the intermediate stages keeps the reported
    funnel consistent with the dashboard's own "reached" counts. */
 export async function enqueueStageAndBackfill(
   leadId: number,
@@ -200,7 +263,7 @@ export async function enqueueStageAndBackfill(
 const MAX_ATTEMPTS = 5;
 
 /* How long a claimed row may sit in 'sending' before another sender may take
-   it. Long enough that a slow Google response is never stolen mid flight,
+   it. Long enough that a slow platform response is never stolen mid flight,
    short enough that a killed process does not strand a conversion. */
 const STALE_CLAIM_SECONDS = 300;
 
@@ -208,18 +271,29 @@ type PendingJob = {
   id: number;
   leadId: number;
   stage: ConversionStage;
+  destination: Destination;
+  eventId: string;
   value: string;
   currency: string;
   occurredAt: string;
   attempts: number;
+  fullName: string;
   email: string;
   phone: string;
+  countryCode: string;
   gclid: string;
   gbraid: string;
   wbraid: string;
+  fbp: string;
+  fbc: string;
+  clientIp: string;
+  clientUserAgent: string;
+  landingPath: string;
   isDemo: boolean;
   source: string;
 };
+
+type SendOutcome = { requestId: string; warnings: string[] };
 
 export type DrainResult = {
   processed: number;
@@ -232,11 +306,17 @@ export type DrainResult = {
 export async function drainConversions(limit = 25): Promise<DrainResult> {
   const empty: DrainResult = { processed: 0, sent: 0, failed: 0, skipped: 0 };
 
-  if (!isConfigured()) {
-    return { ...empty, reason: "Google Ads credentials are not configured." };
+  /* Only rows for a platform whose credentials are present are claimed; the
+     rest wait in the outbox for the day they are. */
+  const google = readConfig();
+  const meta = readMetaConfig();
+  const ready: Destination[] = [];
+  if (google.ok) ready.push("google");
+  if (meta.ok) ready.push("meta");
+  if (ready.length === 0) {
+    const missing = [...(google.ok ? [] : google.missing), ...(meta.ok ? [] : meta.missing)];
+    return { ...empty, reason: `No ad platform is configured. Missing ${missing.join(", ")}.` };
   }
-  const config = readConfig();
-  if (!config.ok) return { ...empty, reason: `Missing ${config.missing.join(", ")}.` };
 
   /* Claim rows with a single atomic UPDATE rather than a SELECT ... FOR UPDATE.
      Every query here runs on its own pooled connection and commits on its own,
@@ -253,6 +333,7 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
      WHERE id IN (
        SELECT id FROM conversion_uploads
        WHERE attempts < $2
+         AND destination = ANY($4::text[])
          AND (
            status IN ('pending', 'failed')
            OR (status = 'sending' AND claimed_at < now() - make_interval(secs => $3))
@@ -262,7 +343,7 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
        FOR UPDATE SKIP LOCKED
      )
      RETURNING id`,
-    [limit, MAX_ATTEMPTS, STALE_CLAIM_SECONDS],
+    [limit, MAX_ATTEMPTS, STALE_CLAIM_SECONDS, ready],
   );
 
   if (claimed.length === 0) return { ...empty };
@@ -271,15 +352,24 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
     `SELECT c.id,
             c.lead_id  AS "leadId",
             c.stage,
+            c.destination,
+            c.event_id AS "eventId",
             c.value,
             c.currency,
             c.occurred_at AS "occurredAt",
             c.attempts,
+            l.full_name AS "fullName",
             l.email,
             l.phone,
+            l.country_code AS "countryCode",
             l.gclid,
             l.gbraid,
             l.wbraid,
+            l.fbp,
+            l.fbc,
+            l.client_ip AS "clientIp",
+            l.client_user_agent AS "clientUserAgent",
+            l.landing_path AS "landingPath",
             l.is_demo  AS "isDemo",
             l.source
      FROM conversion_uploads c
@@ -293,7 +383,7 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
 
   for (const job of jobs) {
     /* Seeded demo rows exist to make the dashboard look alive. Sending them
-       would teach Smart Bidding on fiction. */
+       would teach the bidding on fiction. */
     if (job.isDemo) {
       await q(
         `UPDATE conversion_uploads
@@ -305,38 +395,11 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
       continue;
     }
 
-    const action = stageConfig(job.stage, job.source);
-    if (!action) {
-      await q(
-        `UPDATE conversion_uploads
-         SET status = 'skipped', last_error = $2
-         WHERE id = $1`,
-        [
-          job.id,
-          `No conversion action configured for stage "${job.stage}" on /${job.source}.`,
-        ],
-      );
-      result.skipped += 1;
-      continue;
-    }
-
     try {
-      const outcome = await ingestEvent(
-        config.config,
-        {
-          conversionActionId: action.conversionActionId,
-          transactionId: dedupeKey(job.leadId, job.stage),
-          occurredAt: new Date(job.occurredAt),
-          value: Number(job.value),
-          currency: job.currency,
-          gclid: job.gclid,
-          gbraid: job.gbraid,
-          wbraid: job.wbraid,
-          email: job.email,
-          phone: job.phone,
-        },
-        { validateOnly: validateOnly() },
-      );
+      const outcome =
+        job.destination === "meta"
+          ? await sendToMeta(meta.ok ? meta.config : null, job)
+          : await sendToGoogle(google.ok ? google.config : null, job);
 
       /* attempts was already incremented when the row was claimed. */
       await q(
@@ -351,7 +414,9 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
       result.sent += 1;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const permanent = error instanceof GoogleAdsError && !error.retryable;
+      const permanent =
+        (error instanceof GoogleAdsError || error instanceof MetaCapiError) &&
+        !error.retryable;
       const attempts = job.attempts;
 
       /* A permanently unmatched conversion is settled, not pending. Marking it
@@ -374,12 +439,109 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
       else result.failed += 1;
 
       console.error(
-        `[conversions] lead ${job.leadId} stage ${job.stage} attempt ${attempts}: ${message}`,
+        `[conversions] ${job.destination} lead ${job.leadId} stage ${job.stage} attempt ${attempts}: ${message}`,
       );
     }
   }
 
   return result;
+}
+
+async function sendToGoogle(
+  config: GoogleAdsConfig | null,
+  job: PendingJob,
+): Promise<SendOutcome> {
+  if (!config) {
+    throw new GoogleAdsError("Google Ads credentials are not configured.", 0, true);
+  }
+
+  const action = stageConfig(job.stage, job.source);
+  if (!action) {
+    throw new GoogleAdsError(
+      `No conversion action configured for stage "${job.stage}" on /${job.source}.`,
+      0,
+      false,
+    );
+  }
+
+  const outcome = await ingestEvent(
+    config,
+    {
+      conversionActionId: action.conversionActionId,
+      transactionId: dedupeKey(job.leadId, job.stage, "google"),
+      occurredAt: new Date(job.occurredAt),
+      value: Number(job.value),
+      currency: job.currency,
+      gclid: job.gclid,
+      gbraid: job.gbraid,
+      wbraid: job.wbraid,
+      email: job.email,
+      phone: job.phone,
+    },
+    { validateOnly: validateOnly() },
+  );
+  return { requestId: outcome.requestId, warnings: outcome.warnings };
+}
+
+/* Where the landing pages live, for the event_source_url Meta requires on a
+   website event. The path comes from the lead when the visit was tagged, and
+   from the source registry otherwise. */
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://campaigns.aaa-accreditation.org"
+).replace(/\/$/, "");
+
+async function sendToMeta(config: MetaConfig | null, job: PendingJob): Promise<SendOutcome> {
+  if (!config) {
+    throw new MetaCapiError("Meta Conversions API token is not configured.", 0, true);
+  }
+
+  const eventName = metaEventFor(job.stage);
+  if (!eventName) {
+    throw new MetaCapiError(`The Meta event for stage "${job.stage}" is switched off.`, 0, false);
+  }
+
+  const source = getSource(job.source);
+  const isLead = job.stage === "lead";
+
+  /* The enquiry is a website event, carrying everything the pixel would have:
+     the page, the connection, the pixel's cookies. A later stage is what Meta
+     calls system generated — reported by a CRM, no browser involved — and is
+     matched on the contact details and the cookies saved at enquiry time. The
+     event_source and lead_event_source keys are Meta's convention for CRM
+     stage events, which is what lets Events Manager treat them as one funnel
+     with the Lead that started it. */
+  const outcome = await sendMetaEvent(config, {
+    eventName,
+    eventId: job.eventId || dedupeKey(job.leadId, job.stage, "meta"),
+    eventTime: new Date(job.occurredAt),
+    actionSource: isLead ? "website" : "system_generated",
+    eventSourceUrl: isLead
+      ? `${SITE_URL}${job.landingPath || source?.path || `/${job.source}`}`
+      : undefined,
+    user: {
+      email: job.email,
+      phone: job.phone,
+      fullName: job.fullName,
+      country: job.countryCode,
+      externalId: String(job.leadId),
+      fbp: job.fbp,
+      fbc: job.fbc,
+      ...(isLead ? { clientIp: job.clientIp, clientUserAgent: job.clientUserAgent } : {}),
+    },
+    customData: {
+      content_name: source?.name ?? job.source,
+      content_category: job.source,
+      value: Number(job.value),
+      currency: job.currency,
+      ...(isLead ? {} : { event_source: "crm", lead_event_source: "AAA Leads Dashboard" }),
+    },
+  });
+
+  return {
+    requestId: outcome.traceId,
+    warnings:
+      outcome.eventsReceived === 1 ? [] : [`Meta reported events_received=${outcome.eventsReceived}`],
+  };
 }
 
 /* ==========================================================================
@@ -391,6 +553,7 @@ export async function getUploadsForSource(source: string): Promise<UploadRow[]> 
     `SELECT c.id,
             c.lead_id AS "leadId",
             c.stage,
+            c.destination,
             c.status,
             c.attempts,
             c.last_error AS "lastError",

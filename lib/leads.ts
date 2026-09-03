@@ -24,6 +24,7 @@ export type LeadRow = {
   gclid: string;
   gbraid: string;
   wbraid: string;
+  fbclid: string;
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
@@ -51,6 +52,11 @@ export type NewLead = {
   website: string;
   message: string;
   attribution: Attribution;
+  /* Read off the enquiry request for Meta; see lib/db.ts. */
+  fbp: string;
+  fbc: string;
+  clientIp: string;
+  clientUserAgent: string;
 };
 
 const LEAD_COLUMNS = `
@@ -72,6 +78,7 @@ const LEAD_COLUMNS = `
   gclid,
   gbraid,
   wbraid,
+  fbclid,
   utm_source   AS "utmSource",
   utm_medium   AS "utmMedium",
   utm_campaign AS "utmCampaign",
@@ -86,11 +93,13 @@ export async function insertLead(lead: NewLead): Promise<number> {
        (source, full_name, organization, email, country_code, country_name, phone, website, message,
         gclid, gbraid, wbraid,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-        landing_path, referrer, clicked_at)
+        landing_path, referrer, clicked_at,
+        fbclid, fbp, fbc, client_ip, client_user_agent)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
              $10, $11, $12,
              $13, $14, $15, $16, $17,
-             $18, $19, $20)
+             $18, $19, $20,
+             $21, $22, $23, $24, $25)
      RETURNING id`,
     [
       lead.source,
@@ -113,6 +122,11 @@ export async function insertLead(lead: NewLead): Promise<number> {
       a.landingPath,
       a.referrer,
       a.clickedAt || null,
+      a.fbclid,
+      lead.fbp,
+      lead.fbc,
+      lead.clientIp,
+      lead.clientUserAgent,
     ],
   );
   return rows[0].id;

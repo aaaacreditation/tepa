@@ -7,6 +7,11 @@
    when the enquiry is posted, which survives the visitor wandering the page,
    opening Calendly, and coming back before filling the form.
 
+   Meta's click id rides in the same cookie. Its own _fbc cookie is written by
+   the pixel and dies after seven days on Safari, the same as this one, so the
+   attribution cookie keeps a copy that the Conversions API can rebuild fbc
+   from when the pixel's cookie has gone; see metaIdsFromCookies.
+
    No "server-only" import here: the shape and the cookie name are shared with
    the browser component that writes it. */
 
@@ -16,10 +21,13 @@ export const ATTRIBUTION_COOKIE = "aaa_attr";
    the cookie alive exactly as long as the click is still attributable. */
 export const ATTRIBUTION_MAX_AGE_SECONDS = 90 * 24 * 60 * 60;
 
-/* gclid is the standard click id. gbraid and wbraid replace it on iOS traffic
+/* gclid is Google's click id. gbraid and wbraid replace it on iOS traffic
    where Google cannot pass a user level identifier, and they are mutually
-   exclusive with it, so all three are carried and whichever arrived wins. */
-export const CLICK_ID_KEYS = ["gclid", "gbraid", "wbraid"] as const;
+   exclusive with it, so all three are carried and whichever arrived wins.
+   fbclid is Meta's, and lives alongside them rather than replacing them: each
+   platform attributes on its own last click within its own window. */
+export const GOOGLE_CLICK_ID_KEYS = ["gclid", "gbraid", "wbraid"] as const;
+export const CLICK_ID_KEYS = [...GOOGLE_CLICK_ID_KEYS, "fbclid"] as const;
 
 export const UTM_KEYS = [
   "utm_source",
@@ -33,6 +41,7 @@ export type Attribution = {
   gclid: string;
   gbraid: string;
   wbraid: string;
+  fbclid: string;
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
@@ -48,6 +57,7 @@ export const EMPTY_ATTRIBUTION: Attribution = {
   gclid: "",
   gbraid: "",
   wbraid: "",
+  fbclid: "",
   utmSource: "",
   utmMedium: "",
   utmCampaign: "",
@@ -64,6 +74,7 @@ type Wire = {
   g?: string;
   gb?: string;
   wb?: string;
+  fb?: string;
   us?: string;
   um?: string;
   uc?: string;
@@ -79,8 +90,12 @@ const MAX_FIELD = 512;
 const trim = (value: unknown): string =>
   typeof value === "string" ? value.trim().slice(0, MAX_FIELD) : "";
 
-export function hasClickId(attribution: Attribution): boolean {
+export function hasGoogleClickId(attribution: Attribution): boolean {
   return Boolean(attribution.gclid || attribution.gbraid || attribution.wbraid);
+}
+
+export function hasClickId(attribution: Attribution): boolean {
+  return hasGoogleClickId(attribution) || Boolean(attribution.fbclid);
 }
 
 /* True when there is anything worth persisting. A visitor arriving from an
@@ -104,6 +119,7 @@ export function serializeAttribution(attribution: Attribution): string {
   if (attribution.gclid) wire.g = attribution.gclid;
   if (attribution.gbraid) wire.gb = attribution.gbraid;
   if (attribution.wbraid) wire.wb = attribution.wbraid;
+  if (attribution.fbclid) wire.fb = attribution.fbclid;
   if (attribution.utmSource) wire.us = attribution.utmSource;
   if (attribution.utmMedium) wire.um = attribution.utmMedium;
   if (attribution.utmCampaign) wire.uc = attribution.utmCampaign;
@@ -124,6 +140,7 @@ export function parseAttribution(raw: string | undefined | null): Attribution {
       gclid: trim(wire.g),
       gbraid: trim(wire.gb),
       wbraid: trim(wire.wb),
+      fbclid: trim(wire.fb),
       utmSource: trim(wire.us),
       utmMedium: trim(wire.um),
       utmCampaign: trim(wire.uc),
@@ -153,6 +170,7 @@ export function attributionFromSearch(
     gclid: get("gclid"),
     gbraid: get("gbraid"),
     wbraid: get("wbraid"),
+    fbclid: get("fbclid"),
     utmSource: get("utm_source"),
     utmMedium: get("utm_medium"),
     utmCampaign: get("utm_campaign"),
@@ -166,19 +184,92 @@ export function attributionFromSearch(
   return attribution;
 }
 
-/* Read the cookie from a raw Cookie header. Route handlers get the header
-   directly, so this avoids pulling in next/headers for one lookup. */
-export function attributionFromCookieHeader(header: string | null): Attribution {
-  if (!header) return { ...EMPTY_ATTRIBUTION };
+/* Fold what a visit brought into what the cookie already holds.
+
+   Google and Meta each attribute on their own last click inside their own
+   window, so a Meta click must not wipe out a Google click that is still live,
+   and vice versa: each platform's id is only replaced by a newer click from
+   the same platform. The campaign tags and landing details follow the newest
+   click. Without any click they only ever fill an empty cookie, so a visitor
+   who comes back through a tagged newsletter link keeps the ad click that
+   first brought them. */
+export function mergeAttribution(existing: Attribution, incoming: Attribution): Attribution {
+  const google = hasGoogleClickId(incoming) ? incoming : existing;
+  const newest = hasClickId(incoming) || !hasClickId(existing) ? incoming : existing;
+
+  return {
+    gclid: google.gclid,
+    gbraid: google.gbraid,
+    wbraid: google.wbraid,
+    fbclid: incoming.fbclid || existing.fbclid,
+    utmSource: newest.utmSource,
+    utmMedium: newest.utmMedium,
+    utmCampaign: newest.utmCampaign,
+    utmTerm: newest.utmTerm,
+    utmContent: newest.utmContent,
+    landingPath: newest.landingPath,
+    referrer: newest.referrer,
+    clickedAt: newest.clickedAt,
+  };
+}
+
+/* One cookie out of a raw Cookie header. Route handlers get the header
+   directly, so this avoids pulling in next/headers for a lookup. */
+export function cookieFromHeader(header: string | null, name: string): string {
+  if (!header) return "";
   for (const part of header.split(";")) {
     const eq = part.indexOf("=");
     if (eq === -1) continue;
-    if (part.slice(0, eq).trim() !== ATTRIBUTION_COOKIE) continue;
+    if (part.slice(0, eq).trim() !== name) continue;
     try {
-      return parseAttribution(decodeURIComponent(part.slice(eq + 1).trim()));
+      return decodeURIComponent(part.slice(eq + 1).trim());
     } catch {
-      return { ...EMPTY_ATTRIBUTION };
+      return "";
     }
   }
-  return { ...EMPTY_ATTRIBUTION };
+  return "";
+}
+
+export function attributionFromCookieHeader(header: string | null): Attribution {
+  return parseAttribution(cookieFromHeader(header, ATTRIBUTION_COOKIE));
+}
+
+/* ==========================================================================
+   Meta's own cookies
+   ========================================================================== */
+
+/* _fbp identifies the browser and is written by the pixel on every visit.
+   _fbc holds the click id from the ad and is written when the pixel sees
+   fbclid in the URL. Both go to the Conversions API exactly as stored. */
+export const META_BROWSER_COOKIE = "_fbp";
+export const META_CLICK_COOKIE = "_fbc";
+
+export type MetaBrowserIds = { fbp: string; fbc: string };
+
+/* Meta's format for both is fb.<subdomain index>.<creation time ms>.<value>.
+   Anything else is dropped rather than sent, since a malformed id fails the
+   whole event. */
+const FBP_SHAPE = /^fb\.\d\.\d+\.\d+$/;
+const FBC_SHAPE = /^fb\.\d\.\d+\..+$/;
+
+export function metaIdsFromCookies(
+  header: string | null,
+  attribution: Attribution,
+): MetaBrowserIds {
+  const fbp = cookieFromHeader(header, META_BROWSER_COOKIE);
+  let fbc = cookieFromHeader(header, META_CLICK_COOKIE);
+
+  /* When the pixel's click cookie is gone — Safari expired it, or the pixel
+     never ran — it is rebuilt from the fbclid this cookie kept, in the shape
+     Meta documents for server side capture: subdomain index 1 and the time
+     the click id was first seen. */
+  if (!FBC_SHAPE.test(fbc) && attribution.fbclid) {
+    const seen = Date.parse(attribution.clickedAt);
+    fbc = `fb.1.${Number.isFinite(seen) ? seen : Date.now()}.${attribution.fbclid}`;
+  }
+
+  return {
+    fbp: FBP_SHAPE.test(fbp) ? fbp.slice(0, MAX_FIELD) : "",
+    fbc: FBC_SHAPE.test(fbc) ? fbc.slice(0, MAX_FIELD) : "",
+  };
 }

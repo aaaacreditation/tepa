@@ -6,7 +6,7 @@ import {
   ATTRIBUTION_MAX_AGE_SECONDS,
   attributionFromSearch,
   hasAttribution,
-  hasClickId,
+  mergeAttribution,
   parseAttribution,
   serializeAttribution,
 } from "@/lib/attribution";
@@ -33,12 +33,14 @@ export function AttributionCapture() {
 
     if (!hasAttribution(incoming)) return;
 
-    /* Google Ads attributes on last click, so a fresh click id replaces what is
-       stored. Without one, incoming utm tags only fill a gap rather than
-       overwriting a click that is still inside its attribution window. */
-    if (!hasClickId(incoming) && hasClickId(existing)) return;
+    /* A fresh click replaces the stored one from the same platform and brings
+       its campaign tags with it; without a click, tags never overwrite a click
+       that is still inside its attribution window. Nothing new means nothing
+       written, so the cookie's clock is not restarted by a plain return visit. */
+    const merged = serializeAttribution(mergeAttribution(existing, incoming));
+    if (merged === serializeAttribution(existing)) return;
 
-    writeCookie(ATTRIBUTION_COOKIE, serializeAttribution(incoming));
+    writeCookie(ATTRIBUTION_COOKIE, merged);
   }, []);
 
   return null;

@@ -65,14 +65,16 @@ export default async function SourceDashboard({
   ]);
   const { reached, pipeline, total } = data;
 
-  /* Group the outbox by lead so each row can show what actually reached Google
-     Ads. Without this the upload is invisible and a silent credential failure
-     would only surface as conversions quietly missing from the ad account. */
+  /* Group the outbox by lead so each row can show what actually reached each
+     ad platform. Without this the upload is invisible and a silent credential
+     failure would only surface as conversions quietly missing from the ad
+     account. */
   const uploadsByLead: Record<number, TableUpload[]> = {};
   for (const upload of uploads) {
     (uploadsByLead[upload.leadId] ??= []).push({
       id: upload.id,
       stage: upload.stage,
+      destination: upload.destination,
       status: upload.status,
       attempts: upload.attempts,
       lastError: upload.lastError,
@@ -123,7 +125,7 @@ export default async function SourceDashboard({
     createdLabel: dayFmt.format(new Date(lead.createdAt)),
     createdFull: fullFmt.format(new Date(lead.createdAt)),
     statusChangedFull: fullFmt.format(new Date(lead.statusChangedAt)),
-    clickId: lead.gclid || lead.gbraid || lead.wbraid,
+    clickId: lead.gclid || lead.gbraid || lead.wbraid || lead.fbclid,
     campaign: lead.utmCampaign,
     utmSource: lead.utmSource,
     utmMedium: lead.utmMedium,

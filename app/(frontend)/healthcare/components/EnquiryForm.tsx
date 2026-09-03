@@ -3,7 +3,9 @@
 import { useId, useState } from "react";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
 import { countries } from "@/lib/countries";
+import { SOURCES } from "@/lib/sources";
 import { HEALTHCARE_FORM_LABEL, trackConversion } from "../../components/GoogleTag";
+import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
 import { facilityTypes, formCopy, site } from "../content";
 import { IconArrow, IconCheck, IconLock } from "../../components/Icons";
 
@@ -100,13 +102,16 @@ export function EnquiryForm({ layout = "panel" }: EnquiryFormProps) {
     }
 
     setStatus("sending");
+    /* Minted here so the pixel's Lead below and the server's Conversions API
+       call carry the same id, and Meta counts one enquiry rather than two. */
+    const metaEventId = newMetaEventId();
     try {
       const response = await fetch("/api/healthcare/enquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         /* The server reads the click id from the cookie; this copy is the
            fallback for browsers that dropped it before submit. */
-        body: JSON.stringify({ ...data, attribution: readAttribution() }),
+        body: JSON.stringify({ ...data, attribution: readAttribution(), metaEventId }),
       });
       const body = await response.json().catch(() => ({}));
 
@@ -123,6 +128,17 @@ export function EnquiryForm({ layout = "panel" }: EnquiryFormProps) {
         email: data.email?.trim(),
         phone: data.phone?.trim(),
       });
+      metaTrack(
+        "Lead",
+        { content_name: SOURCES.healthcare.name, content_category: "healthcare" },
+        metaEventId,
+        {
+          email: data.email,
+          phone: data.phone,
+          fullName: data.fullName,
+          country: data.country,
+        },
+      );
 
       form.reset();
       setStatus("sent");

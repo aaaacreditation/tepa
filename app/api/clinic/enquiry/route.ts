@@ -3,10 +3,13 @@ import {
   type Attribution,
   attributionFromCookieHeader,
   EMPTY_ATTRIBUTION,
+  hasClickId,
+  metaIdsFromCookies,
 } from "@/lib/attribution";
 import { countries } from "@/lib/countries";
 import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
+import { cleanMetaEventId } from "@/lib/meta-identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,9 +96,18 @@ export async function POST(request: Request) {
   }
 
   const cookieAttribution = attributionFromCookieHeader(request.headers.get("cookie"));
-  const attribution = hasAnyClickId(cookieAttribution)
+  const attribution = hasClickId(cookieAttribution)
     ? cookieAttribution
     : mergeBodyAttribution(cookieAttribution, payload);
+
+  /* What Meta matches the enquiry on besides the hashed contact details: the
+     pixel's own cookies and the connection itself. The form minted the event
+     id before posting, so its pixel call and the server's Conversions API call
+     share it and Meta counts one enquiry, not two. */
+  const metaIds = metaIdsFromCookies(request.headers.get("cookie"), attribution);
+  const metaEventId = cleanMetaEventId(payload.metaEventId);
+  const clientIp = ip === "unknown" ? "" : ip;
+  const clientUserAgent = (request.headers.get("user-agent") ?? "").slice(0, 512);
 
   try {
     const leadId = await insertLead({
@@ -113,6 +125,10 @@ export async function POST(request: Request) {
       website: "",
       message: "Requested a free clinic accreditation consultation call.",
       attribution,
+      fbp: metaIds.fbp,
+      fbc: metaIds.fbc,
+      clientIp,
+      clientUserAgent,
     });
 
     console.info(
@@ -120,7 +136,11 @@ export async function POST(request: Request) {
       JSON.stringify({ leadId, organization, country }),
     );
 
-    const queued = await enqueueConversion(leadId, "lead");
+    /* One row per ad platform. Meta's carries the pixel's event id so its
+       browser and server halves are counted once. */
+    const queued = await enqueueConversion(leadId, "lead", new Date(), SOURCE, {
+      metaEventId,
+    });
     if (queued) {
       after(async () => {
         try {
@@ -139,10 +159,6 @@ export async function POST(request: Request) {
   }
 
   return Response.json({ ok: true });
-}
-
-function hasAnyClickId(attribution: Attribution): boolean {
-  return Boolean(attribution.gclid || attribution.gbraid || attribution.wbraid);
 }
 
 /* Safari's tracking prevention can drop the cookie before the form is sent.
@@ -166,6 +182,7 @@ function mergeBodyAttribution(
     gclid: pick("gclid", base.gclid),
     gbraid: pick("gbraid", base.gbraid),
     wbraid: pick("wbraid", base.wbraid),
+    fbclid: pick("fbclid", base.fbclid),
     utmSource: pick("utmSource", base.utmSource),
     utmMedium: pick("utmMedium", base.utmMedium),
     utmCampaign: pick("utmCampaign", base.utmCampaign),

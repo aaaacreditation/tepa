@@ -71,6 +71,17 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS clicked_at    TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS leads_gclid_idx ON leads (gclid) WHERE gclid <> '';
 
+/* Meta's side of the same story. fbclid is the click id from the ad URL; fbp
+   and fbc are the pixel's own cookies, read back when the form is posted; the
+   IP and user agent are what Meta matches a website event on when the pixel
+   was blocked. All of it is captured at enquiry time because a stage change
+   weeks later has no browser left to ask. */
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS fbclid            TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS fbp               TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS fbc               TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS client_ip         TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS client_user_agent TEXT NOT NULL DEFAULT '';
+
 /* organization_type, program_count and contact_role backed three extra form
    questions that were removed for making the form too long. They are kept
    rather than dropped: the columns are empty and cost nothing, dropping them
@@ -125,6 +136,18 @@ ALTER TABLE conversion_uploads ADD  CONSTRAINT conversion_uploads_status_check
 /* Set when a row is claimed, so a sender killed mid upload can be detected
    and its row handed back rather than stranded in 'sending' forever. */
 ALTER TABLE conversion_uploads ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ;
+
+/* Which ad platform a row reports to. Google rows keep the dedupe key they
+   always had, because it doubles as the transaction id Google deduplicates on
+   and changing it would let a retry count twice; Meta rows carry a "meta:"
+   prefix. event_id is what Meta deduplicates on: for the enquiry it is the id
+   the pixel used in the browser, so the two halves collapse into one event,
+   and for the later stages it is the dedupe key. */
+ALTER TABLE conversion_uploads ADD COLUMN IF NOT EXISTS destination TEXT NOT NULL DEFAULT 'google';
+ALTER TABLE conversion_uploads ADD COLUMN IF NOT EXISTS event_id    TEXT NOT NULL DEFAULT '';
+ALTER TABLE conversion_uploads DROP CONSTRAINT IF EXISTS conversion_uploads_destination_check;
+ALTER TABLE conversion_uploads ADD  CONSTRAINT conversion_uploads_destination_check
+  CHECK (destination IN ('google', 'meta'));
 `;
 
 function pool(): Pool {

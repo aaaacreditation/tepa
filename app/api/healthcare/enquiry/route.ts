@@ -4,10 +4,13 @@ import {
   type Attribution,
   attributionFromCookieHeader,
   EMPTY_ATTRIBUTION,
+  hasClickId,
+  metaIdsFromCookies,
 } from "@/lib/attribution";
 import { countries } from "@/lib/countries";
 import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
+import { cleanMetaEventId } from "@/lib/meta-identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +42,12 @@ export type Enquiry = {
   receivedAt: string;
   source: string;
   attribution: Attribution;
+  /* Meta's matching keys, read off the request; see lib/db.ts. */
+  metaEventId: string;
+  fbp: string;
+  fbc: string;
+  clientIp: string;
+  clientUserAgent: string;
 };
 
 /* Small in memory throttle. Enough to blunt casual abuse on a single instance;
@@ -114,9 +123,18 @@ export async function POST(request: Request) {
      it survives the visitor leaving the page and coming back. The body is read
      as a fallback for the case where the cookie was blocked. */
   const cookieAttribution = attributionFromCookieHeader(request.headers.get("cookie"));
-  const attribution = hasAnyClickId(cookieAttribution)
+  const attribution = hasClickId(cookieAttribution)
     ? cookieAttribution
     : mergeBodyAttribution(cookieAttribution, payload);
+
+  /* What Meta matches the enquiry on besides the hashed contact details: the
+     pixel's own cookies and the connection itself. The form minted the event
+     id before posting, so its pixel call and the server's Conversions API call
+     share it and Meta counts one enquiry, not two. */
+  const metaIds = metaIdsFromCookies(request.headers.get("cookie"), attribution);
+  const metaEventId = cleanMetaEventId(payload.metaEventId);
+  const clientIp = ip === "unknown" ? "" : ip;
+  const clientUserAgent = (request.headers.get("user-agent") ?? "").slice(0, 512);
 
   const enquiry: Enquiry = {
     fullName,
@@ -131,6 +149,11 @@ export async function POST(request: Request) {
     receivedAt: new Date().toISOString(),
     source: SOURCE,
     attribution,
+    metaEventId,
+    fbp: metaIds.fbp,
+    fbc: metaIds.fbc,
+    clientIp,
+    clientUserAgent,
   };
 
   try {
@@ -168,14 +191,22 @@ async function deliver(enquiry: Enquiry) {
       .join("\n\n")
       .slice(0, MAX_LEN),
     attribution: enquiry.attribution,
+    fbp: enquiry.fbp,
+    fbc: enquiry.fbc,
+    clientIp: enquiry.clientIp,
+    clientUserAgent: enquiry.clientUserAgent,
   });
   console.info("[healthcare/enquiry]", JSON.stringify(enquiry));
 
-  /* Queue the "lead" conversion in the same request that stored the lead, so
-     the two cannot disagree. Nothing is queued unless a conversion action is
-     configured for this source, which is how a setup that already counts the
-     submit with the gtag snippet avoids counting it twice. */
-  const queued = await enqueueConversion(leadId, "lead");
+  /* Queue the "lead" conversion for each ad platform in the same request that
+     stored the lead, so the two cannot disagree. Google's row needs a
+     conversion action configured for this source, which is how a setup that
+     already counts the submit with the gtag snippet avoids counting it twice.
+     Meta's row needs the Conversions API token and carries the pixel's event
+     id, which is how its two halves are counted once. */
+  const queued = await enqueueConversion(leadId, "lead", new Date(), enquiry.source, {
+    metaEventId: enquiry.metaEventId,
+  });
 
   /* Sending happens after the response so Google's latency never shows up in
      the visitor's form submit, and a failure there leaves a retryable outbox
@@ -189,10 +220,6 @@ async function deliver(enquiry: Enquiry) {
       }
     });
   }
-}
-
-function hasAnyClickId(attribution: Attribution): boolean {
-  return Boolean(attribution.gclid || attribution.gbraid || attribution.wbraid);
 }
 
 /* Safari's tracking prevention can drop the cookie before the form is sent.
@@ -216,6 +243,7 @@ function mergeBodyAttribution(
     gclid: pick("gclid", base.gclid),
     gbraid: pick("gbraid", base.gbraid),
     wbraid: pick("wbraid", base.wbraid),
+    fbclid: pick("fbclid", base.fbclid),
     utmSource: pick("utmSource", base.utmSource),
     utmMedium: pick("utmMedium", base.utmMedium),
     utmCampaign: pick("utmCampaign", base.utmCampaign),
