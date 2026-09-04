@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS leads (
   website           TEXT NOT NULL DEFAULT '',
   message           TEXT NOT NULL DEFAULT '',
   status            TEXT NOT NULL DEFAULT 'lead'
-                    CHECK (status IN ('lead', 'mql', 'sql', 'customer')),
+                    CHECK (status IN ('lead', 'mql', 'sql', 'customer', 'not_qualified')),
   notes             TEXT NOT NULL DEFAULT '',
   is_demo           BOOLEAN NOT NULL DEFAULT false,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -72,6 +72,22 @@ CREATE TABLE IF NOT EXISTS lead_events (
 );
 
 CREATE INDEX IF NOT EXISTS lead_events_lead_idx ON lead_events (lead_id, created_at);
+
+ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_status_check;
+ALTER TABLE leads ADD  CONSTRAINT leads_status_check
+  CHECK (status IN ('lead', 'mql', 'sql', 'customer', 'not_qualified'));
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS disqualified_reason TEXT NOT NULL DEFAULT '';
+ALTER TABLE lead_events ADD COLUMN IF NOT EXISTS reason TEXT NOT NULL DEFAULT '';
+
+/* The attribution columns the demo rows fill, in case this runs against a
+   database the app has never booted against. */
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS gclid        TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS gbraid       TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS wbraid       TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS fbclid       TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_source   TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_medium   TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_campaign TEXT NOT NULL DEFAULT '';
 `);
 
 if (process.argv.includes("--clear")) {
@@ -130,16 +146,46 @@ const MESSAGES = [
 
 const STATUS_FLOW = ["lead", "mql", "sql", "customer"];
 
+const REASONS = [
+  "Individual, not a training provider",
+  "Outside our accreditation scope — asked about a personal certificate",
+  "No budget — wants free listing only",
+  "Not the decision maker",
+  "Spam or test submission",
+];
+
 function pick(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
 function statusFor() {
   const roll = Math.random();
-  if (roll < 0.55) return "lead";
-  if (roll < 0.78) return "mql";
-  if (roll < 0.92) return "sql";
-  return "customer";
+  if (roll < 0.42) return "lead";
+  if (roll < 0.62) return "mql";
+  if (roll < 0.74) return "sql";
+  if (roll < 0.82) return "customer";
+  return "not_qualified";
+}
+
+/* Attribution shaped like the live traffic: the Meta ads tag every URL, the
+   Google campaigns tag none of theirs and are recognised by the click id
+   alone, and the rest arrives untagged. See lib/channels.ts. */
+function attributionFor() {
+  const roll = Math.random();
+  const id = Math.random().toString(36).slice(2, 12);
+  if (roll < 0.4) {
+    return { gclid: `demo-gclid-${id}`, fbclid: "", source: "", medium: "", campaign: "" };
+  }
+  if (roll < 0.75) {
+    return {
+      gclid: "",
+      fbclid: `demo-fbclid-${id}`,
+      source: "facebook",
+      medium: "paid",
+      campaign: "tepa-ww-sep26",
+    };
+  }
+  return { gclid: "", fbclid: "", source: "", medium: "", campaign: "" };
 }
 
 const COUNT = 46;
@@ -149,6 +195,8 @@ for (let i = 0; i < COUNT; i++) {
   const [fullName, organization] = pick(PEOPLE);
   const [countryCode, countryName] = pick(COUNTRIES);
   const status = statusFor();
+  const attribution = attributionFor();
+  const reason = status === "not_qualified" ? pick(REASONS) : "";
 
   /* Weight creation toward recent days across a 60 day window. */
   const daysAgo = Math.floor(60 * Math.random() * Math.random());
@@ -163,8 +211,10 @@ for (let i = 0; i < COUNT; i++) {
   const { rows } = await pool.query(
     `INSERT INTO leads
        (source, full_name, organization, email, country_code, country_name,
-        phone, website, message, status, is_demo, created_at, status_changed_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11, $11)
+        phone, website, message, status, is_demo, created_at, status_changed_at,
+        disqualified_reason, gclid, fbclid, utm_source, utm_medium, utm_campaign)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11, $11,
+             $12, $13, $14, $15, $16, $17)
      RETURNING id`,
     [
       "tepa",
@@ -179,10 +229,18 @@ for (let i = 0; i < COUNT; i++) {
       pick(MESSAGES),
       status,
       created,
+      reason,
+      attribution.gclid,
+      attribution.fbclid,
+      attribution.source,
+      attribution.medium,
+      attribution.campaign,
     ],
   );
 
-  /* Walk the pipeline history for progressed leads. */
+  /* Walk the pipeline history for progressed leads. A disqualified one is
+     rejected straight from the lead stage, which is where most of them are
+     caught in practice. */
   const stageIndex = STATUS_FLOW.indexOf(status);
   let stamp = new Date(created);
   for (let s = 1; s <= stageIndex; s++) {
@@ -193,7 +251,15 @@ for (let i = 0; i < COUNT; i++) {
       [rows[0].id, STATUS_FLOW[s - 1], STATUS_FLOW[s], stamp],
     );
   }
-  if (stageIndex > 0) {
+  if (reason) {
+    stamp = new Date(stamp.getTime() + (1 + Math.random() * 3) * 86_400_000);
+    await pool.query(
+      `INSERT INTO lead_events (lead_id, from_status, to_status, changed_by, reason, created_at)
+       VALUES ($1, 'lead', 'not_qualified', 'Demo seed', $2, $3)`,
+      [rows[0].id, reason, stamp],
+    );
+  }
+  if (stageIndex > 0 || reason) {
     await pool.query("UPDATE leads SET status_changed_at = $2 WHERE id = $1", [rows[0].id, stamp]);
   }
   inserted++;

@@ -8,8 +8,10 @@ import {
 } from "./google-data-manager";
 import {
   type Destination,
-  LEAD_STATUSES,
+  isPipelineStage,
   type LeadStatus,
+  PIPELINE_STAGES,
+  type PipelineStage,
 } from "./lead-status";
 import {
   MetaCapiError,
@@ -38,7 +40,10 @@ import { DEFAULT_SOURCE, getSource } from "./sources";
    Value telling the bidding what each stage is worth is the point of the
    exercise: a customer must outweigh a raw lead or the bidding cannot learn. */
 
-export type ConversionStage = LeadStatus;
+/* Only a pipeline stage is ever reported to an ad platform. Disqualifying a
+   lead is a decision about it, not a milestone it reached, so it has no
+   conversion action, no value, and no row in the outbox. */
+export type ConversionStage = PipelineStage;
 
 export type StageConfig = {
   stage: ConversionStage;
@@ -149,7 +154,7 @@ export function stageConfig(
 }
 
 export function configuredStages(source: string = DEFAULT_SOURCE): StageConfig[] {
-  return LEAD_STATUSES.map((stage) => stageConfig(stage, source)).filter(
+  return PIPELINE_STAGES.map((stage) => stageConfig(stage, source)).filter(
     (s): s is StageConfig => s !== null,
   );
 }
@@ -239,11 +244,16 @@ export async function enqueueConversion(
    funnel consistent with the dashboard's own "reached" counts. */
 export async function enqueueStageAndBackfill(
   leadId: number,
-  stage: ConversionStage,
+  stage: LeadStatus,
   occurredAt: Date = new Date(),
 ): Promise<number> {
-  const target = LEAD_STATUSES.indexOf(stage);
-  if (target < 0) return 0;
+  /* Not qualified reports nothing. There is no way to retract a conversion
+     already uploaded for an earlier stage, and nothing new is owed: the lead
+     stage stays true — the enquiry did happen — and the platforms simply never
+     hear about a promotion that never came. */
+  if (!isPipelineStage(stage)) return 0;
+
+  const target = PIPELINE_STAGES.indexOf(stage);
 
   /* Resolved once and threaded through, rather than re-read for each stage. */
   const source = await leadSource(leadId);
@@ -251,7 +261,7 @@ export async function enqueueStageAndBackfill(
 
   let queued = 0;
   for (let i = 0; i <= target; i += 1) {
-    if (await enqueueConversion(leadId, LEAD_STATUSES[i], occurredAt, source)) queued += 1;
+    if (await enqueueConversion(leadId, PIPELINE_STAGES[i], occurredAt, source)) queued += 1;
   }
   return queued;
 }

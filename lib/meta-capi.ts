@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import type { LeadStatus } from "./lead-status";
+import type { PipelineStage } from "./lead-status";
 import {
   normalizeMetaCountry,
   normalizeMetaEmail,
@@ -70,14 +70,14 @@ export function isMetaConfigured(): boolean {
    two middle stages have no standard counterpart and go as custom events under
    the names the dashboard uses. Any of the four can be renamed, or switched
    off with "off", through META_EVENT_<STAGE>. */
-const DEFAULT_EVENT: Record<LeadStatus, string> = {
+const DEFAULT_EVENT: Record<PipelineStage, string> = {
   lead: "Lead",
   mql: "MQL",
   sql: "SQL",
   customer: "Purchase",
 };
 
-export function metaEventFor(stage: LeadStatus): string | null {
+export function metaEventFor(stage: PipelineStage): string | null {
   const raw = process.env[`META_EVENT_${stage.toUpperCase()}`];
   const name = raw === undefined ? DEFAULT_EVENT[stage] : raw.trim();
   if (!name || name.toLowerCase() === "off") return null;

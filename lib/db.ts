@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS leads (
   website           TEXT NOT NULL DEFAULT '',
   message           TEXT NOT NULL DEFAULT '',
   status            TEXT NOT NULL DEFAULT 'lead'
-                    CHECK (status IN ('lead', 'mql', 'sql', 'customer')),
+                    CHECK (status IN ('lead', 'mql', 'sql', 'customer', 'not_qualified')),
   notes             TEXT NOT NULL DEFAULT '',
   is_demo           BOOLEAN NOT NULL DEFAULT false,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -49,6 +49,27 @@ CREATE TABLE IF NOT EXISTS lead_events (
 );
 
 CREATE INDEX IF NOT EXISTS lead_events_lead_idx ON lead_events (lead_id, created_at);
+
+/* 'not_qualified' is a fifth status, not a fifth stage: a lead can be marked
+   not qualified from anywhere in the pipeline and never moves on from it.
+   Installs created before it existed carry the old four value constraint, so
+   it is replaced by name; dropping first keeps the pair re-runnable.
+
+   The reason is required by the dashboard rather than by the column, which
+   stays NOT NULL DEFAULT '' like every other text column here so the rows that
+   predate it are still valid. It is cleared when a lead returns to the
+   pipeline — the current row says what is true now, and lead_events keeps what
+   was said at the time. */
+ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_status_check;
+ALTER TABLE leads ADD  CONSTRAINT leads_status_check
+  CHECK (status IN ('lead', 'mql', 'sql', 'customer', 'not_qualified'));
+
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS disqualified_reason TEXT NOT NULL DEFAULT '';
+
+/* Why a stage change was made, filled for disqualifications and empty for the
+   rest. On the event rather than only on the lead so the history survives the
+   lead being re-qualified later. */
+ALTER TABLE lead_events ADD COLUMN IF NOT EXISTS reason TEXT NOT NULL DEFAULT '';
 
 /* Ad attribution captured on the landing page and carried through to the
    conversion uploads. Added with ALTER so existing installs migrate in place;

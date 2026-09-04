@@ -118,6 +118,68 @@
   color: #ffffff;
 }
 
+/* Channel tabs ----------------------------------------------------------- */
+
+/* The one filter that splits the page rather than narrowing it, so it reads as
+   a tab strip and not as another chip in the row of chips below it. */
+
+.dash-tabs {
+  display: flex;
+  gap: 0.125rem;
+  border-bottom: 1px solid rgba(31, 89, 147, 0.14);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dash-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.dash-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  white-space: nowrap;
+  padding: 0.5625rem 0.875rem;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #5d6c7b;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.dash-tab:hover {
+  color: #10171f;
+  border-bottom-color: rgba(31, 89, 147, 0.28);
+}
+
+.dash-tab[data-active="true"] {
+  color: #10171f;
+  font-weight: 600;
+  border-bottom-color: #1f5993;
+}
+
+.dash-tab:focus-visible {
+  outline: 2px solid rgba(31, 89, 147, 0.4);
+  outline-offset: -2px;
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.dash-tab-count {
+  border-radius: 999px;
+  background: rgba(31, 89, 147, 0.08);
+  padding: 0.0625rem 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5d6c7b;
+}
+
+.dash-tab[data-active="true"] .dash-tab-count {
+  background: rgba(31, 89, 147, 0.14);
+  color: #1f5993;
+}
+
 /* Form fields ------------------------------------------------------------ */
 
 .dash-label {

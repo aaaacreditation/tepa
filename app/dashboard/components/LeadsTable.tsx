@@ -2,15 +2,24 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import {
+  CHANNEL_COLOR,
+  CHANNEL_SHORT,
+  type Channel,
+} from "@/lib/channels";
+import {
+  composeReason,
   DESTINATION_LABEL,
   type Destination,
+  DISQUALIFY_REASONS,
   LEAD_STATUSES,
+  MAX_REASON_LENGTH,
+  NOT_QUALIFIED,
   STAGE_COLORS,
   STATUS_LABEL,
   isLeadStatus,
   type LeadStatus,
 } from "@/lib/lead-status";
-import { removeLead, setLeadNotes, setLeadStatus } from "../lead-actions";
+import { removeLead, setLeadNotes, setLeadReason, setLeadStatus } from "../lead-actions";
 
 /* Mirrors the TEPA enquiry form field for field: full name, organization,
    work email, phone, country, website, and the programs textarea. Keep the
@@ -25,6 +34,8 @@ export type TableLead = {
   website: string;
   message: string;
   status: LeadStatus;
+  /* Set only while the status is not qualified. */
+  disqualifiedReason: string;
   notes: string;
   isDemo: boolean;
   createdLabel: string;
@@ -35,6 +46,8 @@ export type TableLead = {
   campaign: string;
   utmSource: string;
   utmMedium: string;
+  /* The ad platform this lead is attributed to; see lib/channels.ts. */
+  channel: Channel;
   uploads: TableUpload[];
 };
 
@@ -73,6 +86,8 @@ const UPLOAD_TONE: Record<TableUpload["status"], string> = {
   skipped: "bg-navy-50 text-ink-500",
 };
 
+const COLUMNS = 7;
+
 export function LeadsTable({
   leads,
   events,
@@ -85,7 +100,8 @@ export function LeadsTable({
   const [openId, setOpenId] = useState<number | null>(null);
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { all: leads.length, lead: 0, mql: 0, sql: 0, customer: 0 };
+    const c: Record<string, number> = { all: leads.length };
+    for (const status of LEAD_STATUSES) c[status] = 0;
     for (const lead of leads) c[lead.status] += 1;
     return c;
   }, [leads]);
@@ -103,6 +119,7 @@ export function LeadsTable({
         lead.countryName,
         lead.website,
         lead.message,
+        lead.disqualifiedReason,
       ].some((field) => field.toLowerCase().includes(needle));
     });
   }, [leads, query, statusFilter]);
@@ -153,6 +170,7 @@ export function LeadsTable({
               <th>Lead</th>
               <th>Contact</th>
               <th>Country</th>
+              <th>Channel</th>
               <th>Received</th>
               <th>Stage</th>
               <th aria-label="Details" />
@@ -161,7 +179,7 @@ export function LeadsTable({
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-10 text-center text-sm text-ink-500">
+                <td colSpan={COLUMNS} className="py-10 text-center text-sm text-ink-500">
                   {leads.length === 0
                     ? "No leads in this range yet. New form enquiries land here the moment they arrive."
                     : "No leads match this search."}
@@ -189,6 +207,19 @@ export function LeadsTable({
   );
 }
 
+function ChannelBadge({ channel }: { channel: Channel }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-navy-50 px-2 py-0.5 text-xs font-medium text-ink-700">
+      <span
+        aria-hidden="true"
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ background: CHANNEL_COLOR[channel] }}
+      />
+      {CHANNEL_SHORT[channel]}
+    </span>
+  );
+}
+
 function LeadRow({
   lead,
   events,
@@ -203,13 +234,35 @@ function LeadRow({
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
+  /* Not qualified is chosen in the select but only committed once a reason has
+     been given, so the pick is held here in the meantime. */
+  const [askingReason, setAskingReason] = useState<"new" | "edit" | null>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const disqualified = lead.status === NOT_QUALIFIED;
+
   function changeStatus(value: string) {
-    if (!isLeadStatus(value) || value === lead.status) return;
+    if (!isLeadStatus(value)) return;
+    if (value === lead.status) {
+      setAskingReason(null);
+      return;
+    }
+    if (value === NOT_QUALIFIED) {
+      setAskingReason("new");
+      return;
+    }
+    setAskingReason(null);
     startTransition(async () => {
       await setLeadStatus(lead.id, value);
+    });
+  }
+
+  function submitReason(reason: string) {
+    startTransition(async () => {
+      if (askingReason === "edit") await setLeadReason(lead.id, reason);
+      else await setLeadStatus(lead.id, NOT_QUALIFIED, reason);
+      setAskingReason(null);
     });
   }
 
@@ -239,6 +292,10 @@ function LeadRow({
       ? lead.website
       : `https://${lead.website}`
     : null;
+
+  /* While a reason is being written the select shows the pick it is about to
+     commit; cancelling puts it back, because the value is controlled. */
+  const shownStatus: LeadStatus = askingReason === "new" ? NOT_QUALIFIED : lead.status;
 
   return (
     <>
@@ -275,7 +332,14 @@ function LeadRow({
           <p className="text-ink-700">{lead.email}</p>
           {lead.phone && <p className="text-xs text-ink-500">{lead.phone}</p>}
         </td>
-        <td className="whitespace-nowrap text-ink-700">{lead.countryName || "—"}</td>
+        {/* Wraps rather than forcing the row wider: "United Arab Emirates" on
+            two lines costs less than a horizontal scrollbar over the stage
+            control. The campaign belongs to the same story but lives in the
+            detail panel, where there is room to read it. */}
+        <td className="text-ink-700">{lead.countryName || "—"}</td>
+        <td>
+          <ChannelBadge channel={lead.channel} />
+        </td>
         <td className="whitespace-nowrap text-ink-700" title={lead.createdFull}>
           {lead.createdLabel}
         </td>
@@ -284,11 +348,10 @@ function LeadRow({
             <span
               aria-hidden="true"
               className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ background: STAGE_COLORS[lead.status] }}
+              style={{ background: STAGE_COLORS[shownStatus] }}
             />
             <select
-              key={lead.status}
-              defaultValue={lead.status}
+              value={shownStatus}
               disabled={isPending}
               onChange={(e) => changeStatus(e.target.value)}
               className="dash-status"
@@ -301,6 +364,14 @@ function LeadRow({
               ))}
             </select>
           </span>
+          {disqualified && lead.disqualifiedReason && (
+            <p
+              className="mt-1 max-w-[10rem] truncate text-[0.6875rem] text-ink-500"
+              title={lead.disqualifiedReason}
+            >
+              {lead.disqualifiedReason}
+            </p>
+          )}
         </td>
         <td className="text-ink-500">
           <span aria-hidden="true" className="inline-block text-xs">
@@ -309,9 +380,24 @@ function LeadRow({
         </td>
       </tr>
 
+      {askingReason && (
+        <tr>
+          <td colSpan={COLUMNS} className="!border-b-navy-500/12 bg-navy-50/60 !py-4">
+            <ReasonForm
+              leadId={lead.id}
+              mode={askingReason}
+              currentReason={lead.disqualifiedReason}
+              busy={isPending}
+              onSubmit={submitReason}
+              onCancel={() => setAskingReason(null)}
+            />
+          </td>
+        </tr>
+      )}
+
       {open && (
         <tr>
-          <td colSpan={6} className="!border-b-navy-500/12 bg-navy-50/50 !py-5">
+          <td colSpan={COLUMNS} className="!border-b-navy-500/12 bg-navy-50/50 !py-5">
             <div className="grid gap-6 px-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
               <div className="space-y-5">
                 <div>
@@ -320,6 +406,22 @@ function LeadRow({
                     {lead.message || "Left blank on the form."}
                   </p>
                 </div>
+                {disqualified && (
+                  <div>
+                    <p className="dash-eyebrow text-navy-500">Not qualified because</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-ink-700">
+                      {lead.disqualifiedReason || "No reason recorded."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setAskingReason("edit")}
+                      disabled={isPending}
+                      className="dash-btn dash-btn-quiet mt-2 !px-4 !py-1.5 text-xs disabled:opacity-60"
+                    >
+                      Change reason
+                    </button>
+                  </div>
+                )}
                 <div>
                   <label className="dash-eyebrow text-navy-500" htmlFor={`notes-${lead.id}`}>
                     Notes
@@ -414,6 +516,12 @@ function LeadRow({
                 <div>
                   <p className="dash-eyebrow text-navy-500">Ad attribution</p>
                   <dl className="mt-2 space-y-1.5 text-[0.8125rem]">
+                    <div className="flex gap-2">
+                      <dt className="w-24 shrink-0 text-ink-500">Channel</dt>
+                      <dd className="text-ink-700">
+                        <ChannelBadge channel={lead.channel} />
+                      </dd>
+                    </div>
                     <div className="flex gap-2">
                       <dt className="w-24 shrink-0 text-ink-500">Click ID</dt>
                       <dd className="min-w-0 break-all text-ink-700">
@@ -511,5 +619,100 @@ function LeadRow({
         </tr>
       )}
     </>
+  );
+}
+
+/* The reason a lead was rejected, asked for at the moment of rejecting it.
+   A preset keeps the common answers countable; the detail box carries the
+   specifics, and is the whole reason when the preset is "Other". */
+function ReasonForm({
+  leadId,
+  mode,
+  currentReason,
+  busy,
+  onSubmit,
+  onCancel,
+}: {
+  leadId: number;
+  mode: "new" | "edit";
+  currentReason: string;
+  busy: boolean;
+  onSubmit: (reason: string) => void;
+  onCancel: () => void;
+}) {
+  const [preset, setPreset] = useState("");
+  const [detail, setDetail] = useState("");
+
+  const needsDetail = preset === "Other";
+  const reason = composeReason(preset, detail);
+  const ready = Boolean(preset) && (!needsDetail || detail.trim().length > 0);
+
+  function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!ready || busy) return;
+    onSubmit(reason);
+  }
+
+  return (
+    <form onSubmit={submit} className="px-1">
+      <p className="text-sm font-semibold text-ink-900">
+        {mode === "edit" ? "Change the reason" : "Why is this lead not qualified?"}
+      </p>
+      <p className="mt-0.5 text-xs text-ink-500">
+        {mode === "edit"
+          ? `Currently: ${currentReason || "no reason recorded"}.`
+          : "Required. This is what tells you later which ads are buying the wrong leads."}
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-start gap-2">
+        <label className="sr-only" htmlFor={`reason-preset-${leadId}`}>
+          Reason
+        </label>
+        <select
+          id={`reason-preset-${leadId}`}
+          value={preset}
+          onChange={(e) => setPreset(e.target.value)}
+          required
+          autoFocus
+          className="dash-field max-w-[16rem] !py-2 text-sm"
+        >
+          <option value="">Select a reason…</option>
+          {DISQUALIFY_REASONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+
+        <label className="sr-only" htmlFor={`reason-detail-${leadId}`}>
+          Detail
+        </label>
+        <input
+          id={`reason-detail-${leadId}`}
+          type="text"
+          value={detail}
+          onChange={(e) => setDetail(e.target.value)}
+          maxLength={MAX_REASON_LENGTH}
+          placeholder={needsDetail ? "Say what happened (required)" : "Add detail (optional)"}
+          className="dash-field max-w-sm !py-2 text-sm"
+        />
+
+        <button
+          type="submit"
+          disabled={!ready || busy}
+          className="dash-btn dash-btn-navy !px-4 !py-2 text-xs disabled:opacity-50"
+        >
+          {mode === "edit" ? "Save reason" : "Mark not qualified"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={busy}
+          className="dash-btn dash-btn-quiet !px-4 !py-2 text-xs disabled:opacity-60"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

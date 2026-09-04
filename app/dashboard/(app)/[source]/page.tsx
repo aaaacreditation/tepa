@@ -1,14 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  CHANNEL_LABEL,
+  type ChannelFilter,
+  channelOf,
+  isChannelFilter,
+} from "@/lib/channels";
 import { getUploadsForSource } from "@/lib/conversions";
 import {
   LEAD_STATUSES,
+  NOT_QUALIFIED,
   STAGE_COLORS,
   STATUS_LABEL,
 } from "@/lib/lead-status";
 import { getDashboardData } from "@/lib/leads";
 import { getSource } from "@/lib/sources";
 import { BarList, type BarRow } from "@/app/dashboard/components/BarList";
+import { ChannelTabs } from "@/app/dashboard/components/ChannelTabs";
+import { DEFAULT_CHANNEL, DEFAULT_RANGE } from "@/app/dashboard/components/filter-href";
 import {
   LeadsTable,
   type TableEvent,
@@ -56,14 +65,22 @@ export default async function SourceDashboard({
   if (!source) notFound();
 
   const sp = await searchParams;
-  const rangeKey = typeof sp.range === "string" && sp.range in RANGES ? sp.range : "30";
+  const rangeKey =
+    typeof sp.range === "string" && sp.range in RANGES ? sp.range : DEFAULT_RANGE;
   const range = RANGES[rangeKey];
+  const channel: ChannelFilter =
+    typeof sp.channel === "string" && isChannelFilter(sp.channel) ? sp.channel : DEFAULT_CHANNEL;
 
   const [data, uploads] = await Promise.all([
-    getDashboardData(source.key, range.days),
+    getDashboardData(source.key, range.days, channel),
     getUploadsForSource(source.key),
   ]);
   const { reached, pipeline, total } = data;
+
+  /* Every "leads in range" caption also has to say which tab produced them, or
+     the same sentence would describe four different numbers. */
+  const scope = channel === "all" ? range.label : `${CHANNEL_LABEL[channel]}, ${range.label}`;
+  const basePath = `/dashboard/${source.key}`;
 
   /* Group the outbox by lead so each row can show what actually reached each
      ad platform. Without this the upload is invisible and a silent credential
@@ -120,6 +137,7 @@ export default async function SourceDashboard({
     website: lead.website,
     message: lead.message,
     status: lead.status,
+    disqualifiedReason: lead.disqualifiedReason,
     notes: lead.notes,
     isDemo: lead.isDemo,
     createdLabel: dayFmt.format(new Date(lead.createdAt)),
@@ -129,14 +147,19 @@ export default async function SourceDashboard({
     campaign: lead.utmCampaign,
     utmSource: lead.utmSource,
     utmMedium: lead.utmMedium,
+    channel: channelOf(lead),
     uploads: uploadsByLead[lead.id] ?? [],
   }));
 
   const eventsByLead: Record<number, TableEvent[]> = {};
   for (const event of data.events) {
+    /* The reason is carried on the event rather than read off the lead, so a
+       lead that was disqualified and later re-qualified still shows what was
+       said at the time. */
+    const why = event.reason ? ` · ${event.reason}` : "";
     (eventsByLead[event.leadId] ??= []).push({
       id: event.id,
-      label: `${STATUS_LABEL[event.fromStatus]} → ${STATUS_LABEL[event.toStatus]} · ${
+      label: `${STATUS_LABEL[event.fromStatus]} → ${STATUS_LABEL[event.toStatus]}${why} · ${
         event.changedBy
       } · ${fullFmt.format(new Date(event.createdAt))}`,
     });
@@ -160,7 +183,15 @@ export default async function SourceDashboard({
         </Link>
       </header>
 
-      <RangeFilter current={rangeKey} basePath={`/dashboard/${source.key}`} />
+      <ChannelTabs
+        current={channel}
+        basePath={basePath}
+        range={rangeKey}
+        counts={data.channels}
+        total={data.channels.google + data.channels.meta + data.channels.other}
+      />
+
+      <RangeFilter current={rangeKey} basePath={basePath} channel={channel} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key numbers">
         <StatTile
@@ -190,7 +221,7 @@ export default async function SourceDashboard({
       <section className="dash-card p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-[0.9375rem] font-semibold text-ink-900">Leads per day</h2>
-          <p className="text-xs text-ink-500">Form enquiries received, {range.label}</p>
+          <p className="text-xs text-ink-500">Form enquiries received, {scope}</p>
         </div>
         <TimeSeriesChart points={points} />
       </section>
@@ -199,14 +230,24 @@ export default async function SourceDashboard({
         <div className="dash-card p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-[0.9375rem] font-semibold text-ink-900">Pipeline today</h2>
-            <p className="text-xs text-ink-500">Current stage of each lead in range</p>
+            <p className="text-xs text-ink-500">Where every lead in range stands now</p>
           </div>
-          <BarList rows={pipelineRows} labelWidth={86} ariaLabel="Leads by pipeline stage" />
+          <BarList rows={pipelineRows} labelWidth={96} ariaLabel="Leads by pipeline stage" />
+          {pipeline[NOT_QUALIFIED] > 0 && (
+            /* The rate matters more than the count: a channel rejecting a
+               quarter of what it sends is buying the wrong clicks, and that
+               only shows up next to the total. */
+            <p className="mt-4 border-t border-navy-500/10 pt-3 text-xs text-ink-500">
+              {pipeline[NOT_QUALIFIED].toLocaleString("en-US")} of{" "}
+              {total.toLocaleString("en-US")} ({share(pipeline[NOT_QUALIFIED], total)}%) marked
+              not qualified. Open a lead to see why.
+            </p>
+          )}
         </div>
         <div className="dash-card p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-[0.9375rem] font-semibold text-ink-900">Top countries</h2>
-            <p className="text-xs text-ink-500">Where enquiries come from, {range.label}</p>
+            <p className="text-xs text-ink-500">Where enquiries come from, {scope}</p>
           </div>
           {countryRows.length > 0 ? (
             <BarList rows={countryRows} labelWidth={128} ariaLabel="Leads by country" />
