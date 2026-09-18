@@ -8,6 +8,14 @@
 export const PIPELINE_STAGES = ["lead", "mql", "sql", "customer"] as const;
 export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 
+/* The sales team's own checkpoint between Lead and MQL: the lead was picked
+   up, an Odoo record was created, the client was contacted (email, call or
+   WhatsApp) and replied with any acknowledgement. It is a status the board
+   shows, not a stage the ad platforms hear about — it says the team did its
+   job, not that the lead is worth more — so it stays out of PIPELINE_STAGES
+   and queues no conversion. Promoting on to MQL reports MQL as usual. */
+export const FIRST_CONTACT = "first_contact" as const;
+
 /* Disqualification is an outcome, not a stage. It can be reached from anywhere
    in the pipeline, it never advances to anything, and it is deliberately kept
    out of PIPELINE_STAGES: a stage's index drives the conversion backfill, so a
@@ -15,27 +23,48 @@ export type PipelineStage = (typeof PIPELINE_STAGES)[number];
    had converted — the exact opposite of what the bidding needs to learn. */
 export const NOT_QUALIFIED = "not_qualified" as const;
 
+/* A second enquiry from a lead already on the board. Like not qualified it is
+   an exit rather than a stage, and the platforms never hear of it: the first
+   enquiry was already reported, and reporting the copy would count one person
+   twice. No reason is asked for; the status is the reason. */
+export const DUPLICATED = "duplicated" as const;
+
 /* Every value the status column may hold, in the order the dashboard shows
-   them. */
-export const LEAD_STATUSES = [...PIPELINE_STAGES, NOT_QUALIFIED] as const;
+   them: the working statuses in pipeline order, then the two exits. */
+export const LEAD_STATUSES = [
+  "lead",
+  FIRST_CONTACT,
+  "mql",
+  "sql",
+  "customer",
+  DUPLICATED,
+  NOT_QUALIFIED,
+] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
 export const STATUS_LABEL: Record<LeadStatus, string> = {
   lead: "Lead",
+  first_contact: "First contact",
   mql: "MQL",
   sql: "SQL",
   customer: "Customer",
+  duplicated: "Duplicated",
   not_qualified: "Not qualified",
 };
 
 export const STAGE_COLORS: Record<LeadStatus, string> = {
   lead: "#6d9ccb",
+  /* Halfway between lead and MQL on the ramp, which is where it sits. */
+  first_contact: "#5489be",
   mql: "#3a76b2",
   sql: "#1a4c81",
   customer: "#0b2440",
-  /* Off the navy ramp on purpose: a disqualified lead is not a darker shade of
-     progress, and a neutral slate reads as "closed" beside four blues without
-     shouting the way a red would on a row someone merely filed correctly. */
+  /* Both exits sit off the navy ramp on purpose: a closed lead is not a darker
+     shade of progress. Neutral tones read as "filed" beside the blues without
+     shouting the way a red would on a row someone merely filed correctly; the
+     duplicate is warm and the rejection cool so the two stay apart in the
+     bar list. */
+  duplicated: "#b3a48c",
   not_qualified: "#93a1b0",
 };
 

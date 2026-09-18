@@ -118,10 +118,12 @@ export async function POST(request: Request) {
       countryCode: country,
       countryName: countries.find(([code]) => code === country)?.[1] ?? country,
       phone,
-      /* The consultation form asks for neither, so both columns stay empty
-         rather than being filled with a placeholder the sales team would have
-         to learn to ignore. Every landing page still writes the same shape of
-         row, so the dashboard needs no per-source rendering. */
+      /* The consultation form asks for neither a position nor a website, so
+         both columns stay empty rather than being filled with a placeholder
+         the sales team would have to learn to ignore. Every landing page still
+         writes the same shape of row, so the dashboard needs no per-source
+         rendering. */
+      position: "",
       website: "",
       message: "Requested a free clinic accreditation consultation call.",
       attribution,

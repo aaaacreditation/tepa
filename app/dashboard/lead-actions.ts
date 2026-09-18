@@ -51,10 +51,11 @@ export async function setLeadStatus(
   const text = status === NOT_QUALIFIED ? validReason(reason) : "";
   const changed = await updateLeadStatus(leadId, status, session.name || session.email, text);
 
-  /* Report the new stage to Google Ads. Only a real transition queues anything,
-     so re-picking the status a lead already has stays a no-op, and the outbox
-     dedupes a demote and re-promote back to the same stage. Not qualified
-     queues nothing at all; see enqueueStageAndBackfill. */
+  /* Report the new stage to the ad platforms. Only a real transition queues
+     anything, so re-picking the status a lead already has stays a no-op, and
+     the outbox dedupes a demote and re-promote back to the same stage. First
+     contact, duplicated and not qualified queue nothing at all; see
+     enqueueStageAndBackfill. */
   if (changed) {
     const queued = await enqueueStageAndBackfill(leadId, status);
     if (queued > 0) {

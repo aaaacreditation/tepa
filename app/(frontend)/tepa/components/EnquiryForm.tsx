@@ -3,13 +3,21 @@
 import { useId, useState } from "react";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
 import { countries } from "@/lib/countries";
-import { formCopy, site } from "../content";
+import { formCopy, positionSuggestions, site } from "../content";
 import { SOURCES } from "@/lib/sources";
 import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
 import { IconArrow, IconCheck } from "./Icons";
 
-type RequiredField = "fullName" | "organization" | "email" | "phone" | "country" | "website";
+type RequiredField =
+  | "fullName"
+  | "position"
+  | "organization"
+  | "email"
+  | "phone"
+  | "country"
+  | "website"
+  | "message";
 type Errors = Partial<Record<RequiredField, string>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -64,8 +72,11 @@ export function EnquiryForm({
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
 
+    /* Every field is required. Mirrors the server checks in
+       app/api/tepa/enquiry/route.ts; keep the two in step. */
     const next: Errors = {};
     if (!data.fullName?.trim()) next.fullName = "Please tell us your name.";
+    if (!data.position?.trim()) next.position = "Please tell us your position.";
     if (!data.organization?.trim()) next.organization = "Please add your organization.";
     if (!EMAIL_RE.test(data.email?.trim() ?? "")) {
       next.email = "Please use a valid email address.";
@@ -76,6 +87,9 @@ export function EnquiryForm({
     if (!data.country) next.country = "Please choose your country.";
     if (!WEBSITE_RE.test(data.website?.trim() ?? "")) {
       next.website = "Please add your website.";
+    }
+    if (!data.message?.trim()) {
+      next.message = "Please tell us which programs you want accredited.";
     }
 
     setErrors(next);
@@ -166,6 +180,24 @@ export function EnquiryForm({
           error={errors.fullName}
         />
 
+        {/* Free text with suggestions rather than a fixed list: the exact
+            title is what sales wants to see, and a list would only ever miss
+            one. */}
+        <FormField
+          id={fieldId("position")}
+          name="position"
+          label="Position"
+          autoComplete="organization-title"
+          placeholder="Position (e.g. CEO, COO, Quality Manager)"
+          list={fieldId("positions")}
+          error={errors.position}
+        />
+        <datalist id={fieldId("positions")}>
+          {positionSuggestions.map((title) => (
+            <option key={title} value={title} />
+          ))}
+        </datalist>
+
         <FormField
           id={fieldId("organization")}
           name="organization"
@@ -203,6 +235,7 @@ export function EnquiryForm({
             id={fieldId("country")}
             name="country"
             defaultValue=""
+            required
             aria-invalid={Boolean(errors.country)}
             aria-describedby={errors.country ? fieldId("country-error") : undefined}
           >
@@ -238,8 +271,16 @@ export function EnquiryForm({
             id={fieldId("message")}
             name="message"
             rows={3}
+            required
             placeholder="Programs for accreditation"
+            aria-invalid={Boolean(errors.message)}
+            aria-describedby={errors.message ? fieldId("message-error") : undefined}
           />
+          {errors.message ? (
+            <p id={fieldId("message-error")} className="form-error">
+              {errors.message}
+            </p>
+          ) : null}
         </div>
 
         <div aria-hidden="true" className="honeypot">
@@ -294,9 +335,14 @@ type FormFieldProps = {
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   autoComplete?: string;
   placeholder?: string;
+  /* id of a <datalist> offering suggestions; the field still takes any text. */
+  list?: string;
   error?: string;
 };
 
+/* Every field on this form is required. The form runs with noValidate so the
+   messages in onSubmit are the ones shown, but the attribute still tells
+   assistive technology that the field is mandatory. */
 function FormField({
   id,
   name,
@@ -305,6 +351,7 @@ function FormField({
   inputMode,
   autoComplete,
   placeholder,
+  list,
   error,
 }: FormFieldProps) {
   return (
@@ -317,6 +364,8 @@ function FormField({
         inputMode={inputMode}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        list={list}
+        required
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
       />

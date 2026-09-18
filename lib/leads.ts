@@ -21,6 +21,9 @@ export type LeadRow = {
   source: string;
   fullName: string;
   organization: string;
+  /* The visitor's job title as they typed it (CEO, Quality Manager…). Read
+     from the contact_role column; empty on leads from before the field. */
+  position: string;
   email: string;
   countryCode: string;
   countryName: string;
@@ -59,6 +62,7 @@ export type NewLead = {
   source: string;
   fullName: string;
   organization: string;
+  position: string;
   email: string;
   countryCode: string;
   countryName: string;
@@ -78,6 +82,7 @@ const LEAD_COLUMNS = `
   source,
   full_name          AS "fullName",
   organization,
+  contact_role       AS "position",
   email,
   country_code       AS "countryCode",
   country_name       AS "countryName",
@@ -109,12 +114,14 @@ export async function insertLead(lead: NewLead): Promise<number> {
         gclid, gbraid, wbraid,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
         landing_path, referrer, clicked_at,
-        fbclid, fbp, fbc, client_ip, client_user_agent)
+        fbclid, fbp, fbc, client_ip, client_user_agent,
+        contact_role)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
              $10, $11, $12,
              $13, $14, $15, $16, $17,
              $18, $19, $20,
-             $21, $22, $23, $24, $25)
+             $21, $22, $23, $24, $25,
+             $26)
      RETURNING id`,
     [
       lead.source,
@@ -142,6 +149,7 @@ export async function insertLead(lead: NewLead): Promise<number> {
       lead.fbc,
       lead.clientIp,
       lead.clientUserAgent,
+      lead.position,
     ],
   );
   return rows[0].id;
@@ -345,7 +353,15 @@ export async function getDashboardData(
     previousQ,
   ]);
 
-  const pipeline: StatusCounts = { lead: 0, mql: 0, sql: 0, customer: 0, not_qualified: 0 };
+  const pipeline: StatusCounts = {
+    lead: 0,
+    first_contact: 0,
+    mql: 0,
+    sql: 0,
+    customer: 0,
+    duplicated: 0,
+    not_qualified: 0,
+  };
   for (const row of statusRows) pipeline[row.status] = row.count;
 
   const channels: ChannelCounts = { google: 0, meta: 0, other: 0 };
@@ -353,9 +369,11 @@ export async function getDashboardData(
 
   const total = LEAD_STATUSES.reduce((sum, status) => sum + pipeline[status], 0);
 
-  /* Every lead captured reached the lead stage, disqualified ones included —
-     the enquiry happened, and dropping them here would make "Leads captured"
-     fall whenever someone tidied the pipeline.
+  /* Every lead captured reached the lead stage, duplicates and disqualified
+     ones included — the enquiry happened, and dropping them here would make
+     "Leads captured" fall whenever someone tidied the pipeline. First contact
+     counts as lead too: it is a checkpoint on the way to MQL, not a stage the
+     funnel measures.
 
      The three stages above it are read off the current status, so a lead
      disqualified after being marked MQL stops counting towards MQL. That is

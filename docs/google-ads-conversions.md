@@ -42,7 +42,8 @@ Two consequences that trip people up:
 | Visitor submits the enquiry form | gtag in the browser, or a server upload | Both work; pick one |
 | Visitor clicks a Calendly link | gtag in the browser | Happens before any form fill |
 | Lead moved to MQL / SQL / Customer | Server upload to Data Manager | Happens days later, with no browser present |
-| Lead marked Not qualified | Nothing is uploaded | It is a rejection, not a milestone |
+| Lead moved to First contact | Nothing is uploaded | The sales team's own checkpoint between Lead and MQL |
+| Lead marked Duplicated or Not qualified | Nothing is uploaded | It is a rejection, not a milestone |
 
 This is shared by every landing page. `/tepa`, `/healthcare` and `/clinic` each
 mount `AttributionCapture` and `GoogleTag` from `app/(frontend)/components`,
@@ -274,14 +275,21 @@ marked `skipped` rather than retried forever.
 Rows seeded by `npm run demo:seed` carry `is_demo` and are always skipped.
 Reporting them would train Smart Bidding on fiction.
 
-### Not qualified
+### First contact, Duplicated and Not qualified
 
-Marking a lead not qualified queues nothing, for either platform. The stage is
-deliberately outside `PIPELINE_STAGES` in `lib/lead-status.ts`, so it has no
-conversion action, no value and no outbox row. Conversions already uploaded for
-earlier stages stay uploaded — there is no way to retract one, and the `lead`
-stage remains true: the enquiry did happen. What changes is that the promotion
-never comes, which is exactly what Smart Bidding should learn.
+Three statuses queue nothing, for either platform. **First contact** is the
+sales team's own checkpoint between Lead and MQL — the lead was picked up, an
+Odoo record was created, the client was contacted by email, call or WhatsApp
+and replied with any acknowledgement. It says the team did its job, not that
+the lead is worth more, so it is not a conversion; moving the lead on to MQL
+reports MQL as usual. **Duplicated** and **Not qualified** are rejections.
+
+All three are deliberately outside `PIPELINE_STAGES` in `lib/lead-status.ts`,
+so they have no conversion action, no value and no outbox row. Conversions
+already uploaded for earlier stages stay uploaded — there is no way to retract
+one, and the `lead` stage remains true: the enquiry did happen. What changes is
+that the promotion never comes, which is exactly what Smart Bidding should
+learn.
 
 ### Backfilled stages
 

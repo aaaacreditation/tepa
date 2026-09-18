@@ -191,6 +191,24 @@ export const formCopy = {
   errorGeneric: "Something went wrong on our side. Please try again, or email us directly.",
 } as const;
 
+/* Offered as suggestions under the position field; the visitor can type any
+   title. Kept short: the list nudges toward consistent spelling, it is not a
+   taxonomy. */
+export const positionSuggestions = [
+  "CEO",
+  "COO",
+  "CFO",
+  "Managing Director",
+  "Owner / Founder",
+  "General Manager",
+  "Quality Manager",
+  "Training Manager",
+  "Academic Director",
+  "Head of Learning & Development",
+  "Business Development Manager",
+  "Marketing Manager",
+] as const;
+
 /* The same form closes the page. Only the heading changes, so a visitor who
    scrolled past the hero copy is not asked the identical question twice. */
 export const applyForm = {

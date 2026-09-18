@@ -6,17 +6,19 @@ import { countries } from "@/lib/countries";
 import { SOURCES } from "@/lib/sources";
 import { HEALTHCARE_FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
-import { facilityTypes, formCopy, site } from "../content";
+import { facilityTypes, formCopy, positionSuggestions, site } from "../content";
 import { IconArrow, IconCheck, IconLock } from "../../components/Icons";
 
 type RequiredField =
   | "fullName"
+  | "position"
   | "organization"
   | "facilityType"
   | "email"
   | "phone"
   | "country"
-  | "website";
+  | "website"
+  | "message";
 type Errors = Partial<Record<RequiredField, string>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -55,10 +57,11 @@ type EnquiryFormProps = {
   layout?: "panel" | "stack";
 };
 
-/* The same card /clinic uses, carrying the healthcare enquiry: seven fields
-   the surveyor needs to pick the applicable standards, plus an optional note
-   on scope. It posts to /api/healthcare/enquiry, which stores the lead under
-   the "healthcare" source and queues the Healthcare Enquiry conversion. */
+/* The same card /clinic uses, carrying the healthcare enquiry: nine required
+   fields, the eight the surveyor needs to pick the applicable standards and a
+   note on scope. It posts to /api/healthcare/enquiry, which stores the lead
+   under the "healthcare" source and queues the Healthcare Enquiry
+   conversion. */
 export function EnquiryForm({ layout = "panel" }: EnquiryFormProps) {
   const uid = useId();
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
@@ -72,10 +75,11 @@ export function EnquiryForm({ layout = "panel" }: EnquiryFormProps) {
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
 
-    /* Mirrors the server checks in app/api/healthcare/enquiry/route.ts; keep
-       the two in step. */
+    /* Every field is required. Mirrors the server checks in
+       app/api/healthcare/enquiry/route.ts; keep the two in step. */
     const next: Errors = {};
     if (!data.fullName?.trim()) next.fullName = "Please tell us your name.";
+    if (!data.position?.trim()) next.position = "Please tell us your position.";
     if (!data.organization?.trim()) next.organization = "Please add your facility name.";
     if (!data.facilityType) next.facilityType = "Please choose a facility type.";
     if (!EMAIL_RE.test(data.email?.trim() ?? "")) {
@@ -87,6 +91,9 @@ export function EnquiryForm({ layout = "panel" }: EnquiryFormProps) {
     if (!data.country) next.country = "Please choose your country.";
     if (!WEBSITE_RE.test(data.website?.trim() ?? "")) {
       next.website = "Please add your website.";
+    }
+    if (!data.message?.trim()) {
+      next.message = "Please describe your scope of services.";
     }
 
     setErrors(next);
@@ -176,6 +183,23 @@ export function EnquiryForm({ layout = "panel" }: EnquiryFormProps) {
             placeholder="Full name"
             error={errors.fullName}
           />
+          {/* Free text with suggestions rather than a fixed list: the exact
+              title is what the surveyor wants to see, and a list would only
+              ever miss one. */}
+          <Field
+            id={fieldId("position")}
+            name="position"
+            label="Position"
+            autoComplete="organization-title"
+            placeholder="Position (e.g. CEO, COO, Medical Director)"
+            list={fieldId("positions")}
+            error={errors.position}
+          />
+          <datalist id={fieldId("positions")}>
+            {positionSuggestions.map((title) => (
+              <option key={title} value={title} />
+            ))}
+          </datalist>
           <Field
             id={fieldId("organization")}
             name="organization"
@@ -230,13 +254,21 @@ export function EnquiryForm({ layout = "panel" }: EnquiryFormProps) {
             error={errors.website}
           />
           <div className="hc-field">
-            <label htmlFor={fieldId("message")}>Scope of services (optional)</label>
+            <label htmlFor={fieldId("message")}>Scope of services</label>
             <textarea
               id={fieldId("message")}
               name="message"
               rows={3}
-              placeholder="Scope of services (optional): departments, bed count, specialties, accreditation you already hold"
+              required
+              placeholder="Scope of services: departments, bed count, specialties, accreditation you already hold"
+              aria-invalid={Boolean(errors.message)}
+              aria-describedby={errors.message ? fieldId("message-error") : undefined}
             />
+            {errors.message ? (
+              <p id={fieldId("message-error")} className="hc-field-error">
+                {errors.message}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -294,12 +326,18 @@ type FieldProps = {
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   autoComplete?: string;
   placeholder?: string;
+  /* id of a <datalist> offering suggestions; the field still takes any text. */
+  list?: string;
   error?: string;
 };
 
 /* The visible label is the placeholder, as on /clinic, but a real label is
    still rendered and visually hidden — a placeholder disappears the moment
-   someone types, and it is not a label to a screen reader at all. */
+   someone types, and it is not a label to a screen reader at all.
+
+   Every field on this form is required. The form runs with noValidate so the
+   messages in onSubmit are the ones shown, but the attribute still tells
+   assistive technology that the field is mandatory. */
 function Field({
   id,
   name,
@@ -308,6 +346,7 @@ function Field({
   inputMode,
   autoComplete,
   placeholder,
+  list,
   error,
 }: FieldProps) {
   return (
@@ -320,6 +359,8 @@ function Field({
         inputMode={inputMode}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        list={list}
+        required
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
       />
@@ -349,6 +390,7 @@ function Select({ id, name, label, placeholder, options, error }: SelectProps) {
         id={id}
         name={name}
         defaultValue=""
+        required
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
       >

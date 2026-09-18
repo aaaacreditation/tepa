@@ -38,7 +38,8 @@ custom conversions, so page separation lives there rather than in the code.
 | Submits the enquiry form | `Lead`, event id *X*, advanced matching | `Lead`, event id *X*, hashed contact details, IP, user agent, `_fbp` / `_fbc` |
 | Clicks a Calendly link (`/tepa`) | `Schedule` | — |
 | Lead moved to MQL / SQL / Customer in the dashboard | — | `MQL` / `SQL` / `Purchase` |
-| Lead marked Not qualified in the dashboard | — | Nothing; a rejection is not a conversion |
+| Lead moved to First contact in the dashboard | — | Nothing; it is the sales team's own checkpoint |
+| Lead marked Duplicated or Not qualified in the dashboard | — | Nothing; a rejection is not a conversion |
 
 `MetaPixel` and `MetaViewContent` are mounted from each landing page's
 layout in `app/(frontend)`, next to the Google tag. The enquiry forms fire the
@@ -122,8 +123,9 @@ within the last 7 days, so a row that fails for a week is settled as skipped
 rather than retried forever.
 
 Dragging a lead straight to Customer backfills MQL and SQL, exactly as for
-Google, so Meta sees the whole funnel. Marking a lead not qualified sends
-nothing at all — see the same section in the Google document.
+Google, so Meta sees the whole funnel. Moving a lead to First contact, or
+marking it Duplicated or Not qualified, sends nothing at all — see the same
+section in the Google document.
 
 ### Failures are visible, not silent
 

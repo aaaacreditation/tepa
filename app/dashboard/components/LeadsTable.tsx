@@ -21,13 +21,15 @@ import {
 } from "@/lib/lead-status";
 import { removeLead, setLeadNotes, setLeadReason, setLeadStatus } from "../lead-actions";
 
-/* Mirrors the TEPA enquiry form field for field: full name, organization,
-   work email, phone, country, website, and the programs textarea. Keep the
-   two in step when the form changes. */
+/* Mirrors the TEPA enquiry form field for field: full name, position,
+   organization, work email, phone, country, website, and the programs
+   textarea. Keep the two in step when the form changes. */
 export type TableLead = {
   id: number;
   fullName: string;
   organization: string;
+  /* Job title as typed on the form. Empty on leads from before it existed. */
+  position: string;
   email: string;
   phone: string;
   countryName: string;
@@ -113,6 +115,7 @@ export function LeadsTable({
       if (!needle) return true;
       return [
         lead.fullName,
+        lead.position,
         lead.organization,
         lead.email,
         lead.phone,
@@ -131,7 +134,7 @@ export function LeadsTable({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, organization, email, phone, country, website, programs"
+          placeholder="Search name, position, organization, email, phone, country, website, programs"
           aria-label="Search leads"
           className="dash-field max-w-xs !py-2 text-sm"
         />
@@ -315,7 +318,9 @@ function LeadRow({
               </span>
             )}
           </p>
-          <p className="text-xs text-ink-500">{lead.organization}</p>
+          <p className="text-xs text-ink-500">
+            {[lead.position, lead.organization].filter(Boolean).join(" · ")}
+          </p>
           {websiteHref && (
             <a
               href={websiteHref}
@@ -480,6 +485,16 @@ function LeadRow({
                     <div className="flex gap-2">
                       <dt className="w-24 shrink-0 text-ink-500">Organization</dt>
                       <dd className="text-ink-700">{lead.organization}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                      <dt className="w-24 shrink-0 text-ink-500">Position</dt>
+                      <dd className="text-ink-700">
+                        {lead.position || (
+                          /* Only leads captured before the position field
+                             existed can be missing one. */
+                          <span className="text-ink-500">—</span>
+                        )}
+                      </dd>
                     </div>
                     <div className="flex gap-2">
                       <dt className="w-24 shrink-0 text-ink-500">Country</dt>

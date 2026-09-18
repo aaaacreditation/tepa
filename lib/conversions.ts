@@ -41,8 +41,10 @@ import { DEFAULT_SOURCE, getSource } from "./sources";
    exercise: a customer must outweigh a raw lead or the bidding cannot learn. */
 
 /* Only a pipeline stage is ever reported to an ad platform. Disqualifying a
-   lead is a decision about it, not a milestone it reached, so it has no
-   conversion action, no value, and no row in the outbox. */
+   lead or filing it as a duplicate is a decision about it, not a milestone it
+   reached, and first contact is the sales team's own checkpoint rather than a
+   sign the lead is worth more; none of the three has a conversion action, a
+   value, or a row in the outbox. */
 export type ConversionStage = PipelineStage;
 
 export type StageConfig = {
@@ -247,10 +249,11 @@ export async function enqueueStageAndBackfill(
   stage: LeadStatus,
   occurredAt: Date = new Date(),
 ): Promise<number> {
-  /* Not qualified reports nothing. There is no way to retract a conversion
-     already uploaded for an earlier stage, and nothing new is owed: the lead
-     stage stays true — the enquiry did happen — and the platforms simply never
-     hear about a promotion that never came. */
+  /* First contact, duplicated and not qualified report nothing. There is no
+     way to retract a conversion already uploaded for an earlier stage, and
+     nothing new is owed: the lead stage stays true — the enquiry did happen —
+     and the platforms simply never hear about a promotion that never came.
+     A lead moved on from first contact to MQL reports MQL then, as usual. */
   if (!isPipelineStage(stage)) return 0;
 
   const target = PIPELINE_STAGES.indexOf(stage);

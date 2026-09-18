@@ -620,7 +620,8 @@
 }
 
 .form-field input[aria-invalid="true"],
-.form-field select[aria-invalid="true"] {
+.form-field select[aria-invalid="true"],
+.form-field textarea[aria-invalid="true"] {
   border-color: #b44d43;
 }
 

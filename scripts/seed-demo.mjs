@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS leads (
   website           TEXT NOT NULL DEFAULT '',
   message           TEXT NOT NULL DEFAULT '',
   status            TEXT NOT NULL DEFAULT 'lead'
-                    CHECK (status IN ('lead', 'mql', 'sql', 'customer', 'not_qualified')),
+                    CHECK (status IN ('lead', 'first_contact', 'mql', 'sql', 'customer',
+                                      'duplicated', 'not_qualified')),
   notes             TEXT NOT NULL DEFAULT '',
   is_demo           BOOLEAN NOT NULL DEFAULT false,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -75,7 +76,8 @@ CREATE INDEX IF NOT EXISTS lead_events_lead_idx ON lead_events (lead_id, created
 
 ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_status_check;
 ALTER TABLE leads ADD  CONSTRAINT leads_status_check
-  CHECK (status IN ('lead', 'mql', 'sql', 'customer', 'not_qualified'));
+  CHECK (status IN ('lead', 'first_contact', 'mql', 'sql', 'customer',
+                    'duplicated', 'not_qualified'));
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS disqualified_reason TEXT NOT NULL DEFAULT '';
 ALTER TABLE lead_events ADD COLUMN IF NOT EXISTS reason TEXT NOT NULL DEFAULT '';
 
@@ -88,6 +90,7 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS fbclid       TEXT NOT NULL DEFAULT ''
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_source   TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_medium   TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS utm_campaign TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_role TEXT NOT NULL DEFAULT '';
 `);
 
 if (process.argv.includes("--clear")) {
@@ -122,6 +125,18 @@ const PEOPLE = [
   ["Mei Ling Tan", "Harbourfront Academy"],
 ];
 
+/* The live form asks for a position, so demo rows carry one too. */
+const POSITIONS = [
+  "CEO",
+  "COO",
+  "Managing Director",
+  "Owner / Founder",
+  "Training Manager",
+  "Quality Manager",
+  "Academic Director",
+  "Head of Learning & Development",
+];
+
 const COUNTRIES = [
   ["US", "United States"],
   ["GB", "United Kingdom"],
@@ -144,7 +159,9 @@ const MESSAGES = [
   "",
 ];
 
-const STATUS_FLOW = ["lead", "mql", "sql", "customer"];
+/* The order a progressed lead's history is walked in. First contact is the
+   sales checkpoint between lead and MQL; see lib/lead-status.ts. */
+const STATUS_FLOW = ["lead", "first_contact", "mql", "sql", "customer"];
 
 const REASONS = [
   "Individual, not a training provider",
@@ -160,10 +177,12 @@ function pick(list) {
 
 function statusFor() {
   const roll = Math.random();
-  if (roll < 0.42) return "lead";
+  if (roll < 0.34) return "lead";
+  if (roll < 0.48) return "first_contact";
   if (roll < 0.62) return "mql";
   if (roll < 0.74) return "sql";
   if (roll < 0.82) return "customer";
+  if (roll < 0.86) return "duplicated";
   return "not_qualified";
 }
 
@@ -212,9 +231,11 @@ for (let i = 0; i < COUNT; i++) {
     `INSERT INTO leads
        (source, full_name, organization, email, country_code, country_name,
         phone, website, message, status, is_demo, created_at, status_changed_at,
-        disqualified_reason, gclid, fbclid, utm_source, utm_medium, utm_campaign)
+        disqualified_reason, gclid, fbclid, utm_source, utm_medium, utm_campaign,
+        contact_role)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11, $11,
-             $12, $13, $14, $15, $16, $17)
+             $12, $13, $14, $15, $16, $17,
+             $18)
      RETURNING id`,
     [
       "tepa",
@@ -235,6 +256,7 @@ for (let i = 0; i < COUNT; i++) {
       attribution.source,
       attribution.medium,
       attribution.campaign,
+      pick(POSITIONS),
     ],
   );
 
@@ -259,7 +281,17 @@ for (let i = 0; i < COUNT; i++) {
       [rows[0].id, reason, stamp],
     );
   }
-  if (stageIndex > 0 || reason) {
+  /* A duplicate is spotted straight from the lead stage too, and carries no
+     reason: the status is the reason. */
+  if (status === "duplicated") {
+    stamp = new Date(stamp.getTime() + (1 + Math.random() * 2) * 86_400_000);
+    await pool.query(
+      `INSERT INTO lead_events (lead_id, from_status, to_status, changed_by, created_at)
+       VALUES ($1, 'lead', 'duplicated', 'Demo seed', $2)`,
+      [rows[0].id, stamp],
+    );
+  }
+  if (stageIndex > 0 || reason || status === "duplicated") {
     await pool.query("UPDATE leads SET status_changed_at = $2 WHERE id = $1", [rows[0].id, stamp]);
   }
   inserted++;

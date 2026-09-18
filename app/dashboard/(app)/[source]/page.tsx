@@ -8,6 +8,7 @@ import {
 } from "@/lib/channels";
 import { getUploadsForSource } from "@/lib/conversions";
 import {
+  DUPLICATED,
   LEAD_STATUSES,
   NOT_QUALIFIED,
   STAGE_COLORS,
@@ -119,6 +120,17 @@ export default async function SourceDashboard({
     tip: [`${share(pipeline[status], total)}% of leads in range`],
   }));
 
+  /* The two exits, summarised under the pipeline chart. The rate matters more
+     than the count: a channel whose leads keep closing without a sale is
+     buying the wrong clicks, and that only shows up next to the total. */
+  const closed = [
+    pipeline[NOT_QUALIFIED] > 0
+      ? `${pipeline[NOT_QUALIFIED].toLocaleString("en-US")} marked not qualified`
+      : "",
+    pipeline[DUPLICATED] > 0 ? `${pipeline[DUPLICATED].toLocaleString("en-US")} duplicated` : "",
+  ].filter(Boolean);
+  const closedCount = pipeline[NOT_QUALIFIED] + pipeline[DUPLICATED];
+
   const countryRows: BarRow[] = data.countries.map((c) => ({
     key: c.countryName,
     label: c.countryName,
@@ -131,6 +143,7 @@ export default async function SourceDashboard({
     id: lead.id,
     fullName: lead.fullName,
     organization: lead.organization,
+    position: lead.position,
     email: lead.email,
     phone: lead.phone,
     countryName: lead.countryName,
@@ -233,14 +246,11 @@ export default async function SourceDashboard({
             <p className="text-xs text-ink-500">Where every lead in range stands now</p>
           </div>
           <BarList rows={pipelineRows} labelWidth={96} ariaLabel="Leads by pipeline stage" />
-          {pipeline[NOT_QUALIFIED] > 0 && (
-            /* The rate matters more than the count: a channel rejecting a
-               quarter of what it sends is buying the wrong clicks, and that
-               only shows up next to the total. */
+          {closed.length > 0 && (
             <p className="mt-4 border-t border-navy-500/10 pt-3 text-xs text-ink-500">
-              {pipeline[NOT_QUALIFIED].toLocaleString("en-US")} of{" "}
-              {total.toLocaleString("en-US")} ({share(pipeline[NOT_QUALIFIED], total)}%) marked
-              not qualified. Open a lead to see why.
+              {closed.join(" and ")} out of {total.toLocaleString("en-US")} (
+              {share(closedCount, total)}%).
+              {pipeline[NOT_QUALIFIED] > 0 && " Open a not qualified lead to see why."}
             </p>
           )}
         </div>

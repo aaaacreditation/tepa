@@ -18,6 +18,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 /* Mirrors the client checks in EnquiryForm.tsx; keep the two in step. */
 const WEBSITE_RE = /^(https?:\/\/)?[^\s]+\.[^\s]{2,}$/i;
 const MAX_LEN = 2000;
+/* A job title, not an essay. */
+const MAX_POSITION_LEN = 120;
 const VALID_COUNTRY = new Set(countries.map(([code]) => code));
 
 function validPhone(value: string): boolean {
@@ -28,6 +30,7 @@ function validPhone(value: string): boolean {
 export type Enquiry = {
   fullName: string;
   organization: string;
+  position: string;
   email: string;
   country: string;
   countryName: string;
@@ -89,19 +92,25 @@ export async function POST(request: Request) {
   }
 
   const fullName = clean(payload.fullName);
+  const position = clean(payload.position).slice(0, MAX_POSITION_LEN);
   const organization = clean(payload.organization);
   const email = clean(payload.email);
   const phone = clean(payload.phone);
   const country = clean(payload.country);
   const website = clean(payload.website);
+  const message = clean(payload.message);
 
+  /* Every field is required, the programs note included: an enquiry that
+     does not say what it wants accredited cannot be assessed. */
   const fieldErrors: Record<string, string> = {};
   if (!fullName) fieldErrors.fullName = "Full name is required.";
+  if (!position) fieldErrors.position = "Your position is required.";
   if (!organization) fieldErrors.organization = "Organization is required.";
   if (!EMAIL_RE.test(email)) fieldErrors.email = "A valid email address is required.";
   if (!validPhone(phone)) fieldErrors.phone = "A valid phone number is required.";
   if (!VALID_COUNTRY.has(country)) fieldErrors.country = "A valid country is required.";
   if (!WEBSITE_RE.test(website)) fieldErrors.website = "A website is required.";
+  if (!message) fieldErrors.message = "The programs for accreditation are required.";
 
   if (Object.keys(fieldErrors).length > 0) {
     return Response.json(
@@ -127,11 +136,10 @@ export async function POST(request: Request) {
   const clientIp = ip === "unknown" ? "" : ip;
   const clientUserAgent = (request.headers.get("user-agent") ?? "").slice(0, 512);
 
-  const message = clean(payload.message);
-
   const enquiry: Enquiry = {
     fullName,
     organization,
+    position,
     email,
     country,
     countryName: countries.find(([code]) => code === country)?.[1] ?? country,
@@ -170,6 +178,7 @@ async function deliver(enquiry: Enquiry) {
     source: enquiry.source,
     fullName: enquiry.fullName,
     organization: enquiry.organization,
+    position: enquiry.position,
     email: enquiry.email,
     countryCode: enquiry.country,
     countryName: enquiry.countryName,

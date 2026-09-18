@@ -353,6 +353,24 @@ export const facilityTypes = [
   "Other healthcare organization",
 ] as const;
 
+/* Offered as suggestions under the position field; the visitor can type any
+   title. Kept short: the list nudges toward consistent spelling, it is not a
+   taxonomy. */
+export const positionSuggestions = [
+  "CEO",
+  "COO",
+  "CFO",
+  "Managing Director",
+  "Owner / Founder",
+  "Hospital Director",
+  "Medical Director",
+  "Nursing Director",
+  "Quality Manager",
+  "Patient Safety Officer",
+  "Operations Manager",
+  "Administrator",
+] as const;
+
 /* The hero form and the closing form are the same component, and both open
    straight on the first field: the section around each one already says what
    the form is for, so a heading inside the card only repeats it. */

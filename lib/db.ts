@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS leads (
   website           TEXT NOT NULL DEFAULT '',
   message           TEXT NOT NULL DEFAULT '',
   status            TEXT NOT NULL DEFAULT 'lead'
-                    CHECK (status IN ('lead', 'mql', 'sql', 'customer', 'not_qualified')),
+                    CHECK (status IN ('lead', 'first_contact', 'mql', 'sql', 'customer',
+                                      'duplicated', 'not_qualified')),
   notes             TEXT NOT NULL DEFAULT '',
   is_demo           BOOLEAN NOT NULL DEFAULT false,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -50,19 +51,23 @@ CREATE TABLE IF NOT EXISTS lead_events (
 
 CREATE INDEX IF NOT EXISTS lead_events_lead_idx ON lead_events (lead_id, created_at);
 
-/* 'not_qualified' is a fifth status, not a fifth stage: a lead can be marked
-   not qualified from anywhere in the pipeline and never moves on from it.
-   Installs created before it existed carry the old four value constraint, so
-   it is replaced by name; dropping first keeps the pair re-runnable.
+/* The four pipeline stages are joined by three statuses that are not stages:
+   'first_contact' is the sales team's checkpoint between lead and mql, and
+   'duplicated' and 'not_qualified' are exits a lead can be moved to from
+   anywhere and never moves on from. None of the three is reported to an ad
+   platform; see lib/lead-status.ts. Installs created before they existed
+   carry an older constraint, so it is replaced by name; dropping first keeps
+   the pair re-runnable.
 
-   The reason is required by the dashboard rather than by the column, which
-   stays NOT NULL DEFAULT '' like every other text column here so the rows that
-   predate it are still valid. It is cleared when a lead returns to the
-   pipeline — the current row says what is true now, and lead_events keeps what
-   was said at the time. */
+   The disqualification reason is required by the dashboard rather than by the
+   column, which stays NOT NULL DEFAULT '' like every other text column here so
+   the rows that predate it are still valid. It is cleared when a lead returns
+   to the pipeline — the current row says what is true now, and lead_events
+   keeps what was said at the time. */
 ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_status_check;
 ALTER TABLE leads ADD  CONSTRAINT leads_status_check
-  CHECK (status IN ('lead', 'mql', 'sql', 'customer', 'not_qualified'));
+  CHECK (status IN ('lead', 'first_contact', 'mql', 'sql', 'customer',
+                    'duplicated', 'not_qualified'));
 
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS disqualified_reason TEXT NOT NULL DEFAULT '';
 
@@ -103,11 +108,17 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS fbc               TEXT NOT NULL DEFAU
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS client_ip         TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS client_user_agent TEXT NOT NULL DEFAULT '';
 
-/* organization_type, program_count and contact_role backed three extra form
-   questions that were removed for making the form too long. They are kept
-   rather than dropped: the columns are empty and cost nothing, dropping them
-   is irreversible, and re-adding the questions later would otherwise mean
-   another migration. Nothing reads or writes them. */
+/* organization_type and program_count backed two extra form questions that
+   were removed for making the form too long. They are kept rather than
+   dropped: the columns are empty and cost nothing, dropping them is
+   irreversible, and re-adding the questions later would otherwise mean
+   another migration. Nothing reads or writes them.
+
+   contact_role came in with them and was emptied the same way, then came back
+   as the required "Position" field on the TEPA and healthcare forms: the job
+   title as the visitor typed it (CEO, Quality Manager…). 'role' is a reserved
+   word in SQL, hence the column name; lib/leads.ts reads it as "position".
+   Rows from before the field returned keep the empty default. */
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS organization_type     TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS program_count         TEXT NOT NULL DEFAULT '';
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_role          TEXT NOT NULL DEFAULT '';
