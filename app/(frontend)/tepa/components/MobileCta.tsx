@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
    throws them back to the top of a page they have almost finished reading. */
 const FORM_IDS = ["enquire", "apply-form"];
 
-export function MobileCta() {
+export function MobileCta({ label = "Check My Eligibility" }: { label?: string }) {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export function MobileCta() {
   return (
     <div className="mobile-cta" data-shown={shown}>
       <a href="#enquire" onClick={onClick} className="tepa-button tepa-button--navy">
-        Check My Eligibility
+        {label}
       </a>
     </div>
   );

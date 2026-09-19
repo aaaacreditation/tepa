@@ -15,7 +15,17 @@ const socialIcons = {
   LinkedIn: IconLinkedIn,
 };
 
-export function SiteFooter() {
+type FooterLink = { readonly label: string; readonly href: string };
+
+/* The links default to /tepa's sections; another page built on this footer
+   passes its own so no link points at a section that is not there. */
+export function SiteFooter({
+  links = nav,
+  cta = { label: "Check eligibility", href: "#enquire" },
+}: {
+  links?: readonly FooterLink[];
+  cta?: FooterLink;
+} = {}) {
   return (
     <footer className="site-footer">
       <div className="site-shell footer-grid">
@@ -53,12 +63,12 @@ export function SiteFooter() {
         <div>
           <h2>On this page</h2>
           <nav className="footer-links" aria-label="Footer navigation">
-            {nav.map((item) => (
+            {links.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.label}
               </a>
             ))}
-            <a href="#enquire">Check eligibility</a>
+            <a href={cta.href}>{cta.label}</a>
           </nav>
         </div>
 
