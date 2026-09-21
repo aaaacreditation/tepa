@@ -399,6 +399,4 @@ export const booking = {
       body: "the list of programs you want accredited, the course outline for one of them, and your trainers' CVs.",
     },
   ],
-  doneCallNote: "Calls and messages come from +1 (571) 601 2616. Save it so you recognize us.",
-  saveContact: "Save our number to your contacts",
 } as const;

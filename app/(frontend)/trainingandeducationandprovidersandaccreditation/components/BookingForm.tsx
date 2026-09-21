@@ -6,8 +6,8 @@ import { countries } from "@/lib/countries";
 import { SOURCES } from "@/lib/sources";
 import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
-import { IconArrow, IconCalendar, IconCheck, IconPhone } from "../../tepa/components/Icons";
-import { booking, links, pending, positionSuggestions, site } from "../content";
+import { IconArrow, IconCalendar, IconCheck } from "../../tepa/components/Icons";
+import { booking, links, pending, positionSuggestions } from "../content";
 
 /* Two steps, then a confirmation.
 
@@ -72,22 +72,6 @@ function readAttribution() {
   }
   return null;
 }
-
-/* A contact card rather than a tel: link, which would dial instead of save.
-   Phones open it as "Add to contacts", so the assessor's call shows up as AAA
-   instead of an unknown US number the visitor lets ring out. */
-const CONTACT_CARD = `data:text/vcard;charset=utf-8,${encodeURIComponent(
-  [
-    "BEGIN:VCARD",
-    "VERSION:3.0",
-    `FN:AAA Accreditation (${site.org})`,
-    `ORG:${site.org}`,
-    `TEL;TYPE=WORK,VOICE:${site.phoneHref.replace("tel:", "")}`,
-    `EMAIL;TYPE=WORK:${site.email}`,
-    `URL:${site.website}`,
-    "END:VCARD",
-  ].join("\r\n"),
-)}`;
 
 type BookingFormProps = {
   badge?: string;
@@ -270,7 +254,6 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
       booking.contactConfirm.Email;
     const confirmValue =
       qualify.contactMethod === "Email" ? details.email.trim() : details.phone.trim();
-    const wantsPhone = qualify.contactMethod !== "Email";
 
     return (
       <div className="eligibility-card bk-card bk-booked" role="status">
@@ -297,22 +280,6 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
             </li>
           ))}
         </ul>
-
-        {wantsPhone ? (
-          <>
-            <p className="bk-small">
-              <IconPhone className="bk-inline-icon" />
-              {booking.doneCallNote}
-            </p>
-            <a
-              href={CONTACT_CARD}
-              download="AAA-Accreditation.vcf"
-              className="tepa-button tepa-button--outline-navy bk-full"
-            >
-              {booking.saveContact}
-            </a>
-          </>
-        ) : null}
       </div>
     );
   }

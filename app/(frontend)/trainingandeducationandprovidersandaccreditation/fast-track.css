@@ -9,8 +9,7 @@
 
 /* Hero */
 
-.ft-reassure,
-.ft-final-contact {
+.ft-reassure {
   display: flex;
   max-width: 560px;
   align-items: flex-start;
@@ -31,12 +30,6 @@
   flex: 0 0 auto;
   margin-top: 2px;
   color: var(--gold-400);
-}
-
-.ft-final-contact a {
-  color: var(--gold-300);
-  font-weight: 700;
-  text-underline-offset: 4px;
 }
 
 /* Booking form */
@@ -308,21 +301,6 @@
   width: 20px;
   height: 20px;
   margin-top: 2px;
-  color: var(--gold-600);
-}
-
-.bk-small {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 18px 0 16px;
-  color: #647184;
-  font-size: 0.74rem;
-}
-
-.bk-inline-icon {
-  width: 16px;
-  height: 16px;
   color: var(--gold-600);
 }
 

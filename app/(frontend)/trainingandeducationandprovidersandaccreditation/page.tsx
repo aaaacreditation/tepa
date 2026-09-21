@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { IconArrow, IconCalendar, IconCheck, IconPhone } from "../tepa/components/Icons";
+import { IconArrow, IconCalendar, IconCheck } from "../tepa/components/Icons";
 import { MobileCta } from "../tepa/components/MobileCta";
 import { SiteFooter } from "../tepa/components/SiteFooter";
 import { SiteHeader } from "../tepa/components/SiteHeader";
@@ -450,22 +450,6 @@ export default function FastTrackPage() {
               <p className="section-kicker section-kicker--gold">{finalCta.eyebrow}</p>
               <h2 className="section-title section-title--light">{finalCta.title}</h2>
               <p className="section-lede section-lede--light">{finalCta.body}</p>
-              <p className="ft-final-contact">
-                <IconPhone className="ft-reassure-icon" />
-                <span>
-                  Prefer to talk now? Call <a href={site.phoneHref}>{site.phoneLabel}</a>
-                  {pending.whatsapp ? (
-                    <>
-                      {" "}or message us on WhatsApp{" "}
-                      <a href={`https://wa.me/${pending.whatsapp.replace(/\D/g, "")}`}>
-                        {pending.whatsapp}
-                      </a>
-                    </>
-                  ) : null}
-                  .
-                </span>
-              </p>
-
               <figure className="apply-photo">
                 <Image
                   src="/tepa/certificate-handover.jpg"
