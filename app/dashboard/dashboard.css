@@ -118,6 +118,95 @@
   color: #ffffff;
 }
 
+/* Custom date range ------------------------------------------------------ */
+
+/* Sits at the end of the preset chips and has to read as one control rather
+   than three, so the pill holds the two inputs and the button inside a single
+   border — the same rounded outline as a chip, just wide enough to write in. */
+
+.dash-daterange {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 89, 147, 0.16);
+  background: #ffffff;
+  padding: 0.25rem 0.3rem 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #33414f;
+  transition: border-color 140ms ease;
+}
+
+.dash-daterange:hover,
+.dash-daterange:focus-within {
+  border-color: rgba(31, 89, 147, 0.4);
+}
+
+.dash-daterange[data-active="true"] {
+  border-color: #1f5993;
+  box-shadow: inset 0 0 0 1px rgba(31, 89, 147, 0.35);
+}
+
+.dash-daterange label {
+  font-weight: 500;
+  color: #5d6c7b;
+}
+
+.dash-daterange input[type="date"] {
+  border: 0;
+  background: transparent;
+  padding: 0.25rem 0.125rem;
+  font: inherit;
+  color: #10171f;
+  outline: none;
+}
+
+.dash-daterange input[type="date"]:focus-visible {
+  border-radius: 0.375rem;
+  outline: 2px solid #1f5993;
+  outline-offset: 1px;
+}
+
+.dash-daterange button {
+  border-radius: 999px;
+  border: 0;
+  background: #1f5993;
+  padding: 0.3125rem 0.8125rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.dash-daterange button:hover {
+  background: #17456f;
+}
+
+.dash-chip-clear {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #5d6c7b;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dash-chip-clear:hover {
+  color: #10171f;
+}
+
+/* The pill is too wide to sit beside the chips on a phone. */
+@media (max-width: 560px) {
+  .dash-daterange {
+    width: 100%;
+    justify-content: space-between;
+    border-radius: 0.75rem;
+  }
+}
+
 /* Channel tabs ----------------------------------------------------------- */
 
 /* The one filter that splits the page rather than narrowing it, so it reads as

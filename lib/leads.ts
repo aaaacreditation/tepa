@@ -244,24 +244,50 @@ export type DashboardData = {
   previousTotal: number | null;
 };
 
-function sinceClause(days: number | null): string {
-  return days ? `AND created_at >= now() - make_interval(days => ${Math.floor(days)})` : "";
+/* An inclusive window of whole UTC days, 'YYYY-MM-DD'. A null bound is
+   unbounded on that side, which is how "all time" is expressed. Whole days
+   rather than a rolling count of hours because that is what the dashboard
+   asks about: "today" has to mean today, not the last 24 hours, and a custom
+   range has to include every lead that arrived on its last day.
+
+   The bounds are always passed as parameters, even when null, so every query
+   below takes the same three and the SQL never has to be assembled by hand. */
+export type DateWindow = { start: string | null; end: string | null };
+
+export const WHOLE_TIME: DateWindow = { start: null, end: null };
+
+/* `end` is inclusive, so the upper guard runs to the start of the next day. */
+const IN_WINDOW = `AND ($2::date IS NULL OR created_at >= $2::date)
+       AND ($3::date IS NULL OR created_at < $3::date + interval '1 day')`;
+
+/* The window immediately before this one, of the same length, for the "vs
+   previous" delta. An unbounded window has no previous to compare with. */
+export function previousWindow(window: DateWindow): DateWindow | null {
+  if (!window.start || !window.end) return null;
+  const start = Date.parse(`${window.start}T00:00:00Z`);
+  const end = Date.parse(`${window.end}T00:00:00Z`);
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return null;
+
+  const DAY = 86_400_000;
+  const days = Math.round((end - start) / DAY) + 1;
+  const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  return { start: iso(start - days * DAY), end: iso(start - DAY) };
 }
 
 export async function getDashboardData(
   source: string,
-  rangeDays: number | null,
+  window: DateWindow,
   channel: ChannelFilter = "all",
 ): Promise<DashboardData> {
-  const since = sinceClause(rangeDays);
   const inChannel = channelClause(channel);
+  const bounds: [string, string | null, string | null] = [source, window.start, window.end];
 
   const leadsQ = q<LeadRow>(
     `SELECT ${LEAD_COLUMNS} FROM leads
-     WHERE source = $1 ${since} ${inChannel}
+     WHERE source = $1 ${IN_WINDOW} ${inChannel}
      ORDER BY created_at DESC
      LIMIT 1000`,
-    [source],
+    bounds,
   );
 
   /* History is read for the leads on screen, so it is scoped to the page but
@@ -284,62 +310,65 @@ export async function getDashboardData(
 
   const statusQ = q<{ status: LeadStatus; count: number }>(
     `SELECT status, count(*)::int AS count FROM leads
-     WHERE source = $1 ${since} ${inChannel}
+     WHERE source = $1 ${IN_WINDOW} ${inChannel}
      GROUP BY status`,
-    [source],
+    bounds,
   );
 
   const channelsQ = q<{ channel: Channel; count: number }>(
     `SELECT (${CHANNEL_SQL}) AS channel, count(*)::int AS count FROM leads
-     WHERE source = $1 ${since}
+     WHERE source = $1 ${IN_WINDOW}
      GROUP BY 1`,
-    [source],
+    bounds,
   );
 
   const countriesQ = q<CountryCount>(
     `SELECT country_name AS "countryName", count(*)::int AS count FROM leads
-     WHERE source = $1 AND country_name <> '' ${since} ${inChannel}
+     WHERE source = $1 AND country_name <> '' ${IN_WINDOW} ${inChannel}
      GROUP BY country_name
      ORDER BY count DESC, country_name ASC
      LIMIT 6`,
-    [source],
+    bounds,
   );
 
-  /* Fill every day of the window so quiet days chart as zero, not a gap. */
-  const spanDays = rangeDays ?? null;
+  /* Fill every day of the window so quiet days chart as zero, not a gap.
+     An unbounded window still needs something to draw, so it falls back to
+     the first lead this page ever took, or a fortnight, whichever is longer. */
   const dailyQ = q<DailyPoint>(
     `WITH bounds AS (
-       SELECT CASE
-                WHEN $2::int IS NOT NULL THEN (now() - make_interval(days => $2::int - 1))::date
-                ELSE LEAST(
+       SELECT COALESCE(
+                $2::date,
+                LEAST(
                   COALESCE(
                     (SELECT min(created_at)::date FROM leads WHERE source = $1 ${inChannel}),
                     now()::date
                   ),
                   (now() - interval '13 days')::date
                 )
-              END AS start_day
+              ) AS start_day,
+              COALESCE($3::date, now()::date) AS end_day
      )
      SELECT to_char(day, 'YYYY-MM-DD') AS date,
             COALESCE(hits.count, 0)::int AS count
      FROM bounds,
-          generate_series(bounds.start_day, now()::date, interval '1 day') AS day
+          generate_series(bounds.start_day, bounds.end_day, interval '1 day') AS day
      LEFT JOIN (
        SELECT created_at::date AS d, count(*)::int AS count
        FROM leads WHERE source = $1 ${inChannel}
        GROUP BY 1
      ) hits ON hits.d = day
      ORDER BY day ASC`,
-    [source, spanDays],
+    bounds,
   );
 
-  const previousQ = rangeDays
+  /* Same query as the status counts, over the window immediately before this
+     one, so the delta compares like with like whatever the range is. */
+  const prev = previousWindow(window);
+  const previousQ = prev
     ? q<{ count: number }>(
         `SELECT count(*)::int AS count FROM leads
-         WHERE source = $1 ${inChannel}
-           AND created_at >= now() - make_interval(days => ${Math.floor(rangeDays) * 2})
-           AND created_at <  now() - make_interval(days => ${Math.floor(rangeDays)})`,
-        [source],
+         WHERE source = $1 ${IN_WINDOW} ${inChannel}`,
+        [source, prev.start, prev.end],
       )
     : Promise.resolve(null);
 

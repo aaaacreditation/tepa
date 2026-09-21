@@ -19,12 +19,17 @@ export function ChannelTabs({
   current,
   basePath,
   range,
+  from,
+  to,
   counts,
   total,
 }: {
   current: ChannelFilter;
   basePath: string;
   range: string;
+  /* Only meaningful on a custom range; carried so switching tab keeps it. */
+  from?: string;
+  to?: string;
   counts: Record<Channel, number>;
   total: number;
 }) {
@@ -45,7 +50,7 @@ export function ChannelTabs({
         return (
           <Link
             key={tab.key}
-            href={filterHref(basePath, { range, channel: tab.key })}
+            href={filterHref(basePath, { range, from, to, channel: tab.key })}
             className="dash-tab"
             data-active={active}
             aria-current={active ? "page" : undefined}

@@ -18,7 +18,8 @@ import { getDashboardData } from "@/lib/leads";
 import { getSource } from "@/lib/sources";
 import { BarList, type BarRow } from "@/app/dashboard/components/BarList";
 import { ChannelTabs } from "@/app/dashboard/components/ChannelTabs";
-import { DEFAULT_CHANNEL, DEFAULT_RANGE } from "@/app/dashboard/components/filter-href";
+import { DEFAULT_CHANNEL } from "@/app/dashboard/components/filter-href";
+import { resolveRange } from "@/app/dashboard/components/ranges";
 import {
   LeadsTable,
   type TableEvent,
@@ -29,14 +30,12 @@ import { RangeFilter } from "@/app/dashboard/components/RangeFilter";
 import { StatTile } from "@/app/dashboard/components/StatTile";
 import { TimeSeriesChart } from "@/app/dashboard/components/TimeSeriesChart";
 
-const RANGES: Record<string, { days: number | null; label: string }> = {
-  "7": { days: 7, label: "last 7 days" },
-  "30": { days: 30, label: "last 30 days" },
-  "90": { days: 90, label: "last 90 days" },
-  all: { days: null, label: "all time" },
-};
-
 const dayFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+const dayYearFmt = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "2-digit",
+});
 const fullFmt = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
 
 /* Fold a daily series into at most `n` buckets for the stat tile sparkline. */
@@ -66,14 +65,12 @@ export default async function SourceDashboard({
   if (!source) notFound();
 
   const sp = await searchParams;
-  const rangeKey =
-    typeof sp.range === "string" && sp.range in RANGES ? sp.range : DEFAULT_RANGE;
-  const range = RANGES[rangeKey];
+  const range = resolveRange(sp.range, sp.from, sp.to);
   const channel: ChannelFilter =
     typeof sp.channel === "string" && isChannelFilter(sp.channel) ? sp.channel : DEFAULT_CHANNEL;
 
   const [data, uploads] = await Promise.all([
-    getDashboardData(source.key, range.days, channel),
+    getDashboardData(source.key, range.window, channel),
     getUploadsForSource(source.key),
   ]);
   const { reached, pipeline, total } = data;
@@ -81,6 +78,7 @@ export default async function SourceDashboard({
   /* Every "leads in range" caption also has to say which tab produced them, or
      the same sentence would describe four different numbers. */
   const scope = channel === "all" ? range.label : `${CHANNEL_LABEL[channel]}, ${range.label}`;
+  const dateSpansYears = range.window.start !== null && range.window.start.slice(0, 4) !== range.to.slice(0, 4);
   const basePath = `/dashboard/${source.key}`;
 
   /* Group the outbox by lead so each row can show what actually reached each
@@ -103,7 +101,9 @@ export default async function SourceDashboard({
 
   const points = data.daily.map((d) => ({
     date: d.date,
-    label: dayFmt.format(new Date(`${d.date}T12:00:00Z`)),
+    /* "Sep 21" is ambiguous once a window crosses a new year, which a custom
+       range or "all time" easily does. */
+    label: (dateSpansYears ? dayYearFmt : dayFmt).format(new Date(`${d.date}T12:00:00Z`)),
     value: d.count,
   }));
 
@@ -199,18 +199,24 @@ export default async function SourceDashboard({
       <ChannelTabs
         current={channel}
         basePath={basePath}
-        range={rangeKey}
+        range={range.key}
+        from={range.from}
+        to={range.to}
         counts={data.channels}
         total={data.channels.google + data.channels.meta + data.channels.other}
       />
 
-      <RangeFilter current={rangeKey} basePath={basePath} channel={channel} />
+      <RangeFilter range={range} basePath={basePath} channel={channel} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key numbers">
         <StatTile
           label="Leads captured"
           value={total.toLocaleString("en-US")}
-          delta={deltaPct !== null ? { pct: deltaPct, label: `vs previous ${range.label.replace("last ", "")}` } : null}
+          delta={
+            deltaPct !== null && range.previousLabel
+              ? { pct: deltaPct, label: `vs previous ${range.previousLabel}` }
+              : null
+          }
           sub={data.previousTotal === 0 ? "Nothing in the previous period" : undefined}
           spark={bucket(points.map((p) => p.value), 12)}
         />
