@@ -3,7 +3,6 @@ import { AttributionCapture } from "../components/AttributionCapture";
 import { GoogleTag } from "../components/GoogleTag";
 import { MetaPixel } from "../components/MetaPixel";
 import { MetaViewContent } from "../components/MetaViewContent";
-import { CalendlyTracking } from "../tepa/components/CalendlyTracking";
 import "../tepa/tepa.css";
 import "./fast-track.css";
 
@@ -31,7 +30,6 @@ export default function FastTrackLayout({
       <GoogleTag />
       <MetaPixel />
       <MetaViewContent contentCategory="tepa" />
-      <CalendlyTracking />
       {children}
     </div>
   );

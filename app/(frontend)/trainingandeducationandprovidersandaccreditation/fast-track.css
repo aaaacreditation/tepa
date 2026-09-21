@@ -264,6 +264,25 @@
   text-align: left;
 }
 
+/* The promise, against the contact detail they actually gave. Sits directly
+   under the heading so it is the first thing read after the tick. */
+.bk-confirm {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  color: #22415f;
+  border: 1px solid rgba(228, 174, 67, 0.4);
+  border-radius: 10px;
+  background: rgba(228, 174, 67, 0.09);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.bk-confirm strong {
+  color: #09234c;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .bk-checklist {
   display: grid;
   gap: 12px;

@@ -26,6 +26,10 @@ export const pending = {
   placesLeft: null as number | null,
   /* International format, e.g. "+971 50 000 0000". */
   whatsapp: null as string | null,
+  /* e.g. "within one business day". Shown on the confirmation screen as
+     "An assessor will contact you …". Left null until AAA commits to a
+     number, so the page never promises a speed nobody agreed to. */
+  responseTime: null as string | null,
   remoteAssessmentAnswer: null as string | null,
   renewalAnswer: null as string | null,
 };
@@ -334,15 +338,17 @@ export const finalCta = {
   captionBody: "Issued to providers who meet the AAA standard, valid for three years.",
 } as const;
 
-/* The booking form. Step 2's answers are what the assessor reads before the
-   call, and what sales sees in the dashboard's message column. */
+/* The application form. Two steps, then a confirmation.
+
+   Step 2's answers are what the assessor reads before making contact, and
+   what sales sees in the dashboard's message column — the preferred contact
+   channel included, since it decides how the lead is worked. */
 export const booking = {
   title: "Apply for accreditation",
   closingTitle: "Apply for accreditation",
   closingBadge: "Start here",
   step1: "Step 1 of 2 · Your details",
   step2: "Step 2 of 2 · Your programs",
-  step3: "Last step · Your application review",
   continue: "Continue",
   back: "Back",
   submit: "Send my application",
@@ -364,27 +370,35 @@ export const booking = {
   individualCta: "Search accredited providers",
   programCounts: ["1", "2 to 5", "6 to 10", "More than 10"],
   timelines: ["Within a month", "1 to 3 months", "3 to 6 months", "Just researching"],
-  scheduleTitle: "Pick a time for your application review",
-  scheduleBody:
-    "Your application is in. Choose a 30 minute slot and your assessor will confirm your scope, your documents and your quote. The calendar shows times in your own time zone, and the call comes from +1 (571) 601 2616.",
-  scheduleFallback: "Calendar not loading? Open it in a new tab",
-  bookedKicker: "Your application is in",
-  bookedTitle: "Here's how to get the most from your 30 minutes",
-  bookedItems: [
-    { lead: "Save our number,", body: "+1 (571) 601 2616, so you recognize the call." },
+
+  /* Asked on the form rather than guessed at. Sales reports that an unknown
+     foreign number goes unanswered, so letting the provider name the channel
+     is worth more than any callback script. It rides into the dashboard on
+     the message, where the assessor reads it before making contact. */
+  contactLegend: "How should we contact you?",
+  contactMethods: ["WhatsApp", "Phone call", "Email"],
+  contactConfirm: {
+    WhatsApp: "We'll message you on WhatsApp at",
+    "Phone call": "We'll call you on",
+    Email: "We'll email you at",
+  },
+
+  doneKicker: "Your application is in",
+  doneTitle: "An AAA assessor will contact you",
+  doneItems: [
+    {
+      lead: "Your application goes straight to an assessor,",
+      body: "who reviews the programs and trainers you put forward.",
+    },
+    {
+      lead: "You'll get",
+      body: "your scope, the documents you need, your timeline and your quote.",
+    },
     {
       lead: "Have ready:",
       body: "the list of programs you want accredited, the course outline for one of them, and your trainers' CVs.",
     },
-    {
-      lead: "On the call",
-      body: "you'll confirm your scope, get your document map and your timeline, and receive your quote.",
-    },
-    {
-      lead: "When you accept the quote,",
-      body: "your assessment starts and your assessor is assigned.",
-    },
   ],
-  bookedNote: "Your confirmation email has the calendar invite.",
+  doneCallNote: "Calls and messages come from +1 (571) 601 2616. Save it so you recognize us.",
   saveContact: "Save our number to your contacts",
 } as const;

@@ -4,27 +4,26 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
 import { countries } from "@/lib/countries";
 import { SOURCES } from "@/lib/sources";
-import {
-  CALENDLY_LABEL,
-  FORM_LABEL,
-  trackConversion,
-} from "../../components/GoogleTag";
+import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
-import { IconArrow, IconCalendar, IconCheck } from "../../tepa/components/Icons";
-import { booking, links, positionSuggestions, site } from "../content";
+import { IconArrow, IconCalendar, IconCheck, IconPhone } from "../../tepa/components/Icons";
+import { booking, links, pending, positionSuggestions, site } from "../content";
 
-/* Two steps, then the calendar.
+/* Two steps, then a confirmation.
 
-   Step 1 is who to call. Step 2 is what the assessor needs to prepare, and
-   also what sorts the leads: an individual learner is sent to the directory
-   instead of becoming a lead, and the other answers land in the message
-   column of the TEPA dashboard. The enquiry goes to the same endpoint as
-   /tepa, so the lead, its attribution and its conversions are handled
-   exactly as they are there. */
+   Step 1 is who to contact. Step 2 is what the assessor needs to prepare,
+   and also what sorts the leads: an individual learner is sent to the
+   directory instead of becoming a lead, and the other answers land in the
+   message column of the TEPA dashboard.
+
+   There is no calendar. The submit itself is the conversion — the lead is
+   stored, reported to Google Ads and reported to Meta in the request that
+   saves it, exactly as on /tepa, /healthcare and /clinic — and the visitor
+   is told an assessor will contact them on the channel they chose. */
 
 const PAGE_PATH = "/trainingandeducationandprovidersandaccreditation";
 
-type Stage = "details" | "qualify" | "schedule" | "booked";
+type Stage = "details" | "qualify" | "done";
 
 type Details = {
   fullName: string;
@@ -40,6 +39,7 @@ type Qualify = {
   orgType: string;
   programs: string;
   timeline: string;
+  contactMethod: string;
 };
 
 type Errors = Partial<Record<keyof Details | keyof Qualify, string>>;
@@ -89,10 +89,6 @@ const CONTACT_CARD = `data:text/vcard;charset=utf-8,${encodeURIComponent(
   ].join("\r\n"),
 )}`;
 
-/* The page renders this form twice. A booking made in either copy is one
-   booking, so the Calendly conversion is guarded once for the whole page. */
-let scheduleTracked = false;
-
 type BookingFormProps = {
   badge?: string;
   title?: string;
@@ -116,12 +112,12 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
     orgType: "",
     programs: "",
     timeline: "",
+    contactMethod: "",
   });
   const [honeypot, setHoneypot] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [calendarHeight, setCalendarHeight] = useState(680);
 
   const headingRef = useRef<HTMLHeadingElement>(null);
   const shownStage = useRef<Stage>(stage);
@@ -138,37 +134,6 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
     if (card && card.getBoundingClientRect().top < 0) {
       card.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [stage]);
-
-  /* Calendly reports from inside its iframe with postMessage: the page height
-     so the frame never scrolls inside itself, and the booking itself. */
-  useEffect(() => {
-    if (stage !== "schedule") return;
-
-    function onMessage(event: MessageEvent) {
-      if (event.origin !== "https://calendly.com") return;
-      const data = event.data as { event?: string; payload?: { height?: string } } | null;
-      if (!data || typeof data.event !== "string") return;
-
-      if (data.event === "calendly.page_height") {
-        const height = Number.parseInt(data.payload?.height ?? "", 10);
-        if (Number.isFinite(height) && height > 0) {
-          setCalendarHeight(Math.max(560, Math.min(height, 1400)));
-        }
-      }
-
-      if (data.event === "calendly.event_scheduled") {
-        if (!scheduleTracked) {
-          scheduleTracked = true;
-          trackConversion(CALENDLY_LABEL);
-          metaTrack("Schedule", { content_name: "Calendly call", content_category: "tepa" });
-        }
-        setStage("booked");
-      }
-    }
-
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
   }, [stage]);
 
   const isIndividual = qualify.orgType === booking.individual;
@@ -223,6 +188,7 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
     if (!qualify.orgType) next.orgType = "Please choose your organization type.";
     if (!qualify.programs) next.programs = "Please choose how many programs.";
     if (!qualify.timeline) next.timeline = "Please choose a timeframe.";
+    if (!qualify.contactMethod) next.contactMethod = "Please choose how we should contact you.";
 
     setErrors(next);
     if (Object.keys(next).length > 0) {
@@ -231,14 +197,17 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
     }
 
     if (honeypot) {
-      setStage("schedule");
+      setStage("done");
       return;
     }
 
+    /* Read in the dashboard's message column, so the contact channel sits
+       with the answers the assessor reads before getting in touch. */
     const message = [
       `Organization type: ${qualify.orgType}`,
       `Programs to accredit: ${qualify.programs}`,
       `Wants accreditation: ${qualify.timeline}`,
+      `Preferred contact: ${qualify.contactMethod}`,
       `Page: Fast Track test (${PAGE_PATH})`,
     ].join("\n");
 
@@ -286,25 +255,40 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
       );
 
       setSending(false);
-      setStage("schedule");
+      setStage("done");
     } catch {
       setSubmitError(booking.errorGeneric);
       setSending(false);
     }
   }
 
-  if (stage === "booked") {
+  if (stage === "done") {
+    /* Echo back the channel they picked, against the contact detail they
+       actually gave, so the promise is checkable rather than generic. */
+    const confirmLead =
+      booking.contactConfirm[qualify.contactMethod as keyof typeof booking.contactConfirm] ??
+      booking.contactConfirm.Email;
+    const confirmValue =
+      qualify.contactMethod === "Email" ? details.email.trim() : details.phone.trim();
+    const wantsPhone = qualify.contactMethod !== "Email";
+
     return (
       <div className="eligibility-card bk-card bk-booked" role="status">
         <span className="success-icon">
           <IconCheck />
         </span>
-        <p className="form-kicker">{booking.bookedKicker}</p>
+        <p className="form-kicker">{booking.doneKicker}</p>
         <h2 ref={headingRef} tabIndex={-1} className="bk-title">
-          {booking.bookedTitle}
+          {booking.doneTitle}
+          {pending.responseTime ? ` ${pending.responseTime}` : ""}
         </h2>
+
+        <p className="bk-confirm">
+          {confirmLead} <strong>{confirmValue}</strong>.
+        </p>
+
         <ul className="bk-checklist">
-          {booking.bookedItems.map((item) => (
+          {booking.doneItems.map((item) => (
             <li key={item.lead}>
               <IconCheck className="bk-check" />
               <span>
@@ -313,60 +297,22 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
             </li>
           ))}
         </ul>
-        <p className="bk-small">
-          <IconCalendar className="bk-inline-icon" />
-          {booking.bookedNote}
-        </p>
-        <a
-          href={CONTACT_CARD}
-          download="AAA-Accreditation.vcf"
-          className="tepa-button tepa-button--outline-navy bk-full"
-        >
-          {booking.saveContact}
-        </a>
-      </div>
-    );
-  }
 
-  if (stage === "schedule") {
-    const params = new URLSearchParams({
-      embed_domain: window.location.host,
-      embed_type: "Inline",
-      hide_gdpr_banner: "1",
-      hide_event_type_details: "1",
-      name: details.fullName.trim(),
-      email: details.email.trim(),
-    });
-    const prefilled = new URLSearchParams({
-      name: details.fullName.trim(),
-      email: details.email.trim(),
-    });
-
-    return (
-      <div className="eligibility-card bk-card bk-schedule">
-        <Progress current={3} />
-        <p className="form-kicker">{booking.step3}</p>
-        <h2 ref={headingRef} tabIndex={-1} className="bk-title">
-          {booking.scheduleTitle}
-        </h2>
-        <p className="bk-lede">{booking.scheduleBody}</p>
-        <div className="bk-calendar">
-          <iframe
-            src={`${site.calendly}?${params.toString()}`}
-            title="Choose a time for your application review"
-            style={{ height: calendarHeight }}
-            loading="lazy"
-          />
-        </div>
-        <a
-          className="bk-fallback"
-          href={`${site.calendly}?${prefilled.toString()}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {booking.scheduleFallback}
-          <IconArrow className="link-icon" />
-        </a>
+        {wantsPhone ? (
+          <>
+            <p className="bk-small">
+              <IconPhone className="bk-inline-icon" />
+              {booking.doneCallNote}
+            </p>
+            <a
+              href={CONTACT_CARD}
+              download="AAA-Accreditation.vcf"
+              className="tepa-button tepa-button--outline-navy bk-full"
+            >
+              {booking.saveContact}
+            </a>
+          </>
+        ) : null}
       </div>
     );
   }
@@ -553,6 +499,15 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
                 error={errors.timeline}
                 errorId={fieldId("timeline-error")}
               />
+              <ChipGroup
+                name="contactMethod"
+                legend={booking.contactLegend}
+                options={booking.contactMethods}
+                value={qualify.contactMethod}
+                onChange={(value) => setAnswer("contactMethod", value)}
+                error={errors.contactMethod}
+                errorId={fieldId("contactMethod-error")}
+              />
             </>
           )}
 
@@ -599,10 +554,10 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
   );
 }
 
-function Progress({ current }: { current: 1 | 2 | 3 }) {
+function Progress({ current }: { current: 1 | 2 }) {
   return (
-    <ol className="bk-progress" aria-label={`Step ${Math.min(current, 2)} of 2`}>
-      {[1, 2, 3].map((step) => (
+    <ol className="bk-progress" aria-label={`Step ${current} of 2`}>
+      {[1, 2].map((step) => (
         <li key={step} data-state={step < current ? "done" : step === current ? "current" : "todo"} />
       ))}
     </ol>
