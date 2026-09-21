@@ -1146,3 +1146,214 @@
   color: #a43e35;
   font-weight: 700;
 }
+
+/* Provider stories carousel
+   ------------------------------------------------------------------
+   One story at a time, in place of the continuous marquee /tepa runs.
+   The card internals (.story-card, .story-media, .quote-mark, footer)
+   come from tepa.css; everything here is the carriage around them and
+   the turn from a tall card into a wide one. */
+
+.ft-stories {
+  position: relative;
+  z-index: 1;
+  margin-top: 44px;
+}
+
+.ft-stories-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e5e7ea;
+  flex-wrap: wrap;
+}
+
+.ft-stories-bar p {
+  display: flex;
+  margin: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ft-stories-bar span {
+  color: var(--gold-600);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ft-stories-bar strong {
+  color: #09234c;
+  font-family: var(--display);
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.ft-stories-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ft-stories-arrow {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #09234c;
+  border: 1px solid #d8dde3;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1.35rem;
+  line-height: 1;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.ft-stories-arrow:hover {
+  color: #09234c;
+  border-color: var(--gold-500);
+  background: rgba(228, 174, 67, 0.12);
+}
+
+.ft-stories-arrow:focus-visible,
+.ft-stories-viewport:focus-visible,
+.ft-stories-dot:focus-visible {
+  outline: 2px solid var(--gold-500);
+  outline-offset: 3px;
+}
+
+.ft-stories-count {
+  min-width: 46px;
+  color: #718094;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.ft-stories-viewport {
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.ft-stories-track {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: transform 0.55s cubic-bezier(0.4, 0.14, 0.2, 1);
+}
+
+.ft-stories-slide {
+  display: flex;
+  width: 100%;
+  flex: 0 0 100%;
+}
+
+/* The marquee card is a tall column because several sit side by side. One
+   at a time it has the full width, so the photo moves beside the quote. */
+.ft-stories .story-card {
+  width: 100%;
+  min-height: 0;
+  flex-direction: row;
+}
+
+.ft-stories .story-media {
+  width: 38%;
+  height: auto;
+  min-height: 330px;
+  flex: 0 0 38%;
+}
+
+/* Centred as one group. The marquee card pins its footer to the bottom with
+   an auto margin, which in a card this wide left the short quotes floating
+   above a hole. */
+.ft-stories-body {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  padding: 26px 0;
+}
+
+.ft-stories .quote-mark {
+  margin: 0 34px;
+}
+
+.ft-stories .story-card > .ft-stories-body > p {
+  margin: 10px 34px 24px;
+  font-size: 1.06rem;
+  line-height: 1.72;
+}
+
+.ft-stories .story-card footer {
+  margin: 0 34px;
+}
+
+.ft-stories-dots {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ft-stories-dot {
+  display: block;
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #d2d8de;
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+
+.ft-stories-dot[data-active="true"] {
+  width: 26px;
+  border-radius: 5px;
+  background: var(--gold-500);
+}
+
+@media (max-width: 900px) {
+  .ft-stories .story-card {
+    flex-direction: column;
+  }
+
+  .ft-stories .story-media {
+    width: 100%;
+    height: 200px;
+    min-height: 0;
+    flex: 0 0 200px;
+  }
+}
+
+@media (max-width: 560px) {
+  .ft-stories-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-stories-track {
+    transition: none;
+  }
+}
+
+.ft-reassure-lead {
+  display: block;
+  margin-bottom: 4px;
+  color: #fff;
+  font-weight: 700;
+}

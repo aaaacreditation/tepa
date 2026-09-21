@@ -4,8 +4,8 @@ import { IconArrow, IconCalendar, IconCheck, IconPhone } from "../tepa/component
 import { MobileCta } from "../tepa/components/MobileCta";
 import { SiteFooter } from "../tepa/components/SiteFooter";
 import { SiteHeader } from "../tepa/components/SiteHeader";
-import { TestimonialMarquee } from "../tepa/components/TestimonialMarquee";
 import { BookingForm } from "./components/BookingForm";
+import { TestimonialCarousel } from "./components/TestimonialCarousel";
 import { VideoFacade } from "./components/VideoFacade";
 import {
   bonuses,
@@ -28,9 +28,9 @@ import {
   site,
 } from "./content";
 
-const title = "Accredited Provider Fast Track";
+const title = "Accredited Educational Provider Fast Track";
 const description =
-  "Win the clients who only buy from accredited providers. Apply for AAA accreditation and an experienced assessor confirms your scope, your timeline and your quote.";
+  "Win the clients who only buy from accredited educational and training providers. Apply for AAA accreditation and an experienced assessor confirms your scope, your timeline and your quote.";
 
 /* A test page: kept out of search so it never competes with /tepa, and
    reached only by the links and campaigns that are pointed at it. */
@@ -85,7 +85,10 @@ export default function FastTrackPage() {
 
               <p className="ft-reassure">
                 <IconCalendar className="ft-reassure-icon" />
-                <span>{hero.reassurance}</span>
+                <span>
+                  <strong className="ft-reassure-lead">{hero.reassurance}</strong>
+                  {hero.reassuranceDetail}
+                </span>
               </p>
 
               <div className="hero-actions">
@@ -343,7 +346,11 @@ export default function FastTrackPage() {
               <h2 className="section-title">{proof.title}</h2>
             </header>
 
-            <TestimonialMarquee stories={practice.stories} />
+            <TestimonialCarousel
+              stories={practice.stories}
+              kicker={proof.storiesKicker}
+              title={proof.storiesTitle}
+            />
 
             <div className="ft-proof-grid">
               <VideoFacade videoId={site.videoId} title={site.videoTitle} label={proof.videoLabel} />

@@ -1,4 +1,4 @@
-/* Copy for the Accredited Provider Fast Track test page.
+/* Copy for the Accredited Educational Provider Fast Track test page.
 
    A second take on /tepa built around one offer, applying for accreditation,
    rather than a generic eligibility check. Nothing on this page is given away
@@ -47,12 +47,14 @@ export const nav = [
 
 export const hero = {
   eyebrow: "For training centers, academies and corporate training teams",
-  title: "Win the clients who only buy from accredited providers",
+  title: "Win the clients who only buy from accredited educational and training providers",
   lede:
-    "The Accredited Provider Fast Track: an experienced AAA assessor reviews your programs and trainers, tells you exactly what to fix, and takes you to a three-year accreditation certificate. Most providers finish in 3 to 8 weeks.",
+    "The Accredited Educational Provider Fast Track: an experienced AAA assessor reviews your programs and trainers, assures your compliance with the international standards, and takes you to a three-year accreditation certificate. Most providers finish in 3 to 8 weeks.",
   secondaryCta: "See what's included",
   reassurance:
-    "Apply in two minutes. An experienced AAA assessor confirms your scope, the documents you need and your timeline, and sends your quote.",
+    "Apply in two minutes, finish in 8 weeks, and receive a three-year accreditation certificate.",
+  reassuranceDetail:
+    "An experienced AAA assessor confirms your scope, the documents you need and your timeline, and sends your quote.",
   stats: [
     { value: "58+", label: "Countries served" },
     { value: "19,847", label: "Accredited certificates" },
@@ -135,7 +137,7 @@ export const outcomes = {
     {
       lead: "Your organization",
       body:
-        "is listed in the AAA directory of accredited organizations, and eligible certified trainees can be added to the American Directory of Competent Personnel.",
+        "is listed in the AAA directory, and eligible trainees can be added to the American Directory of Competent Personnel.",
     },
     {
       lead: "Competitors without accreditation",
@@ -146,7 +148,7 @@ export const outcomes = {
 
 export const offer = {
   eyebrow: "The offer",
-  title: "The Accredited Provider Fast Track",
+  title: "The Accredited Educational Provider Fast Track",
   lede: "Everything it takes to go from first call to a three-year accreditation certificate.",
   items: [
     {
@@ -182,7 +184,7 @@ export const offer = {
     {
       title: "Directory listings:",
       body:
-        "the AAA directory of accredited organizations and access to the American Directory of Competent Personnel.",
+        "the AAA directory and access to the American Directory of Competent Personnel.",
     },
   ],
   panelKicker: "Start here",
@@ -250,6 +252,8 @@ export const proof = {
   title: "Providers in 58+ countries, and you can check every one",
   directoryBody: "Every accredited organization is listed in our public directory.",
   directoryCta: "Check the directory",
+  storiesKicker: "Provider stories",
+  storiesTitle: "Accreditation in their words",
   videoLabel: "Provider story",
   videoBody: "Watch an accredited provider describe the assessment in their own words.",
   addressLine: "AAA is based at 8609 Westwood Center Drive, Tysons Corner, Virginia.",
