@@ -1376,3 +1376,74 @@
   color: #fff;
   font-weight: 700;
 }
+
+/* Hero, re-proportioned for a longer headline
+   ------------------------------------------------------------------
+   The shared hero is tuned for /tepa's six-word headline. This page's
+   runs to eleven, and at the inherited size it filled six lines and
+   pushed the proof numbers off the first screen.
+
+   Two changes, and only above 1020px, which is where the three-track
+   grid exists: smaller display type, and a narrower middle track. That
+   track is an empty spacer that lets the background photograph show
+   between the copy and the form — it keeps that job, it just stops
+   holding a fifth of the row open while the headline wraps early.
+   Below 1020px the shared grid already drops the spacer, so those
+   breakpoints are left exactly as they are. */
+
+.tepa .hero-title {
+  max-width: 780px;
+  font-size: clamp(2.3rem, 3.15vw, 3.3rem);
+  letter-spacing: -0.028em;
+  line-height: 1.05;
+}
+
+.tepa .hero-lede {
+  max-width: 710px;
+}
+
+.tepa .ft-reassure {
+  max-width: 710px;
+}
+
+.tepa .hero-stats {
+  max-width: 690px;
+}
+
+/* The shared hero reserves 880px so /tepa's taller headline block sits
+   centred. Three lines instead of six leaves that much height holding
+   nothing, and it pushed the proof numbers under the fold — the one
+   thing besides the form the copy deck asks to be on the first screen. */
+.tepa .hero-grid {
+  min-height: 800px;
+}
+
+@media (min-width: 1181px) {
+  .tepa .hero-grid {
+    grid-template-columns: minmax(400px, 5.6fr) minmax(80px, 1fr) minmax(340px, 3.5fr);
+  }
+}
+
+@media (min-width: 1021px) and (max-width: 1180px) {
+  .tepa .hero-grid {
+    grid-template-columns: minmax(360px, 1.36fr) minmax(60px, 0.3fr) minmax(330px, 0.9fr);
+  }
+}
+
+@media (max-width: 1020px) {
+  .tepa .hero-title {
+    font-size: clamp(2.4rem, 4.6vw, 3.3rem);
+  }
+}
+
+@media (max-width: 780px) {
+  .tepa .hero-title {
+    font-size: clamp(2.1rem, 7.4vw, 2.85rem);
+  }
+}
+
+@media (max-width: 520px) {
+  .tepa .hero-title {
+    font-size: clamp(1.95rem, 9vw, 2.45rem);
+  }
+}
