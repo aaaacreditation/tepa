@@ -28,9 +28,9 @@ import {
   site,
 } from "./content";
 
-const title = "Accredited Educational Provider Fast Track";
+const title = "Training & Education Provider Accreditation";
 const description =
-  "Win the clients who only buy from accredited educational and training providers. Apply for AAA accreditation and an experienced assessor confirms your scope, your timeline and your quote.";
+  "Accreditation for training centers, academies, corporate training teams and CPD providers. Apply and an AAA assessor confirms your scope, the accreditation requirements, your timeline and your quote. Most providers finish in 3 to 8 weeks.";
 
 /* A test page: kept out of search so it never competes with /tepa, and
    reached only by the links and campaigns that are pointed at it. */
@@ -121,6 +121,7 @@ export default function FastTrackPage() {
             <header className="section-heading section-heading--center">
               <p className="section-kicker">{fit.eyebrow}</p>
               <h2 className="section-title">{fit.title}</h2>
+              <p className="section-lede">{fit.note}</p>
             </header>
 
             <ul className="ft-fit-grid">

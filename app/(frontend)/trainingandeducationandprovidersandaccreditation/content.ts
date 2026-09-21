@@ -50,7 +50,7 @@ export const nav = [
 ] as const;
 
 export const hero = {
-  eyebrow: "For training centers, academies and corporate training teams",
+  eyebrow: "Training provider accreditation for centers, academies and corporate training teams",
   title: "Win the clients who only buy from accredited educational and training providers",
   lede:
     "The Accredited Educational Provider Fast Track: an experienced AAA assessor reviews your programs and trainers, assures your compliance with the international standards, and takes you to a three-year accreditation certificate. Most providers finish in 3 to 8 weeks.",
@@ -69,18 +69,25 @@ export const hero = {
 export const fit = {
   eyebrow: "Built for organizations that deliver training",
   title: "Is this for you?",
+  /* The words providers actually search with, said plainly. They were missing
+     from this page, and a landing page that never uses the searcher's own
+     words is scored as a poor match for the keyword that paid for the click. */
+  note:
+    "AAA accredits training providers and the training they deliver: training programs and short courses, CPD and continuing education programs, and the trainers who run them.",
   items: [
     {
       title: "Training centers and academies",
-      body: "Professional and vocational programs with paying learners.",
+      body:
+        "Training provider accreditation for professional and vocational programs with paying learners.",
     },
     {
       title: "Corporate training teams",
-      body: "In-house programs your company wants recognized.",
+      body: "In-house training program accreditation your company wants recognized.",
     },
     {
       title: "Online, CPD and association providers",
-      body: "Including healthcare training organizations.",
+      body:
+        "Course, CPD and continuing education program accreditation, including healthcare training organizations.",
     },
   ],
   redirects: [
@@ -301,6 +308,14 @@ export const faq = {
     {
       q: "Do you accredit individuals?",
       a: "No. AAA accredits organizations that deliver training. If you want an accredited course, use our directory to find a provider.",
+    },
+    {
+      q: "What are the accreditation requirements for a training provider?",
+      a: "Two things are assessed: the training itself, which has to cover the applicable learning outcomes and be relevant, complete and current, and the trainers, who have to show the qualifications, professional experience and competence to deliver it. Your assessor confirms the exact accreditation requirements for the programs you put forward.",
+    },
+    {
+      q: "How does the accreditation process work?",
+      a: "Four steps: apply, an application review with your assessor, the assessment of your programs and trainers, then an independent decision and your three-year certificate. Most providers complete the accreditation process in 3 to 8 weeks.",
     },
     {
       q: "How long does it take?",
