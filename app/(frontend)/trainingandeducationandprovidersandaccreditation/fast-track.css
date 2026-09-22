@@ -109,6 +109,45 @@
   gap: 7px;
 }
 
+/* Grid mode. Seven organization types wrapping as pills left a tall ragged
+   column that pushed the rest of step 2 off the screen; in even cells they
+   read as a set of choices instead of a list. Equal-width cells mean the
+   labels wrap, so the pill becomes a rounded box and the text centres —
+   a two-line pill looks like a mistake, a two-line box does not. */
+.bk-chips[data-columns] {
+  display: grid;
+  grid-template-columns: repeat(var(--bk-columns, 3), minmax(0, 1fr));
+  align-items: stretch;
+  gap: 6px;
+}
+
+.bk-chips[data-columns] .bk-chip {
+  justify-content: center;
+  min-height: 46px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* The option that reads as a sentence rather than a label, given its own
+   row so it does not force three tall cells to fit it. */
+.bk-chips[data-columns] .bk-chip[data-wide] {
+  grid-column: 1 / -1;
+  min-height: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+/* Two columns before the cells get too narrow to hold a word. */
+@media (max-width: 400px) {
+  .bk-chips[data-columns] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .bk-chip {
   position: relative;
   display: inline-flex;

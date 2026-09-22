@@ -466,6 +466,8 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
             onChange={(value) => setAnswer("orgType", value)}
             error={errors.orgType}
             errorId={fieldId("orgType-error")}
+            columns={3}
+            wideOption={booking.individual}
           />
 
           {isIndividual ? (
@@ -642,11 +644,28 @@ type ChipGroupProps = {
   onChange: (value: string) => void;
   error?: string;
   errorId: string;
+  /* Lays the options out in a fixed grid instead of letting them wrap as
+     pills. Worth it once a group has enough options that wrapping leaves a
+     tall ragged column — the seven organization types did. */
+  columns?: number;
+  /* One option that takes the whole row rather than a cell. The odd one out
+     in a grid is usually the one that reads as a sentence. */
+  wideOption?: string;
 };
 
 /* Real radio inputs under the chips, so keyboard and screen reader users get
    an ordinary radio group. */
-function ChipGroup({ name, legend, options, value, onChange, error, errorId }: ChipGroupProps) {
+function ChipGroup({
+  name,
+  legend,
+  options,
+  value,
+  onChange,
+  error,
+  errorId,
+  columns,
+  wideOption,
+}: ChipGroupProps) {
   return (
     <fieldset
       className="bk-group"
@@ -657,9 +676,18 @@ function ChipGroup({ name, legend, options, value, onChange, error, errorId }: C
         {legend}
         <Required />
       </legend>
-      <div className="bk-chips">
+      <div
+        className="bk-chips"
+        data-columns={columns}
+        style={columns ? ({ "--bk-columns": columns } as React.CSSProperties) : undefined}
+      >
         {options.map((option) => (
-          <label key={option} className="bk-chip" data-checked={value === option}>
+          <label
+            key={option}
+            className="bk-chip"
+            data-checked={value === option}
+            data-wide={option === wideOption || undefined}
+          >
             <input
               type="radio"
               name={name}
