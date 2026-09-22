@@ -2,11 +2,18 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { ATTRIBUTION_COOKIE, parseAttribution } from "@/lib/attribution";
-import { countries } from "@/lib/countries";
+import { countries, dialCodes } from "@/lib/countries";
 import { SOURCES } from "@/lib/sources";
 import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
 import { IconArrow, IconCalendar, IconCheck } from "../../tepa/components/Icons";
+import {
+  formatPhone,
+  guessRegion,
+  PhoneField,
+  type PhoneValue,
+  validPhone,
+} from "./PhoneField";
 import { booking, links, pending, positionSuggestions } from "../content";
 
 /* Two steps, then a confirmation.
@@ -29,7 +36,9 @@ type Details = {
   fullName: string;
   position: string;
   email: string;
-  phone: string;
+  /* The dialling code is picked, not typed; see PhoneField. */
+  phoneRegion: string;
+  phoneNumber: string;
   country: string;
   organization: string;
   website: string;
@@ -46,17 +55,6 @@ type Errors = Partial<Record<keyof Details | keyof Qualify, string>>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const WEBSITE_RE = /^(https?:\/\/)?[^\s]+\.[^\s]{2,}$/i;
-
-/* Stricter than /tepa on purpose: most unreachable leads there typed a
-   local number with no country code, which an assessor calling from the US
-   cannot dial. A leading + or 00 is required; the digit count covers every
-   national numbering plan. */
-function validIntlPhone(value: string): boolean {
-  const trimmed = value.trim();
-  if (!trimmed.startsWith("+") && !trimmed.startsWith("00")) return false;
-  const digits = trimmed.replace(/\D/g, "").replace(/^00/, "");
-  return digits.length >= 8 && digits.length <= 15;
-}
 
 function readAttribution() {
   if (typeof document === "undefined") return null;
@@ -87,7 +85,8 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
     fullName: "",
     position: "",
     email: "",
-    phone: "",
+    phoneRegion: "",
+    phoneNumber: "",
     country: "",
     organization: "",
     website: "",
@@ -105,6 +104,20 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
 
   const headingRef = useRef<HTMLHeadingElement>(null);
   const shownStage = useRef<Stage>(stage);
+  /* Set once the visitor picks a code or a country themselves, after which
+     neither guess gets to move it again. */
+  const regionPinned = useRef(false);
+
+  /* A first guess from the browser's own locale. In an effect rather than in
+     the initial state because the server has no navigator: rendering a guess
+     during SSR would hydrate against a different one. */
+  useEffect(() => {
+    const region = guessRegion();
+    if (!region) return;
+    setDetails((current) =>
+      current.phoneRegion || regionPinned.current ? current : { ...current, phoneRegion: region },
+    );
+  }, []);
 
   /* Each stage swaps the card's content, so focus follows the new heading
      rather than being left on a button that no longer exists. Compared with
@@ -119,6 +132,8 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
       card.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [stage]);
+
+  const phoneValue: PhoneValue = { region: details.phoneRegion, number: details.phoneNumber };
 
   const isIndividual = qualify.orgType === booking.individual;
 
@@ -149,8 +164,10 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
     if (!details.fullName.trim()) next.fullName = "Please tell us your name.";
     if (!details.position.trim()) next.position = "Please tell us your position.";
     if (!EMAIL_RE.test(details.email.trim())) next.email = "Please use a valid email address.";
-    if (!validIntlPhone(details.phone)) {
-      next.phone = "Please start with your country code, for example +971 50 123 4567.";
+    if (!details.phoneRegion) {
+      next.phoneNumber = "Please choose your country code.";
+    } else if (!validPhone(phoneValue)) {
+      next.phoneNumber = "Please check your phone number.";
     }
     if (!details.country) next.country = "Please choose your country.";
     if (!details.organization.trim()) next.organization = "Please add your organization.";
@@ -207,7 +224,7 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
           position: details.position.trim(),
           organization: details.organization.trim(),
           email: details.email.trim(),
-          phone: details.phone.trim(),
+          phone: formatPhone(phoneValue),
           country: details.country,
           website: details.website.trim(),
           message,
@@ -225,14 +242,14 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
       }
 
       /* Only once the server has stored the lead, as on /tepa. */
-      trackConversion(FORM_LABEL, { email: details.email.trim(), phone: details.phone.trim() });
+      trackConversion(FORM_LABEL, { email: details.email.trim(), phone: formatPhone(phoneValue) });
       metaTrack(
         "Lead",
         { content_name: SOURCES.tepa.name, content_category: "tepa" },
         metaEventId,
         {
           email: details.email,
-          phone: details.phone,
+          phone: formatPhone(phoneValue),
           fullName: details.fullName,
           country: details.country,
         },
@@ -253,7 +270,7 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
       booking.contactConfirm[qualify.contactMethod as keyof typeof booking.contactConfirm] ??
       booking.contactConfirm.Email;
     const confirmValue =
-      qualify.contactMethod === "Email" ? details.email.trim() : details.phone.trim();
+      qualify.contactMethod === "Email" ? details.email.trim() : formatPhone(phoneValue);
 
     return (
       <div className="eligibility-card bk-card bk-booked" role="status">
@@ -336,19 +353,6 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
             onChange={(value) => setDetail("email", value)}
             error={errors.email}
           />
-          <Field
-            id={fieldId("phone")}
-            name="phone"
-            label="Phone, with country code"
-            placeholder="+ country code and number"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={details.phone}
-            onChange={(value) => setDetail("phone", value)}
-            error={errors.phone}
-          />
-
           <div className="form-field bk-field">
             <label htmlFor={fieldId("country")}>
               Country
@@ -358,7 +362,19 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
               id={fieldId("country")}
               name="country"
               value={details.country}
-              onChange={(event) => setDetail("country", event.target.value)}
+              onChange={(event) => {
+                const country = event.target.value;
+                setDetails((current) => ({
+                  ...current,
+                  country,
+                  /* The country is asked after the phone, so this only helps
+                     someone who left the code alone. A code they chose
+                     themselves is never overwritten. */
+                  phoneRegion:
+                    regionPinned.current || !dialCodes[country] ? current.phoneRegion : country,
+                }));
+                if (errors.country) setErrors((current) => ({ ...current, country: undefined }));
+              }}
               required
               aria-invalid={Boolean(errors.country)}
               aria-describedby={errors.country ? fieldId("country-error") : undefined}
@@ -378,6 +394,25 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
               </p>
             ) : null}
           </div>
+
+          <PhoneField
+            id={fieldId("phone")}
+            value={phoneValue}
+            error={errors.phoneNumber}
+            onChange={(next) => {
+              /* Touching either half is the visitor taking charge of the code,
+                 so neither the locale guess nor the country field moves it. */
+              if (next.region !== details.phoneRegion) regionPinned.current = true;
+              setDetails((current) => ({
+                ...current,
+                phoneRegion: next.region,
+                phoneNumber: next.number,
+              }));
+              if (errors.phoneNumber) {
+                setErrors((current) => ({ ...current, phoneNumber: undefined }));
+              }
+            }}
+          />
 
           <Field
             id={fieldId("organization")}

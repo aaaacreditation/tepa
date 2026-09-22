@@ -1425,3 +1425,164 @@
     font-size: clamp(1.95rem, 9vw, 2.45rem);
   }
 }
+
+/* Phone: country code picker, then the number
+   ------------------------------------------------------------------
+   The two controls read as one field — one border around the pair, the
+   code button divided off by a hairline — because they are one answer.
+   The list opens underneath and pushes the fields down: the card clips
+   to its rounded corners with overflow:hidden, so a floating menu would
+   be cut off at the edge. */
+
+.bk-phone-row {
+  display: flex;
+  min-height: 44px;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid #d2d8df;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.75);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.bk-phone-row:focus-within {
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 3px rgba(228, 174, 67, 0.16);
+}
+
+.bk-phone-row[data-invalid="true"] {
+  border-color: #c2483c;
+}
+
+.bk-phone-code {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 0 11px;
+  color: var(--ink);
+  border: 0;
+  border-right: 1px solid #d2d8df;
+  background: rgba(9, 35, 76, 0.035);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.bk-phone-code:hover {
+  background: rgba(9, 35, 76, 0.07);
+}
+
+.bk-phone-flag {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.bk-phone-dial {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.bk-phone-caret {
+  width: 0;
+  height: 0;
+  border-top: 4px solid #6b7a8d;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+/* The number input sits inside the shared border, so it drops its own. */
+.bk-phone-row > input {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.bk-phone-row > input:focus {
+  border: 0;
+  box-shadow: none;
+}
+
+.bk-phone-menu {
+  margin-top: 6px;
+  overflow: hidden;
+  border: 1px solid #d2d8df;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(17, 34, 56, 0.1);
+}
+
+.bk-phone-search {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid #e6e9ed;
+  outline: none;
+  background: #fff;
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.bk-phone-search:focus {
+  border-bottom-color: var(--gold-500);
+}
+
+.bk-phone-list {
+  max-height: 232px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  overscroll-behavior: contain;
+}
+
+.bk-phone-list button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+}
+
+.bk-phone-list button[data-cursor="true"] {
+  background: rgba(9, 35, 76, 0.06);
+}
+
+.bk-phone-list button[aria-selected="true"] {
+  font-weight: 600;
+}
+
+.bk-phone-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bk-phone-plus {
+  flex: 0 0 auto;
+  color: #6b7a8d;
+  font-variant-numeric: tabular-nums;
+}
+
+.bk-phone-empty {
+  margin: 0;
+  padding: 14px 12px;
+  color: #6b7a8d;
+  font-size: 0.78rem;
+  text-align: center;
+}
