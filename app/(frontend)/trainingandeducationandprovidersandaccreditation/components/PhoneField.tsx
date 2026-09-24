@@ -35,10 +35,51 @@ export function phoneDigits(value: string): string {
    not an edge one. */
 const KEEPS_TRUNK_ZERO = new Set(["IT", "VA"]);
 
+function withoutTrunkZero(region: string, digits: string): string {
+  return KEEPS_TRUNK_ZERO.has(region) ? digits : digits.replace(/^0+/, "");
+}
+
+/* Every dial code in the list. International codes are designed so that none
+   is the start of another, so the first match is the only match; sorting the
+   longest first just keeps that true if the table ever grows an exception. */
+const DIALS_LONGEST_FIRST = [...new Set(Object.values(dialCodes))]
+  .filter(Boolean)
+  .sort((a, b) => b.length - a.length);
+
+/* Plenty of people type their number the international way out of habit,
+   "+91 98765 43210" or "00971 50 …", even with the code already picked beside
+   it. Read a leading + or 00 as the whole international number. Without this
+   the picked code was added again in front of the typed one and sales got
+   +91 919876543210, a number that cannot be dialled. */
+function typedInternational(number: string): string | null {
+  const trimmed = number.trim();
+  if (trimmed.startsWith("+")) return phoneDigits(trimmed);
+  if (trimmed.startsWith("00")) return phoneDigits(trimmed).slice(2);
+  return null;
+}
+
+/* The dial code and the national part of what was entered. When the typed
+   international code differs from the picker, the typed one wins: it is what
+   the person would dial, and the picker may only hold the browser's guess. */
+function resolvePhone(value: PhoneValue): { dial: string; national: string } {
+  const intl = typedInternational(value.number);
+  if (intl === null) {
+    return {
+      dial: dialCodes[value.region] ?? "",
+      national: withoutTrunkZero(value.region, phoneDigits(value.number)),
+    };
+  }
+  const picked = dialCodes[value.region];
+  if (picked && intl.startsWith(picked)) {
+    return { dial: picked, national: withoutTrunkZero(value.region, intl.slice(picked.length)) };
+  }
+  const dial = DIALS_LONGEST_FIRST.find((code) => intl.startsWith(code));
+  if (!dial) return { dial: "", national: intl };
+  return { dial, national: intl.slice(dial.length).replace(/^0+/, "") };
+}
+
 export function nationalDigits(value: PhoneValue): string {
-  const digits = phoneDigits(value.number);
-  if (KEEPS_TRUNK_ZERO.has(value.region)) return digits;
-  return digits.replace(/^0+/, "");
+  return resolvePhone(value).national;
 }
 
 /* The same 8-to-15 digit rule the field has always applied, now counted over
@@ -46,19 +87,17 @@ export function nationalDigits(value: PhoneValue): string {
    list guarantees a country code; it says nothing about whether the rest of
    the number is complete, which is what this still catches. */
 export function validPhone(value: PhoneValue): boolean {
-  const dial = dialCodes[value.region];
-  if (!dial) return false;
-  const digits = nationalDigits(value);
-  if (digits.length === 0) return false;
-  const total = dial.length + digits.length;
+  const { dial, national } = resolvePhone(value);
+  if (!dial || national.length === 0) return false;
+  const total = dial.length + national.length;
   return total >= 8 && total <= 15;
 }
 
 /* Spaced for a human reading the dashboard. Both ad platforms strip the
    space before hashing, so the same string serves for matching. */
 export function formatPhone(value: PhoneValue): string {
-  const dial = dialCodes[value.region];
-  return dial ? `+${dial} ${nationalDigits(value)}` : "";
+  const { dial, national } = resolvePhone(value);
+  return dial ? `+${dial} ${national}` : "";
 }
 
 /* The browser's own region is a better first guess than none, and it is only a
