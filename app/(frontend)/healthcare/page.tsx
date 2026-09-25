@@ -1,31 +1,34 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { EnquiryForm } from "./components/EnquiryForm";
+import { ClinicForm } from "./components/ClinicForm";
 import { GalleryMarquee } from "./components/GalleryMarquee";
 import { HeroWaves } from "./components/HeroWaves";
-import { ICONS, IconArrow, IconCheck, IconCheckCircle } from "../components/Icons";
+import { ICONS, IconArrow, IconCheck, IconCheckCircle, IconMinus } from "../components/Icons";
 import { MobileCta } from "./components/MobileCta";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
+import { StoryVideo } from "./components/StoryVideo";
 import { TeamGrid } from "./components/TeamGrid";
 import {
-  about,
   apply,
-  benefits,
-  eligibility,
+  clinicSizes,
+  faq,
+  fees,
+  fit,
   gallery,
   hero,
+  opportunity,
   organizations,
-  presence,
   process,
   site,
   standards,
+  story,
   team,
 } from "./content";
 
-const title = "Healthcare Accreditation for Hospitals & Clinics";
+const title = "Clinic & Healthcare Accreditation";
 const description =
-  "Internationally aligned accreditation standards supporting patient safety, clinical excellence, and organizational performance. ISQua EEA assessed, active in 53+ countries.";
+  "Independent accreditation for medical, dental, aesthetic and specialist clinics. Standards assessed by ISQua EEA, active in 53+ countries. Fees from USD 4,000 by clinic size.";
 
 export const metadata: Metadata = {
   title,
@@ -82,12 +85,24 @@ const jsonLd = {
       areaServed: "Worldwide",
       audience: {
         "@type": "Audience",
-        audienceType: eligibility.entities.join(", "),
+        audienceType: fit.suitable.items.join(", "),
       },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faq.items.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a },
+      })),
     },
   ],
 };
 
+/* The page reads as one argument, top to bottom: why change, proof it works,
+   what is checked, what the journey is like, who it is for, what it costs,
+   and the questions left over. Every section ends by pointing forward into
+   the closing form rather than back up to the hero one. */
 export default function HealthcareLandingPage() {
   return (
     <>
@@ -100,24 +115,15 @@ export default function HealthcareLandingPage() {
 
       <main>
         {/* ================================================================
-            Hero — the same composition as /clinic, carrying this page's copy.
+            Hero. Left: the promise, three numbers, the starting price, and a
+            photograph of an accredited organization holding its award.
+            Right: the application form, with the ISQua plate under it.
 
-            Two columns that balance themselves. Left: the promise — eyebrow,
-            headline, lede, three numbers — and beneath it a photograph of an
-            accredited organization holding its award. Right: the enquiry
-            form, with the ISQua plate under it. The columns are stretched to
-            one height and the photograph is the piece that flexes, so it
-            takes whatever room the form column leaves rather than being
-            sized by hand.
-
-            The two column wrappers dissolve on narrow screens (display:
-            contents) and the four pieces reorder for a phone: headline,
-            photograph, form, proof — the evidence is seen before the visitor
-            is asked for anything.
+            The column wrappers dissolve on narrow screens (display:
+            contents) and the pieces reorder for a phone: headline,
+            photograph, form, proof.
             ================================================================ */}
         <section id="top" className="hc-hero">
-          {/* The painted ground: ruling, three aurora washes and the wave
-              field, all inert, all under the content. */}
           <div className="hc-hero-bg" aria-hidden="true">
             <div className="hc-hero-grid-bg" />
             <div className="hc-hero-orb hc-hero-orb--gold" />
@@ -136,9 +142,6 @@ export default function HealthcareLandingPage() {
                 </h1>
                 <p className="hc-hero-lede">{hero.lede}</p>
 
-                {/* Three numbers, inline rather than boxed. The fourth
-                    credential — who assesses the standards — sits under the
-                    form instead, beside the thing it is there to vouch for. */}
                 <ul className="hc-hero-stats" aria-label="Accreditation trust indicators">
                   {hero.proof.map((item) => {
                     const Icon = ICONS[item.icon];
@@ -155,11 +158,13 @@ export default function HealthcareLandingPage() {
                     );
                   })}
                 </ul>
+
+                <p className="hc-hero-price">
+                  <IconCheck />
+                  <span>{hero.price}</span>
+                </p>
               </div>
 
-              {/* The photograph, shown whole. It is a named organization
-                  holding a real award, which is the reason it earns the
-                  room, and the credit says so. */}
               <figure className="hc-hero-shot">
                 <Image
                   src={hero.photo}
@@ -181,7 +186,7 @@ export default function HealthcareLandingPage() {
                 role in some browsers, so it never carries one. */}
             <div className="hc-hero-side">
               <div id="enquire" className="hc-hero-form">
-                <EnquiryForm />
+                <ClinicForm />
               </div>
 
               <p className="hc-hero-isqua">
@@ -197,76 +202,18 @@ export default function HealthcareLandingPage() {
           </div>
         </section>
 
-        <section id="about" className="hc-section hc-section--mist">
-          <div className="hc-dots hc-dots--tr" aria-hidden="true" />
-          <div className="hc-shell hc-about-grid">
-            <div className="hc-about-copy">
-              <p className="hc-label reveal">{about.eyebrow}</p>
-              <h2 className="hc-title reveal">{about.title}</h2>
-              {about.paragraphs.map((paragraph) => (
-                <p className="reveal" key={paragraph.slice(0, 32)}>
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-
-            <div className="hc-mv-grid">
-              {about.cards.map((card, index) => {
-                const Icon = ICONS[card.icon];
-                return (
-                  <article
-                    className="hc-mv-card reveal"
-                    key={card.title}
-                    style={{ transitionDelay: `${index * 90}ms` }}
-                  >
-                    <div className="hc-mv-head">
-                      <span className="hc-tile">
-                        <Icon />
-                      </span>
-                      <h3>{card.title}</h3>
-                    </div>
-                    <p>{card.body}</p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section className="hc-section hc-section--navy">
-          <div className="hc-dots hc-dots--light hc-dots--bl" aria-hidden="true" />
-          <div className="hc-shell">
-            <header className="hc-heading--center reveal">
-              <p className="hc-label hc-label--light">{presence.eyebrow}</p>
-              <h2 className="hc-title hc-title--light">{presence.title}</h2>
-              <p className="hc-lede hc-lede--light">{presence.lede}</p>
-            </header>
-
-            <figure className="hc-map reveal">
-              <div className="hc-map-frame">
-                <Image
-                  src="/healthcare/map.png"
-                  alt={presence.mapAlt}
-                  width={1200}
-                  height={655}
-                  sizes="(max-width: 720px) 100vw, 1200px"
-                />
-              </div>
-            </figure>
-          </div>
-        </section>
-
-        <section id="benefits" className="hc-section hc-section--white">
+        {/* 1. The opportunity: why change anything, and why now. */}
+        <section id="why" className="hc-section hc-section--white">
           <div className="hc-dots hc-dots--tr" aria-hidden="true" />
           <div className="hc-shell">
             <header className="hc-heading--center reveal">
-              <p className="hc-label">{benefits.eyebrow}</p>
-              <h2 className="hc-title">{benefits.title}</h2>
-              <p className="hc-lede">{benefits.lede}</p>
+              <p className="hc-label">{opportunity.eyebrow}</p>
+              <h2 className="hc-title">{opportunity.title}</h2>
+              <p className="hc-lede">{opportunity.lede}</p>
             </header>
 
             <ol className="hc-benefit-grid">
-              {benefits.items.map((item, index) => {
+              {opportunity.items.map((item, index) => {
                 const Icon = ICONS[item.icon];
                 return (
                   <li
@@ -289,21 +236,92 @@ export default function HealthcareLandingPage() {
 
             <div className="hc-benefit-action reveal">
               <a href="#apply-form" className="hc-button hc-button--primary">
-                Start your accreditation journey
+                {opportunity.cta}
                 <IconArrow className="hc-icon" />
               </a>
             </div>
           </div>
         </section>
 
+        {/* 2. The proof: one clinic's own story, then the organizations
+            beside it. */}
+        <section id="proof" className="hc-section hc-section--navy">
+          <div className="hc-dots hc-dots--light hc-dots--bl" aria-hidden="true" />
+          <div className="hc-shell">
+            <div className="hc-story-grid">
+              <div className="reveal">
+                <StoryVideo />
+              </div>
+
+              <div className="hc-story-copy reveal">
+                <p className="hc-label hc-label--light">{story.eyebrow}</p>
+                <h2 className="hc-title hc-title--light">{story.title}</h2>
+                <p className="hc-lede hc-lede--light">{story.lede}</p>
+
+                <div className="hc-story-id">
+                  <Image src={story.logo} alt="" width={176} height={96} sizes="88px" />
+                  <p>
+                    <strong>{story.organization}</strong>
+                    <small>{story.location}</small>
+                  </p>
+                </div>
+
+                <ul className="hc-story-points">
+                  {story.points.map((point) => (
+                    <li key={point}>
+                      <IconCheck />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <p className="hc-org-label reveal">{organizations.label}</p>
+            <ul className="hc-org-grid hc-org-grid--tight">
+              {organizations.items.map((item, index) => (
+                <li
+                  className="hc-org-card reveal"
+                  key={item.name}
+                  style={{ transitionDelay: `${index * 70}ms` }}
+                >
+                  <span className="hc-org-logo">
+                    <Image
+                      src={item.logo}
+                      alt={`${item.name} logo`}
+                      width={108}
+                      height={108}
+                      sizes="108px"
+                    />
+                  </span>
+                  <h3>{item.name}</h3>
+                  <p>{item.location}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section id="gallery" className="hc-section hc-section--mist">
+          <div className="hc-shell">
+            <header className="hc-heading--center reveal">
+              <p className="hc-label">{gallery.eyebrow}</p>
+              <h2 className="hc-title">{gallery.title}</h2>
+              <p className="hc-lede">{gallery.lede}</p>
+            </header>
+          </div>
+
+          <GalleryMarquee />
+        </section>
+
+        {/* 3. The teaching: what a surveyor checks, useful before anyone
+            applies. */}
         <section id="standards" className="hc-section hc-section--navy">
           <div className="hc-dots hc-dots--light hc-dots--tr" aria-hidden="true" />
           <div className="hc-shell">
             <header className="reveal">
               <p className="hc-label hc-label--light">{standards.eyebrow}</p>
-              <h2 className="hc-title hc-title--light hc-title--wide">
-                {standards.title}
-              </h2>
+              <h2 className="hc-title hc-title--light hc-title--wide">{standards.title}</h2>
               <p className="hc-lede hc-lede--light">{standards.lede}</p>
             </header>
 
@@ -330,9 +348,26 @@ export default function HealthcareLandingPage() {
                 );
               })}
             </ol>
+
+            <div className="hc-ledger-action reveal">
+              <a href="#apply-form" className="hc-button hc-button--primary">
+                {opportunity.cta}
+                <IconArrow className="hc-icon" />
+              </a>
+              <a
+                href={site.standards}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hc-text-link"
+              >
+                {standards.standardsCta}
+              </a>
+            </div>
           </div>
         </section>
 
+        {/* 4. The ownership experience: the journey step by step, then what
+            the clinic holds at the end of it. */}
         <section id="process" className="hc-section hc-section--paper">
           <div className="hc-dots hc-dots--bl" aria-hidden="true" />
           <div className="hc-shell">
@@ -342,100 +377,114 @@ export default function HealthcareLandingPage() {
               <p className="hc-lede">{process.lede}</p>
             </header>
 
-            <figure className="hc-process-figure reveal">
-              <Image
-                src={process.image}
-                alt={process.imageAlt}
-                width={1800}
-                height={519}
-                sizes="(max-width: 1240px) 100vw, 1196px"
-              />
-              <figcaption>{process.note}</figcaption>
-            </figure>
+            <ol className="hc-steps">
+              {process.steps.map((step, index) => (
+                <li
+                  className="hc-step reveal"
+                  key={step.title}
+                  style={{ transitionDelay: `${index * 80}ms` }}
+                >
+                  <span className="hc-step-index" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </li>
+              ))}
+            </ol>
+
+            <ul className="hc-outcomes reveal" aria-label="What your clinic holds once accredited">
+              {process.outcomes.map((item) => (
+                <li key={item.label}>
+                  <b>{item.value}</b>
+                  <span>{item.label}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        <section id="gallery" className="hc-section hc-section--mist">
-          <div className="hc-shell">
-            <header className="hc-heading--center reveal">
-              <p className="hc-label">{gallery.eyebrow}</p>
-              <h2 className="hc-title">{gallery.title}</h2>
-              <p className="hc-lede">{gallery.lede}</p>
-            </header>
-          </div>
-
-          <GalleryMarquee />
-        </section>
-
-        <section id="eligibility" className="hc-section hc-section--navy">
+        {/* 5. Who it is for, and who it is not for. */}
+        <section id="fit" className="hc-section hc-section--navy">
           <div className="hc-dots hc-dots--light hc-dots--bl" aria-hidden="true" />
           <div className="hc-shell hc-eligibility-grid">
             <div>
-              <p className="hc-label hc-label--light reveal">{eligibility.eyebrow}</p>
-              <h2 className="hc-title hc-title--light reveal">{eligibility.title}</h2>
-              <p className="hc-lede hc-lede--light reveal">{eligibility.lede}</p>
+              <p className="hc-label hc-label--light reveal">{fit.eyebrow}</p>
+              <h2 className="hc-title hc-title--light reveal">{fit.title}</h2>
 
-              <ul className="hc-eligibility-list reveal">
-                {eligibility.entities.map((entity) => (
-                  <li key={entity}>
-                    <IconCheckCircle />
-                    <span>{entity}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="hc-fit-columns">
+                <div className="reveal">
+                  <h3 className="hc-fit-label">{fit.suitable.label}</h3>
+                  <ul className="hc-eligibility-list hc-eligibility-list--single">
+                    {fit.suitable.items.map((item) => (
+                      <li key={item}>
+                        <IconCheckCircle />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="reveal">
+                  <h3 className="hc-fit-label hc-fit-label--muted">{fit.unsuitable.label}</h3>
+                  <ul className="hc-fit-not">
+                    {fit.unsuitable.items.map((item) => (
+                      <li key={item}>
+                        <IconMinus />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
 
             <div className="hc-eligibility-card reveal">
-              <h3>{eligibility.cardTitle}</h3>
-              <p>{eligibility.cardBody}</p>
+              <h3>{fit.cardTitle}</h3>
+              <p>{fit.cardBody}</p>
               <div className="hc-eligibility-actions">
                 <a href="#apply-form" className="hc-button hc-button--primary">
-                  {eligibility.cardCta}
+                  {fit.cardCta}
                   <IconArrow className="hc-icon" />
-                </a>
-                <a
-                  href={site.standards}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hc-button hc-button--outline"
-                >
-                  {eligibility.standardsCta}
                 </a>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="organizations" className="hc-section hc-section--white">
+        {/* 6. The investment, the same three sizes the form asks about. */}
+        <section id="fees" className="hc-section hc-section--white">
           <div className="hc-dots hc-dots--tr" aria-hidden="true" />
           <div className="hc-shell">
             <header className="hc-heading--center reveal">
-              <p className="hc-label">{organizations.eyebrow}</p>
-              <h2 className="hc-title">{organizations.title}</h2>
-              <p className="hc-lede">{organizations.lede}</p>
+              <p className="hc-label">{fees.eyebrow}</p>
+              <h2 className="hc-title">{fees.title}</h2>
+              <p className="hc-lede">{fees.lede}</p>
             </header>
 
-            <ul className="hc-org-grid">
-              {organizations.items.map((item, index) => (
+            <ul className="hc-fee-grid">
+              {clinicSizes.map((size, index) => (
                 <li
-                  className="hc-org-card reveal"
-                  key={item.name}
-                  style={{ transitionDelay: `${index * 70}ms` }}
+                  className="hc-fee-card reveal"
+                  key={size.value}
+                  style={{ transitionDelay: `${index * 80}ms` }}
                 >
-                  <span className="hc-org-logo">
-                    <Image
-                      src={item.logo}
-                      alt={`${item.name} logo`}
-                      width={108}
-                      height={108}
-                      sizes="108px"
-                    />
-                  </span>
-                  <h3>{item.name}</h3>
-                  <p>{item.location}</p>
+                  <h3>{size.value}</h3>
+                  <p className="hc-fee-price">
+                    <small>{fees.from}</small>
+                    {size.price.replace("+", "")}
+                  </p>
                 </li>
               ))}
             </ul>
+
+            <p className="hc-fee-note reveal">{fees.note}</p>
+
+            <div className="hc-benefit-action reveal">
+              <a href="#apply-form" className="hc-button hc-button--primary">
+                {fees.cta}
+                <IconArrow className="hc-icon" />
+              </a>
+            </div>
           </div>
         </section>
 
@@ -449,6 +498,28 @@ export default function HealthcareLandingPage() {
             </header>
 
             <TeamGrid />
+          </div>
+        </section>
+
+        {/* 7. The objections, answered before the call. */}
+        <section id="faq" className="hc-section hc-section--white">
+          <div className="hc-shell hc-faq-shell">
+            <header className="hc-heading--center reveal">
+              <p className="hc-label">{faq.eyebrow}</p>
+              <h2 className="hc-title">{faq.title}</h2>
+            </header>
+
+            <div className="hc-faq">
+              {faq.items.map((item) => (
+                <details className="hc-faq-item reveal" key={item.q}>
+                  <summary>
+                    {item.q}
+                    <span className="hc-faq-mark" aria-hidden="true" />
+                  </summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -478,10 +549,11 @@ export default function HealthcareLandingPage() {
               </figure>
             </div>
 
-            {/* Second copy of the hero form, so every CTA below the fold has a
-                form to land on without sending the visitor back to the top. */}
+            {/* Second copy of the hero form, so every call to action below
+                the fold has a form to land on without sending the visitor
+                back to the top. */}
             <div id="apply-form" className="hc-apply-form reveal">
-              <EnquiryForm layout="stack" />
+              <ClinicForm layout="stack" />
             </div>
           </div>
         </section>

@@ -1,5 +1,9 @@
 import { after } from "next/server";
-import { facilityTypes } from "@/app/(frontend)/healthcare/content";
+import {
+  branchCounts,
+  clinicSizes,
+  employeeCounts,
+} from "@/app/(frontend)/healthcare/content";
 import {
   type Attribution,
   attributionFromCookieHeader,
@@ -17,14 +21,17 @@ export const dynamic = "force-dynamic";
 
 const SOURCE = "healthcare";
 
+/* Mirrors the client checks in components/ClinicForm.tsx; keep the two in step. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-/* Mirrors the client checks in components/EnquiryForm.tsx; keep the two in step. */
-const WEBSITE_RE = /^(https?:\/\/)?[^\s]+\.[^\s]{2,}$/i;
 const MAX_LEN = 2000;
-/* A job title, not an essay. */
-const MAX_POSITION_LEN = 120;
+/* A job title or a city, not an essay. */
+const MAX_SHORT_LEN = 120;
 const VALID_COUNTRY = new Set(countries.map(([code]) => code));
-const VALID_FACILITY = new Set<string>(facilityTypes);
+/* The closed answers are checked against the same lists the form draws from,
+   so nothing the form cannot produce is stored. */
+const VALID_BRANCHES = new Set<string>(branchCounts);
+const VALID_EMPLOYEES = new Set<string>(employeeCounts);
+const SIZE_PRICE = new Map<string, string>(clinicSizes.map((size) => [size.value, size.price]));
 
 function validPhone(value: string): boolean {
   const digits = value.replace(/\D/g, "");
@@ -35,13 +42,15 @@ export type Enquiry = {
   fullName: string;
   organization: string;
   position: string;
-  facilityType: string;
   email: string;
   country: string;
   countryName: string;
+  city: string;
   phone: string;
-  website: string;
-  message: string;
+  branches: string;
+  specialty: string;
+  employees: string;
+  clinicSize: string;
   receivedAt: string;
   source: string;
   attribution: Attribution;
@@ -97,29 +106,32 @@ export async function POST(request: Request) {
   }
 
   const fullName = clean(payload.fullName);
-  const position = clean(payload.position).slice(0, MAX_POSITION_LEN);
-  const organization = clean(payload.organization);
-  const facilityType = clean(payload.facilityType);
+  const position = clean(payload.position).slice(0, MAX_SHORT_LEN);
   const email = clean(payload.email);
   const phone = clean(payload.phone);
+  const organization = clean(payload.organization);
   const country = clean(payload.country);
-  const website = clean(payload.website);
-  const message = clean(payload.message);
+  const city = clean(payload.city).slice(0, MAX_SHORT_LEN);
+  const branches = clean(payload.branches);
+  const specialty = clean(payload.specialty);
+  const employees = clean(payload.employees);
+  const clinicSize = clean(payload.clinicSize);
 
-  /* Every field is required, the scope note included: the surveyor picks the
-     applicable standards from it. */
+  /* Every question on the clinic form is mandatory. */
   const fieldErrors: Record<string, string> = {};
   if (!fullName) fieldErrors.fullName = "Full name is required.";
   if (!position) fieldErrors.position = "Your position is required.";
-  if (!organization) fieldErrors.organization = "Facility name is required.";
-  if (!VALID_FACILITY.has(facilityType)) {
-    fieldErrors.facilityType = "A valid facility type is required.";
-  }
   if (!EMAIL_RE.test(email)) fieldErrors.email = "A valid email address is required.";
   if (!validPhone(phone)) fieldErrors.phone = "A valid phone number is required.";
+  if (!organization) fieldErrors.organization = "The clinic's name is required.";
   if (!VALID_COUNTRY.has(country)) fieldErrors.country = "A valid country is required.";
-  if (!WEBSITE_RE.test(website)) fieldErrors.website = "A website is required.";
-  if (!message) fieldErrors.message = "The scope of services is required.";
+  if (!city) fieldErrors.city = "The clinic's city is required.";
+  if (!VALID_BRANCHES.has(branches)) fieldErrors.branches = "The number of branches is required.";
+  if (!specialty) fieldErrors.specialty = "The speciality or services are required.";
+  if (!VALID_EMPLOYEES.has(employees)) {
+    fieldErrors.employees = "The number of employees is required.";
+  }
+  if (!SIZE_PRICE.has(clinicSize)) fieldErrors.clinicSize = "The clinic size is required.";
 
   if (Object.keys(fieldErrors).length > 0) {
     return Response.json(
@@ -149,13 +161,15 @@ export async function POST(request: Request) {
     fullName,
     organization,
     position,
-    facilityType,
     email,
     country,
     countryName: countries.find(([code]) => code === country)?.[1] ?? country,
+    city,
     phone,
-    website,
-    message,
+    branches,
+    specialty,
+    employees,
+    clinicSize,
     receivedAt: new Date().toISOString(),
     source: SOURCE,
     attribution,
@@ -193,13 +207,22 @@ async function deliver(enquiry: Enquiry) {
     countryCode: enquiry.country,
     countryName: enquiry.countryName,
     phone: enquiry.phone,
-    website: enquiry.website,
-    /* Facility type is the one question this form asks that TEPA's does not.
-       It rides in the message rather than earning a column, so every landing
-       page keeps writing the same shape of row into the shared leads table. */
-    message: [`Facility type: ${enquiry.facilityType}`, enquiry.message]
-      .filter(Boolean)
-      .join("\n\n")
+    /* The clinic form does not ask for a website; the shared table keeps the
+       column for the other pages. */
+    website: "",
+    /* The clinic answers ride in the message rather than earning columns, so
+       every landing page keeps writing the same shape of row into the shared
+       leads table. One answer per line, read top to bottom in the dashboard
+       before the first call. */
+    message: [
+      `Clinic location: ${enquiry.city}, ${enquiry.countryName}`,
+      `Branches: ${enquiry.branches}`,
+      `Speciality / services: ${enquiry.specialty}`,
+      `Employees: ${enquiry.employees}`,
+      `Clinic size: ${enquiry.clinicSize} (${SIZE_PRICE.get(enquiry.clinicSize)})`,
+      "Page: /healthcare (clinic application)",
+    ]
+      .join("\n")
       .slice(0, MAX_LEN),
     attribution: enquiry.attribution,
     fbp: enquiry.fbp,

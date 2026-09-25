@@ -340,8 +340,7 @@
   height: 23px;
 }
 
-.hc-benefit-card:hover .hc-tile,
-.hc-mv-card:hover .hc-tile {
+.hc-benefit-card:hover .hc-tile {
   background: linear-gradient(148deg, var(--gold-hi), var(--gold));
   color: var(--navy-deep);
   transform: translateY(-2px);
@@ -844,6 +843,32 @@
   white-space: pre-line;
 }
 
+/* The starting fee, said once above the fold. A clinic that cannot consider
+   it leaves here rather than after a sales call. Framed like the credit chip
+   rather than as a banner: it is information, not an offer. */
+.hc-hero-price {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 60ch;
+  margin: 24px 0 0;
+  padding: 10px 15px;
+  color: rgba(235, 242, 249, 0.92);
+  border: 1px solid rgba(244, 189, 75, 0.35);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.hc-hero-price svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--gold);
+}
+
 /* ---- Photograph ---------------------------------------------------------- */
 
 /* `flex: 1` is the whole trick: the figure takes the height the form column
@@ -981,6 +1006,10 @@
   animation-delay: 0.19s;
 }
 
+.hc-hero-copy > *:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
 .hc-hero-form {
   animation-delay: 0.12s;
 }
@@ -994,17 +1023,14 @@
 }
 
 /* ==========================================================================
-   Enquiry form
+   Application form
 
-   One ordinary vertical form, used in both placements: heading, then one
-   field per row, then the button. `panel` is the card standing beside the
-   hero headline and `stack` is the closing card; they differ only in trim.
-
-   The healthcare enquiry asks seven things plus an optional note, which is
-   three rows more than the clinic consultation. They stay one to a row all
-   the same: a pair of half-width fields in a 400px card is too short to show
-   what the visitor typed, and a single column is slower to scan but faster
-   to complete, which is the trade this page wants.
+   Two steps, then a confirmation, in both placements: `panel` is the card
+   standing beside the hero headline and `stack` is the closing card; they
+   differ only in trim. Step 1 is the person and the clinic, step 2 the
+   clinic's size. Fields stay one to a row, apart from country and city,
+   which are one answer: a single column is slower to scan but faster to
+   complete, which is the trade this page wants.
    ========================================================================== */
 
 .hc-form-card {
@@ -1207,15 +1233,10 @@
   }
 }
 
-.hc-form-done {
-  display: block;
-  text-align: center;
-}
-
 .hc-form-tick {
   width: 58px;
   height: 58px;
-  margin: 0 auto 18px;
+  margin: 0 0 16px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -1229,124 +1250,493 @@
   height: 30px;
 }
 
-.hc-form-done h2 {
-  font-size: 1.55rem;
+/* ---- Progress, step and heading ------------------------------------------ */
+
+.hc-cf-progress {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
 }
 
-.hc-form-done p {
-  max-width: 52ch;
-  margin: 12px auto 0;
+.hc-cf-progress li {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+.hc-cf-progress li[data-state="done"] {
+  background: var(--navy);
+}
+
+.hc-cf-progress li[data-state="current"] {
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-hi));
+}
+
+.hc-cf-kicker {
+  margin: 0;
+  color: var(--gold-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hc-cf-title {
+  margin: 6px 0 18px;
+  color: var(--navy);
+  font-size: 1.32rem;
+  line-height: 1.2;
+}
+
+.hc-cf-title:focus {
+  outline: none;
+}
+
+/* ---- Labelled fields -----------------------------------------------------
+
+   This form shows its labels, each with a red star, rather than letting the
+   placeholder stand in: every answer is mandatory and the star is how that is
+   read at a glance. The phone field comes from the shared component, so its
+   label and parts are styled here under the page's scope. */
+
+.hc-field--labelled > label,
+.hc .bk-phone > label {
+  position: static;
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0 0 6px 2px;
+  overflow: visible;
+  clip-path: none;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: normal;
+}
+
+.hc-field--labelled input,
+.hc-field--labelled select {
+  height: 48px;
+}
+
+.hc-field--labelled select {
+  background-position: calc(100% - 20px) 21px, calc(100% - 14px) 21px;
+}
+
+.hc-req {
+  margin-left: 3px;
+  color: var(--red);
+  font-weight: 700;
+}
+
+.hc-field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hc .bk-req {
+  margin-left: 3px;
+  color: var(--red);
+  font-weight: 700;
+}
+
+.hc .bk-phone-row {
+  display: flex;
+  height: 48px;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.hc .bk-phone-row:focus-within {
+  background: var(--white);
+  border-color: var(--navy-lift);
+  box-shadow: 0 0 0 3px rgba(10, 77, 128, 0.15);
+}
+
+.hc .bk-phone-row[data-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.hc .bk-phone-code {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  color: var(--ink);
+  border: 0;
+  border-right: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: rgba(0, 39, 71, 0.04);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.hc .bk-phone-code:hover {
+  background: rgba(0, 39, 71, 0.08);
+}
+
+.hc .bk-phone-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.hc .bk-phone-dial {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc .bk-phone-caret {
+  width: 0;
+  height: 0;
+  border-top: 4px solid var(--ink-soft);
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+.hc .bk-phone-row > input {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0 14px;
+  color: var(--ink);
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--body);
+  font-size: 0.95rem;
+}
+
+.hc .bk-phone-row > input::placeholder {
+  color: #8798a7;
+  opacity: 1;
+}
+
+.hc .bk-phone-menu {
+  margin-top: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.hc .bk-phone-search {
+  display: block;
+  width: 100%;
+  padding: 11px 13px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  outline: none;
+  background: var(--white);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.hc .bk-phone-search:focus {
+  border-bottom-color: var(--gold-deep);
+}
+
+.hc .bk-phone-list {
+  max-height: 232px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  overscroll-behavior: contain;
+}
+
+.hc .bk-phone-list button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 9px;
+  color: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.hc .bk-phone-list button[data-cursor="true"] {
+  background: var(--mist);
+}
+
+.hc .bk-phone-list button[aria-selected="true"] {
+  font-weight: 600;
+}
+
+.hc .bk-phone-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hc .bk-phone-plus {
+  flex: 0 0 auto;
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.hc .bk-phone-empty {
+  margin: 0;
+  padding: 14px 12px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.hc .bk-phone .form-error {
+  margin: 6px 0 0;
+  color: var(--danger);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* ---- Step 2: chips and size bands ----------------------------------------- */
+
+.hc-cf-clinic {
+  display: grid;
+  gap: 18px;
+}
+
+.hc-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.hc-group legend {
+  margin: 0 0 8px 2px;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.hc-group-hint {
+  margin: 8px 0 0 2px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.hc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+/* Real radio inputs sit under the chips and the size bands, so keyboard and
+   screen reader users get an ordinary radio group. */
+.hc-chip,
+.hc-tier-option {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  background: var(--white);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.hc-chip {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 8px 14px;
+  color: var(--ink-soft);
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.hc-chip:hover,
+.hc-tier-option:hover {
+  border-color: var(--gold-deep);
+}
+
+.hc-chip input,
+.hc-tier-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hc-chip:has(input:focus-visible),
+.hc-tier-option:has(input:focus-visible) {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.hc-chip[data-checked="true"] {
+  color: var(--white);
+  border-color: var(--navy);
+  background: var(--navy);
+}
+
+.hc-group[aria-invalid="true"] .hc-chip,
+.hc-group[aria-invalid="true"] .hc-tier-option {
+  border-color: #e2b4ae;
+}
+
+/* The three sizes carry their starting fee. Set as three equal boxes rather
+   than pills: the price is the part being compared, so it gets the weight. */
+.hc-tier-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hc-tier-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 6px;
+  border-radius: var(--r-sm);
+  text-align: center;
+}
+
+.hc-tier-name {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.hc-tier-price {
+  color: var(--navy);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hc-tier-option[data-checked="true"] {
+  border-color: var(--navy);
+  background: var(--navy);
+}
+
+.hc-tier-option[data-checked="true"] .hc-tier-name {
+  color: rgba(226, 238, 247, 0.82);
+}
+
+.hc-tier-option[data-checked="true"] .hc-tier-price {
+  color: var(--gold);
+}
+
+.hc-cf-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.hc-cf-actions .hc-button {
+  flex: 1 1 auto;
+  min-height: 56px;
   font-size: 0.97rem;
-  line-height: 1.65;
+}
+
+.hc-cf-back {
+  min-height: 56px;
+  padding: 0 18px;
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-btn);
+  background: var(--white);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.hc-cf-back:hover {
+  border-color: var(--navy-lift);
+}
+
+/* ---- Confirmation ---------------------------------------------------------- */
+
+/* The promise, against the contact details they actually gave, directly under
+   the heading so it is the first thing read after the tick. */
+.hc-cf-confirm {
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--ink-soft);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--r-sm);
+  background: var(--gold-soft);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.hc-cf-confirm strong {
+  color: var(--navy);
+  overflow-wrap: anywhere;
+}
+
+.hc-cf-checklist {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hc-cf-checklist li {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.hc-cf-checklist svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  color: var(--gold-deep);
+}
+
+.hc-cf-checklist strong {
+  color: var(--navy);
+}
+
+.hc-form-done-mail {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
 }
 
 .hc-form-done-mail a {
   color: var(--navy-lift);
   font-weight: 600;
-}
-
-/* ==========================================================================
-   About
-   ========================================================================== */
-
-.hc-about-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  align-items: start;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: 64px;
-}
-
-.hc-about-copy p {
-  max-width: 60ch;
-  margin: 20px 0 0;
-  color: var(--muted);
-  font-size: 1.02rem;
-  line-height: 1.78;
-}
-
-.hc-mv-grid {
-  display: grid;
-  gap: 18px;
-  margin-top: 8px;
-}
-
-.hc-mv-card {
-  position: relative;
-  overflow: hidden;
-  padding: 30px 30px 30px 34px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--white);
-  box-shadow: 0 18px 44px rgba(0, 39, 71, 0.07);
-}
-
-.hc-mv-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 4px;
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold-deep));
-}
-
-.hc-mv-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.hc-mv-card h3 {
-  margin: 0;
-  color: var(--navy);
-  font-family: var(--display);
-  font-size: 1.3rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.hc-mv-card p {
-  margin: 14px 0 0;
-  color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.72;
-}
-
-/* ==========================================================================
-   Global presence
-   ========================================================================== */
-
-.hc-map {
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-  margin-top: 48px;
-  padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.hc-map-frame {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 1200 / 655;
-  border-radius: 12px;
-}
-
-.hc-map-frame img {
-  width: 100%;
-  height: 100%;
-  opacity: 0.88;
-  object-fit: cover;
-  transition: opacity 300ms ease;
-}
-
-.hc-map:hover .hc-map-frame img {
-  opacity: 1;
 }
 
 /* ==========================================================================
@@ -1494,36 +1884,6 @@
   color: rgba(212, 231, 242, 0.76);
   font-size: 0.95rem;
   line-height: 1.72;
-}
-
-/* ==========================================================================
-   Process
-   ========================================================================== */
-
-.hc-process-figure {
-  position: relative;
-  z-index: 1;
-  margin: 52px 0 0;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--white);
-  box-shadow: 0 24px 60px rgba(0, 39, 71, 0.09);
-}
-
-.hc-process-figure img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 12px;
-}
-
-.hc-process-figure figcaption {
-  margin-top: 18px;
-  color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.6;
-  text-align: center;
 }
 
 /* ==========================================================================
@@ -1759,6 +2119,537 @@
   margin: 6px 0 0;
   color: var(--muted);
   font-size: 0.84rem;
+}
+
+/* ==========================================================================
+   Proof: one clinic's story, then the organizations beside it
+   ========================================================================== */
+
+.hc-story-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-items: center;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 56px;
+}
+
+.hc-video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid rgba(244, 189, 75, 0.45);
+  border-radius: var(--r-lg);
+  background: var(--navy-deep);
+  box-shadow: var(--shadow-lg);
+}
+
+.hc-video iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.hc-video button {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.hc-video img {
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.hc-video button:hover img {
+  transform: scale(1.03);
+}
+
+.hc-video-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(170deg, rgba(0, 29, 51, 0.3), rgba(0, 29, 51, 0.72));
+}
+
+.hc-video-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 78px;
+  height: 78px;
+  place-items: center;
+  translate: -50% -50%;
+  color: var(--white);
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.6);
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.hc-video-play svg {
+  width: 34px;
+  height: 34px;
+  fill: currentcolor;
+  translate: 2px 0;
+}
+
+.hc-video button:hover .hc-video-play {
+  background: var(--red-hi);
+  transform: scale(1.07);
+}
+
+.hc-video-label {
+  position: absolute;
+  right: 24px;
+  bottom: 22px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 1.2rem;
+  text-align: left;
+}
+
+.hc-video-label small {
+  margin-top: 4px;
+  color: var(--muted-light);
+  font-family: var(--body);
+  font-size: 0.8rem;
+}
+
+.hc-story-id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 26px;
+  padding: 14px 18px;
+  border: 1px solid rgba(244, 189, 75, 0.4);
+  border-radius: var(--r);
+  background: rgba(0, 29, 51, 0.45);
+}
+
+/* Contained, not cropped: the lockup is a wide mark over a wordmark, and the
+   white plate is the ground the logo was drawn for. */
+.hc-story-id img {
+  width: 88px;
+  height: 48px;
+  flex: 0 0 auto;
+  padding: 5px 7px;
+  border-radius: 10px;
+  background: var(--white);
+  object-fit: contain;
+}
+
+.hc-story-id p {
+  margin: 0;
+}
+
+.hc-story-id strong {
+  display: block;
+  color: var(--white);
+  font-size: 1rem;
+}
+
+.hc-story-id small {
+  color: var(--muted-light);
+  font-size: 0.84rem;
+}
+
+.hc-story-points {
+  display: grid;
+  gap: 12px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hc-story-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #e7eff5;
+  font-size: 0.97rem;
+  line-height: 1.5;
+}
+
+.hc-story-points svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  padding: 3px;
+  color: var(--gold);
+  border-radius: 50%;
+  background: rgba(244, 189, 75, 0.18);
+}
+
+.hc-org-label {
+  position: relative;
+  z-index: 1;
+  margin: 76px 0 0;
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.hc-org-grid--tight {
+  margin-top: 22px;
+}
+
+/* ==========================================================================
+   What a surveyor checks: the close of the ledger
+   ========================================================================== */
+
+.hc-ledger-action {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 28px;
+  margin-top: 44px;
+}
+
+.hc-text-link {
+  color: var(--gold);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(244, 189, 75, 0.45);
+  text-underline-offset: 4px;
+}
+
+.hc-text-link:hover {
+  text-decoration-color: var(--gold);
+}
+
+/* ==========================================================================
+   The journey: four steps, then what the clinic holds at the end
+   ========================================================================== */
+
+.hc-steps {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin: 56px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hc-step {
+  position: relative;
+  padding: 28px 24px 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--white);
+  box-shadow: 0 18px 44px rgba(0, 39, 71, 0.06);
+}
+
+/* A short gold rule between neighbouring cards, level with the numbers, so
+   the four read as one path rather than four features. */
+.hc-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 47px;
+  right: -21px;
+  width: 22px;
+  height: 2px;
+  background: var(--gold-line);
+}
+
+.hc-step-index {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: var(--gold);
+  border-radius: 50%;
+  background: var(--navy);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.hc-step h3 {
+  margin: 18px 0 0;
+  color: var(--navy);
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.hc-step p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.68;
+}
+
+.hc-outcomes {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 28px 0 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--gold-line);
+  border-radius: var(--r);
+  background: var(--gold-soft);
+  list-style: none;
+}
+
+.hc-outcomes li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 24px;
+  border-right: 1px solid var(--gold-line);
+}
+
+.hc-outcomes li:last-child {
+  border-right: 0;
+}
+
+.hc-outcomes b {
+  color: var(--navy);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.hc-outcomes span {
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   Fit: who it is for, and who it is not for
+   ========================================================================== */
+
+.hc-fit-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 34px;
+  margin-top: 34px;
+}
+
+.hc-fit-label {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hc-fit-label--muted {
+  color: rgba(212, 231, 242, 0.7);
+}
+
+.hc-eligibility-list--single {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.hc-fit-not {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hc-fit-not li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: rgba(212, 231, 242, 0.82);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.hc-fit-not svg {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: rgba(212, 231, 242, 0.55);
+}
+
+/* ==========================================================================
+   Fees: the three sizes the form asks about
+   ========================================================================== */
+
+.hc-fee-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  max-width: 960px;
+  margin: 52px auto 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hc-fee-card {
+  position: relative;
+  overflow: hidden;
+  padding: 34px 28px 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--white);
+  box-shadow: 0 18px 44px rgba(0, 39, 71, 0.06);
+  text-align: center;
+}
+
+.hc-fee-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-hi), var(--gold-deep));
+}
+
+.hc-fee-card h3 {
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.hc-fee-price {
+  margin: 14px 0 0;
+  color: var(--navy);
+  font-size: clamp(1.9rem, 3vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-fee-price small {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hc-fee-note {
+  position: relative;
+  z-index: 1;
+  max-width: 62ch;
+  margin: 26px auto 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Questions
+   ========================================================================== */
+
+.hc-faq-shell {
+  max-width: 880px;
+}
+
+.hc-faq {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  margin: 44px 0 0;
+}
+
+.hc-faq-item {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.hc-faq-item[open] {
+  border-color: var(--gold-line);
+  box-shadow: 0 16px 36px rgba(0, 39, 71, 0.07);
+}
+
+.hc-faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 22px;
+  color: var(--navy);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  list-style: none;
+  cursor: pointer;
+}
+
+.hc-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.hc-faq-mark {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--mist);
+}
+
+.hc-faq-mark::before,
+.hc-faq-mark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--navy);
+  translate: -50% -50%;
+  transition: rotate 0.2s ease;
+}
+
+.hc-faq-mark::after {
+  rotate: 90deg;
+}
+
+.hc-faq-item[open] .hc-faq-mark::after {
+  rotate: 0deg;
+}
+
+.hc-faq-item p {
+  margin: 0;
+  padding: 0 22px 22px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.72;
 }
 
 /* ==========================================================================
@@ -2174,7 +3065,6 @@
     gap: 40px;
   }
 
-  .hc-about-grid,
   .hc-eligibility-grid {
     gap: 44px;
   }
@@ -2242,9 +3132,9 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hc-about-grid,
   .hc-eligibility-grid,
-  .hc-apply-grid {
+  .hc-apply-grid,
+  .hc-story-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2439,6 +3329,91 @@
 
   .hc-flip {
     height: 372px;
+  }
+}
+
+/* The sections added with the clinic application: story, journey, fit, fees
+   and the form's paired and banded fields. */
+@media (max-width: 1180px) {
+  .hc-story-grid {
+    gap: 40px;
+  }
+}
+
+@media (max-width: 1040px) {
+  .hc-story-grid {
+    gap: 34px;
+  }
+
+  .hc-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hc-step:not(:last-child)::after {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .hc-steps,
+  .hc-outcomes,
+  .hc-fee-grid,
+  .hc-fit-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hc-outcomes li {
+    border-right: 0;
+    border-bottom: 1px solid var(--gold-line);
+  }
+
+  .hc-outcomes li:last-child {
+    border-bottom: 0;
+  }
+
+  .hc-org-label {
+    margin-top: 56px;
+  }
+
+  .hc-fee-card {
+    padding: 26px 22px 24px;
+  }
+
+  .hc-faq-item summary {
+    padding: 17px 16px;
+    font-size: 0.95rem;
+  }
+
+  .hc-faq-item p {
+    padding: 0 16px 18px;
+  }
+
+  /* 16px keeps iOS from zooming the page on focus, as for the other fields. */
+  .hc .bk-phone-row > input,
+  .hc .bk-phone-search {
+    font-size: 1rem;
+  }
+}
+
+/* Two answers to a row stop fitting a phone's form card: the country list
+   would cut "Saudi Arabia" to "Saudi Ar…". */
+@media (max-width: 480px) {
+  .hc-field-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Three price boxes side by side need about 320px of card. Under that each
+   band becomes a row, name on the left and price on the right. */
+@media (max-width: 400px) {
+  .hc-tier-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hc-tier-option {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 12px 14px;
   }
 }
 

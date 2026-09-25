@@ -13,7 +13,7 @@ import {
   PhoneField,
   type PhoneValue,
   validPhone,
-} from "./PhoneField";
+} from "../../components/PhoneField";
 import { booking, links, pending, positionSuggestions } from "../content";
 
 /* Two steps, then a confirmation.
