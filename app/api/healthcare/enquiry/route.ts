@@ -2,6 +2,7 @@ import { after } from "next/server";
 import {
   branchCounts,
   clinicSizes,
+  contactMethods,
   employeeCounts,
 } from "@/app/(frontend)/healthcare/content";
 import {
@@ -31,6 +32,7 @@ const VALID_COUNTRY = new Set(countries.map(([code]) => code));
    so nothing the form cannot produce is stored. */
 const VALID_BRANCHES = new Set<string>(branchCounts);
 const VALID_EMPLOYEES = new Set<string>(employeeCounts);
+const VALID_CONTACT = new Set<string>(contactMethods);
 const SIZE_PRICE = new Map<string, string>(clinicSizes.map((size) => [size.value, size.price]));
 
 function validPhone(value: string): boolean {
@@ -51,6 +53,7 @@ export type Enquiry = {
   specialty: string;
   employees: string;
   clinicSize: string;
+  contactMethod: string;
   receivedAt: string;
   source: string;
   attribution: Attribution;
@@ -116,6 +119,7 @@ export async function POST(request: Request) {
   const specialty = clean(payload.specialty);
   const employees = clean(payload.employees);
   const clinicSize = clean(payload.clinicSize);
+  const contactMethod = clean(payload.contactMethod);
 
   /* Every question on the clinic form is mandatory. */
   const fieldErrors: Record<string, string> = {};
@@ -132,6 +136,9 @@ export async function POST(request: Request) {
     fieldErrors.employees = "The number of employees is required.";
   }
   if (!SIZE_PRICE.has(clinicSize)) fieldErrors.clinicSize = "The clinic size is required.";
+  if (!VALID_CONTACT.has(contactMethod)) {
+    fieldErrors.contactMethod = "A preferred contact channel is required.";
+  }
 
   if (Object.keys(fieldErrors).length > 0) {
     return Response.json(
@@ -170,6 +177,7 @@ export async function POST(request: Request) {
     specialty,
     employees,
     clinicSize,
+    contactMethod,
     receivedAt: new Date().toISOString(),
     source: SOURCE,
     attribution,
@@ -220,6 +228,9 @@ async function deliver(enquiry: Enquiry) {
       `Speciality / services: ${enquiry.specialty}`,
       `Employees: ${enquiry.employees}`,
       `Clinic size: ${enquiry.clinicSize} (${SIZE_PRICE.get(enquiry.clinicSize)})`,
+      /* Same wording as the training-provider form, so sales reads the
+         channel in the same place on every lead. */
+      `Preferred contact: ${enquiry.contactMethod}`,
       "Page: /healthcare (clinic application)",
     ]
       .join("\n")

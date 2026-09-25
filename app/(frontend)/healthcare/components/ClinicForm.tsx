@@ -17,6 +17,7 @@ import {
 import {
   branchCounts,
   clinicSizes,
+  contactMethods,
   employeeCounts,
   formCopy,
   positionSuggestions,
@@ -30,7 +31,8 @@ import {
    which is what sales needs before the first call and what sorts the leads:
    branches, services, headcount, and the size band with its starting fee. A
    clinic that chooses a band has read the price and chosen to continue, which
-   is the strongest signal a form can collect.
+   is the strongest signal a form can collect. Last, the channel the clinic
+   wants to be reached on, which decides how the lead is worked.
 
    Every answer is required. The server repeats every check in
    app/api/healthcare/enquiry/route.ts; keep the two in step. */
@@ -54,6 +56,7 @@ type Clinic = {
   specialty: string;
   employees: string;
   clinicSize: string;
+  contactMethod: string;
 };
 
 type Errors = Partial<Record<keyof Details | keyof Clinic, string>>;
@@ -101,6 +104,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
     specialty: "",
     employees: "",
     clinicSize: "",
+    contactMethod: "",
   });
   const [honeypot, setHoneypot] = useState("");
   const [errors, setErrors] = useState<Errors>({});
@@ -190,6 +194,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
     if (!clinic.specialty.trim()) next.specialty = "Please list your specialities or services.";
     if (!clinic.employees) next.employees = "Please choose how many employees.";
     if (!clinic.clinicSize) next.clinicSize = "Please choose your clinic's size.";
+    if (!clinic.contactMethod) next.contactMethod = "Please choose how we should contact you.";
 
     setErrors(next);
     if (Object.keys(next).length > 0) {
@@ -224,6 +229,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
           specialty: clinic.specialty.trim(),
           employees: clinic.employees,
           clinicSize: clinic.clinicSize,
+          contactMethod: clinic.contactMethod,
           company_website_confirm: honeypot,
           attribution: readAttribution(),
           metaEventId,
@@ -261,6 +267,14 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
   }
 
   if (stage === "done") {
+    /* The channel they picked, against the contact detail they actually gave,
+       so the promise can be checked rather than taken on trust. */
+    const confirmLead =
+      formCopy.contactConfirm[clinic.contactMethod as keyof typeof formCopy.contactConfirm] ??
+      formCopy.contactConfirm.Email;
+    const confirmValue =
+      clinic.contactMethod === "Email" ? details.email.trim() : formatPhone(phoneValue);
+
     return (
       <div className={`hc-form-card hc-form-card--${layout} hc-cf-done`} role="status">
         <span className="hc-form-tick">
@@ -271,11 +285,8 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
           {formCopy.doneTitle}
         </h2>
 
-        {/* Echoed against what they actually typed, so the promise can be
-            checked rather than taken on trust. */}
         <p className="hc-cf-confirm">
-          {formCopy.doneConfirm} <strong>{details.email.trim()}</strong> or{" "}
-          <strong>{formatPhone(phoneValue)}</strong>.
+          {confirmLead} <strong>{confirmValue}</strong>.
         </p>
 
         <ul className="hc-cf-checklist">
@@ -523,6 +534,16 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
               </p>
             )}
           </fieldset>
+
+          <ChipGroup
+            name="contactMethod"
+            legend={formCopy.contactLegend}
+            options={contactMethods}
+            value={clinic.contactMethod}
+            onChange={(value) => setAnswer("contactMethod", value)}
+            error={errors.contactMethod}
+            errorId={fieldId("contactMethod-error")}
+          />
 
           {submitError ? (
             <p role="alert" className="hc-form-error">

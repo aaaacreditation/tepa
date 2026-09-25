@@ -432,7 +432,7 @@ export const faq = {
     },
     {
       q: "What happens after I send the form?",
-      a: "An AAA surveyor reviews your answers and contacts you within 48 hours with the standards that apply to your clinic and the next step.",
+      a: "An AAA surveyor reviews your answers and contacts you within 48 hours, on WhatsApp, by phone or by email as you choose, with the standards that apply to your clinic and the next step.",
     },
   ],
 } as const;
@@ -452,6 +452,12 @@ export const apply = {
 /* The form's closed answers. The API route validates against these same lists,
    so an answer the form cannot produce is refused on the server as well. */
 export const branchCounts = ["1", "2 to 3", "4 to 10", "More than 10"] as const;
+
+/* Asked rather than guessed at. Sales reports that a call from an unknown
+   foreign number goes unanswered, so the clinic names the channel it will
+   actually pick up on. It rides into the dashboard on the message, where the
+   surveyor reads it before making contact. */
+export const contactMethods = ["WhatsApp", "Phone call", "Email"] as const;
 
 export const employeeCounts = [
   "1 to 10",
@@ -488,9 +494,14 @@ export const formCopy = {
   submitting: "Sending",
   note: "Every field is required. Your application goes straight to an AAA surveyor.",
   sizeHint: "The starting accreditation fee for each size.",
+  contactLegend: "How should we contact you?",
+  contactConfirm: {
+    WhatsApp: "We will message you on WhatsApp at",
+    "Phone call": "We will call you on",
+    Email: "We will email you at",
+  },
   doneKicker: "Your application is in",
   doneTitle: "An AAA surveyor will contact you within 48 hours",
-  doneConfirm: "We will reach you at",
   doneItems: [
     {
       lead: "Your answers are reviewed first.",
