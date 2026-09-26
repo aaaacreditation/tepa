@@ -20,6 +20,14 @@ declare global {
   }
 }
 
+/* The two halves load at different times. The queue is a few bytes and is set
+   up straight away, so every gtag() call from the first moment is kept. The
+   library is 160 KB of script that a phone has to parse and run, and loaded
+   alongside the page it held the first screen back by about two seconds on
+   PageSpeed's mobile run; it now waits until the page has finished loading
+   and the browser is idle, then works through whatever was queued. The lead
+   itself never depends on it: the server reports every enquiry to Google
+   directly. */
 export function GoogleTag() {
   if (!CONVERSION_ID) return null;
 
@@ -27,7 +35,7 @@ export function GoogleTag() {
     <>
       <Script
         id="gtag-src"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         src={`https://www.googletagmanager.com/gtag/js?id=${CONVERSION_ID}`}
       />
       <Script id="gtag-init" strategy="afterInteractive">

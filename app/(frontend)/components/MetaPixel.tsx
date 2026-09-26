@@ -32,23 +32,33 @@ declare global {
   }
 }
 
+/* Meta's own snippet, split in two. The first half is the queue: fbq exists
+   from the start, and init, PageView and anything the page tracks before the
+   library arrives are held in it. The second half is fbevents.js, about 250 KB
+   once its config is counted, which the stock snippet injects immediately; on
+   PageSpeed's mobile run it was the heaviest thing competing with the first
+   screen. It now loads once the page has finished and the browser is idle,
+   and replays the queue exactly as it would have. The enquiry's Lead is also
+   sent by the server with the same event id, so nothing depends on the
+   library being early. */
 export function MetaPixel() {
   if (!PIXEL_ID) return null;
 
   return (
     <>
       <Script id="meta-pixel" strategy="afterInteractive">
-        {`!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        {`!function(f,n){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
 if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
+n.queue=[]}(window);
 fbq('init', '${PIXEL_ID}');
 fbq('track', 'PageView');`}
       </Script>
+      <Script
+        id="meta-pixel-lib"
+        strategy="lazyOnload"
+        src="https://connect.facebook.net/en_US/fbevents.js"
+      />
       <noscript>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

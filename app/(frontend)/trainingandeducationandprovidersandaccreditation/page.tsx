@@ -74,6 +74,10 @@ export default function FastTrackPage() {
               fill
               priority
               sizes="100vw"
+              /* Drawn at 36% opacity over navy, where compression artefacts
+                 cannot be seen. It is also the page's largest element, so
+                 its weight is what Google times the first screen by. */
+              quality={50}
               className="hero-background-image"
             />
           </div>
