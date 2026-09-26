@@ -493,7 +493,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
             errorId={fieldId("employees-error")}
           />
 
-          {/* The size band carries its starting fee, the same three the Fees
+          {/* The size band carries its starting fee, the same four the Fees
               section shows, so choosing one is choosing it knowingly. */}
           <fieldset
             className="hc-group"

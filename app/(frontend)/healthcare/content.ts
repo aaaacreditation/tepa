@@ -71,7 +71,7 @@ export const hero = {
   /* The price, said once near the top. A clinic that cannot consider it
      leaves here instead of after a sales call, and one that can reads the
      rest of the page knowing what it is weighing. */
-  price: "Fees start at USD 4,000 and are set by the size of your clinic.",
+  price: "Fees start at USD 4,000 and are set by the size of your clinic or hospital.",
   isquaNote: "Healthcare Standards\nAssessed by ISQua EEA",
 } as const;
 
@@ -294,7 +294,7 @@ export const process = {
    is for believe the rest. */
 export const fit = {
   eyebrow: "Is it right for your clinic?",
-  title: "Built for clinics that want to be checked",
+  title: "Built for clinics and hospitals that want to be checked",
   suitable: {
     label: "A good fit",
     items: [
@@ -304,6 +304,7 @@ export const fit = {
       "Day-surgery and ambulatory care centers",
       "Diagnostic and rehabilitation clinics",
       "Independent and multi-location clinic groups",
+      "Public and private hospitals",
     ],
   },
   unsuitable: {
@@ -320,22 +321,23 @@ export const fit = {
   cardCta: "Apply for accreditation",
 } as const;
 
-/* 6. The investment. The same three sizes the form asks the clinic to choose
+/* 6. The investment. The same four sizes the form asks the visitor to choose
    between, so nothing on the page contradicts what the form says. */
 export const clinicSizes = [
   { value: "Small clinic", price: "USD 4,000+" },
   { value: "Medium clinic", price: "USD 5,000+" },
-  { value: "Large clinic", price: "USD 10,000+" },
+  { value: "Large clinic", price: "USD 8,000+" },
+  { value: "Hospital", price: "USD 10,000+" },
 ] as const;
 
 export const fees = {
   eyebrow: "Investment",
-  title: "Clinic accreditation fees",
+  title: "Accreditation fees",
   lede:
-    "Every clinic follows the same path to accreditation. The fee depends on your clinic's size.",
+    "Every clinic and hospital follows the same path to accreditation. The fee depends on its size.",
   from: "From",
   note:
-    "Your surveyor confirms your clinic's size from your branches, team and services, then sends your exact quote.",
+    "Your surveyor confirms your size from your branches, team and services, then sends your exact quote.",
   cta: "Apply for accreditation",
 } as const;
 
@@ -404,7 +406,7 @@ export const faq = {
   items: [
     {
       q: "How much does clinic accreditation cost?",
-      a: "Fees start at USD 4,000 for a small clinic, USD 5,000 for a medium clinic and USD 10,000 for a large clinic. Your surveyor confirms your clinic's size from your branches, team and services, then sends your exact quote.",
+      a: "Fees start at USD 4,000 for a small clinic, USD 5,000 for a medium clinic, USD 8,000 for a large clinic and USD 10,000 for a hospital. Your surveyor confirms your size from your branches, team and services, then sends your exact quote.",
     },
     {
       q: "Who recognizes AAA accreditation?",
@@ -428,7 +430,7 @@ export const faq = {
     },
     {
       q: "We are a hospital. Can we apply?",
-      a: "Yes. AAA's healthcare standards cover hospitals as well as clinics. Choose Large in the form and list your departments under services; your surveyor confirms the scope and the quote.",
+      a: "Yes. AAA's healthcare standards cover hospitals as well as clinics. Choose Hospital in the form and list your departments under services; your surveyor confirms the scope and the quote.",
     },
     {
       q: "What happens after I send the form?",

@@ -28,7 +28,7 @@ import {
 
 const title = "Clinic & Healthcare Accreditation";
 const description =
-  "Independent accreditation for medical, dental, aesthetic and specialist clinics. Standards assessed by ISQua EEA, active in 53+ countries. Fees from USD 4,000 by clinic size.";
+  "Independent accreditation for medical, dental, aesthetic and specialist clinics and hospitals. Standards assessed by ISQua EEA, active in 53+ countries. Fees from USD 4,000 by size.";
 
 export const metadata: Metadata = {
   title,
@@ -451,7 +451,7 @@ export default function HealthcareLandingPage() {
           </div>
         </section>
 
-        {/* 6. The investment, the same three sizes the form asks about. */}
+        {/* 6. The investment, the same four sizes the form asks about. */}
         <section id="fees" className="hc-section hc-section--white">
           <div className="hc-dots hc-dots--tr" aria-hidden="true" />
           <div className="hc-shell">

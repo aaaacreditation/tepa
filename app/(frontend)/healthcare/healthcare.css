@@ -1603,11 +1603,12 @@
   border-color: #e2b4ae;
 }
 
-/* The three sizes carry their starting fee. Set as three equal boxes rather
-   than pills: the price is the part being compared, so it gets the weight. */
+/* The four sizes carry their starting fee. Set as equal boxes, two to a row,
+   rather than pills: the price is the part being compared, so it gets the
+   weight, and four across would squeeze "USD 10,000+" out of its box. */
 .hc-tier-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -2502,9 +2503,9 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px;
-  max-width: 960px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 1120px;
   margin: 52px auto 0;
   padding: 0;
   list-style: none;
@@ -3345,7 +3346,8 @@
     gap: 34px;
   }
 
-  .hc-steps {
+  .hc-steps,
+  .hc-fee-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -3403,7 +3405,7 @@
   }
 }
 
-/* Three price boxes side by side need about 320px of card. Under that each
+/* Two price boxes side by side need about 320px of card. Under that each
    band becomes a row, name on the left and price on the right. */
 @media (max-width: 400px) {
   .hc-tier-options {
