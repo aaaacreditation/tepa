@@ -20,7 +20,7 @@ in Odoo. Code: `lib/odoo.ts`.
 | Type / stage / team | Opportunity / New / Sales |
 | Name | Organisation (full name if empty) |
 | Contact, company, email, phone, job position, website, country | From the form |
-| Medium | `Google Adwords`, `Facebook` or `Website`, by the ad click (`lib/channels.ts`) |
+| Source / medium | `AAA Landing Pages` / `Google Adwords`, `Facebook` or `Website`, by the ad click (`lib/channels.ts`) |
 | Tags | Product (`TEPA` or `Healthcare Accreditation`), `Contact: WhatsApp` / `Contact: Phone call` / `Contact: Email` when the form asked, and the nurture tag when enabled |
 | Salesperson | Sara Morgan for healthcare and clinic; on TEPA, Adam Malom for the US and Babita Singh for India and the Middle East; anyone else unassigned (`ownerFor()` in `lib/odoo.ts`) |
 | Notes | The form answers, the ad campaign and keyword, and `(portal lead #123)` |

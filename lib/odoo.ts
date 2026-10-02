@@ -276,17 +276,31 @@ async function lookupId(
   return id;
 }
 
-async function tagId(config: OdooConfig, name: string, create: boolean): Promise<number | null> {
+/* A record looked up by name, created on first use when allowed. Used for the
+   contact tags and the landing-page source, which this sync introduced. */
+async function namedId(
+  config: OdooConfig,
+  model: "crm.tag" | "utm.source",
+  name: string,
+  create: boolean,
+): Promise<number | null> {
   const domain = [["name", "=", name]];
-  const id = await lookupId(config, "crm.tag", domain);
+  const id = await lookupId(config, model, domain);
   if (id || !create) return id;
 
-  const [created] = await odooCall<number[]>(config, "crm.tag", "create", {
+  const [created] = await odooCall<number[]>(config, model, "create", {
     vals_list: [{ name }],
   });
-  lookups.set(`crm.tag:${JSON.stringify(domain)}`, { id: created, at: Date.now() });
+  lookups.set(`${model}:${JSON.stringify(domain)}`, { id: created, at: Date.now() });
   return created;
 }
+
+const tagId = (config: OdooConfig, name: string, create: boolean) =>
+  namedId(config, "crm.tag", name, create);
+
+/* Every record this sync creates carries this source, so one filter in Odoo
+   shows every lead that came from the landing pages. */
+const LANDING_SOURCE = "AAA Landing Pages";
 
 /* ==========================================================================
    Planning one lead
@@ -460,8 +474,10 @@ export async function planLead(
   const product = productTag ? await tagId(config, productTag, false) : null;
   const nurture = nurtureTag ? await tagId(config, nurtureTag, false) : null;
   const contact = method ? await tagId(config, contactTag(method), !readOnly) : null;
+  const source = await namedId(config, "utm.source", LANDING_SOURCE, !readOnly);
 
   if (method && !contact) warnings.push(`Tag "${contactTag(method)}" will be created in Odoo.`);
+  if (!source) warnings.push(`Source "${LANDING_SOURCE}" will be created in Odoo.`);
   /* A missing nurture tag means no welcome email, so it is recorded on the
      outbox row where the dashboard shows it, not only logged. */
   if (productTag && !product) warnings.push(`Tag "${productTag}" not found in Odoo.`);
@@ -486,6 +502,7 @@ export async function planLead(
     ...(stage ? { stage_id: stage } : {}),
     ...(team ? { team_id: team } : {}),
     ...(medium ? { medium_id: medium } : {}),
+    ...(source ? { source_id: source } : {}),
     ...(country ? { country_id: country } : {}),
   };
 
