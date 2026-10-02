@@ -15,6 +15,7 @@ import {
   STATUS_LABEL,
 } from "@/lib/lead-status";
 import { getDashboardData } from "@/lib/leads";
+import { odooRecordUrl } from "@/lib/odoo";
 import { getSource } from "@/lib/sources";
 import { BarList, type BarRow } from "@/app/dashboard/components/BarList";
 import { ChannelTabs } from "@/app/dashboard/components/ChannelTabs";
@@ -162,6 +163,10 @@ export default async function SourceDashboard({
     utmMedium: lead.utmMedium,
     channel: channelOf(lead),
     uploads: uploadsByLead[lead.id] ?? [],
+    odooUrl: odooRecordUrl(lead.odooLeadId),
+    odooSync: lead.odooSync,
+    /* A warning on a synced lead (a tag missing in Odoo) stays visible too. */
+    odooError: lead.odooError,
   }));
 
   const eventsByLead: Record<number, TableEvent[]> = {};

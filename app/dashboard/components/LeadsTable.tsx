@@ -51,6 +51,11 @@ export type TableLead = {
   /* The ad platform this lead is attributed to; see lib/channels.ts. */
   channel: Channel;
   uploads: TableUpload[];
+  /* The opportunity in Odoo, once the sync has created or found it. */
+  odooUrl: string;
+  /* The sync's outbox status; empty for a lead it has never queued. */
+  odooSync: "" | TableUpload["status"];
+  odooError: string;
 };
 
 export type TableEvent = { id: number; label: string };
@@ -524,6 +529,47 @@ function LeadRow({
                     <div className="flex gap-2">
                       <dt className="w-24 shrink-0 text-ink-500">Stage since</dt>
                       <dd className="text-ink-700">{lead.statusChangedFull}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                      <dt className="w-24 shrink-0 text-ink-500">Odoo</dt>
+                      <dd className="min-w-0">
+                        {lead.odooUrl ? (
+                          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <a
+                              href={lead.odooUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-medium text-navy-500 hover:underline"
+                            >
+                              Open in Odoo
+                            </a>
+                            {/* A synced lead can still carry a warning, such as
+                                a nurture tag missing in Odoo. */}
+                            {lead.odooError && (
+                              <span className="w-full break-words text-xs text-ink-500">
+                                {lead.odooError}
+                              </span>
+                            )}
+                          </span>
+                        ) : lead.odooSync ? (
+                          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                            <span
+                              className={`rounded px-1.5 py-0.5 font-medium ${UPLOAD_TONE[lead.odooSync]}`}
+                            >
+                              {UPLOAD_LABEL[lead.odooSync]}
+                            </span>
+                            {/* Why the lead is not in the CRM is what sales
+                                needs to read here, so it is not truncated. */}
+                            {lead.odooError && (
+                              <span className="w-full break-words text-ink-500">
+                                {lead.odooError}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-ink-500">—</span>
+                        )}
+                      </dd>
                     </div>
                   </dl>
                 </div>

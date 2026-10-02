@@ -16,6 +16,7 @@ import { countries } from "@/lib/countries";
 import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
 import { cleanMetaEventId } from "@/lib/meta-identity";
+import { queueEnquiryForOdoo } from "@/lib/odoo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -206,6 +207,24 @@ export async function POST(request: Request) {
    the visitor, so the form tells them to email instead of silently dropping
    the lead. The log line stays as a plain text backup of the payload. */
 async function deliver(enquiry: Enquiry) {
+  /* The clinic answers ride in the message rather than earning columns, so
+     every landing page keeps writing the same shape of row into the shared
+     leads table. One answer per line, read top to bottom in the dashboard
+     before the first call. */
+  const message = [
+    `Clinic location: ${enquiry.city}, ${enquiry.countryName}`,
+    `Branches: ${enquiry.branches}`,
+    `Speciality / services: ${enquiry.specialty}`,
+    `Employees: ${enquiry.employees}`,
+    `Clinic size: ${enquiry.clinicSize} (${SIZE_PRICE.get(enquiry.clinicSize)})`,
+    /* Same wording as the training-provider form, so sales reads the
+       channel in the same place on every lead, and lib/odoo.ts tags it. */
+    `Preferred contact: ${enquiry.contactMethod}`,
+    "Page: /healthcare (clinic application)",
+  ]
+    .join("\n")
+    .slice(0, MAX_LEN);
+
   const leadId = await insertLead({
     source: enquiry.source,
     fullName: enquiry.fullName,
@@ -218,23 +237,7 @@ async function deliver(enquiry: Enquiry) {
     /* The clinic form does not ask for a website; the shared table keeps the
        column for the other pages. */
     website: "",
-    /* The clinic answers ride in the message rather than earning columns, so
-       every landing page keeps writing the same shape of row into the shared
-       leads table. One answer per line, read top to bottom in the dashboard
-       before the first call. */
-    message: [
-      `Clinic location: ${enquiry.city}, ${enquiry.countryName}`,
-      `Branches: ${enquiry.branches}`,
-      `Speciality / services: ${enquiry.specialty}`,
-      `Employees: ${enquiry.employees}`,
-      `Clinic size: ${enquiry.clinicSize} (${SIZE_PRICE.get(enquiry.clinicSize)})`,
-      /* Same wording as the training-provider form, so sales reads the
-         channel in the same place on every lead. */
-      `Preferred contact: ${enquiry.contactMethod}`,
-      "Page: /healthcare (clinic application)",
-    ]
-      .join("\n")
-      .slice(0, MAX_LEN),
+    message,
     attribution: enquiry.attribution,
     fbp: enquiry.fbp,
     fbc: enquiry.fbc,
@@ -242,6 +245,9 @@ async function deliver(enquiry: Enquiry) {
     clientUserAgent: enquiry.clientUserAgent,
   });
   console.info("[healthcare/enquiry]", JSON.stringify(enquiry));
+
+  /* Into the Odoo CRM, after the response; see lib/odoo.ts. */
+  await queueEnquiryForOdoo(leadId, message);
 
   /* Queue the "lead" conversion for each ad platform in the same request that
      stored the lead, so the two cannot disagree. Google's row needs a

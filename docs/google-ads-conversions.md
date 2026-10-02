@@ -278,9 +278,10 @@ Reporting them would train Smart Bidding on fiction.
 ### First contact, Duplicated and Not qualified
 
 Three statuses queue nothing, for either platform. **First contact** is the
-sales team's own checkpoint between Lead and MQL — the lead was picked up, an
-Odoo record was created, the client was contacted by email, call or WhatsApp
-and replied with any acknowledgement. It says the team did its job, not that
+sales team's own checkpoint between Lead and MQL — the lead was picked up, the
+client was contacted by email, call or WhatsApp and replied with any
+acknowledgement. (The Odoo record is created automatically for every lead;
+see docs/odoo-sync.md.) It says the team did its job, not that
 the lead is worth more, so it is not a conversion; moving the lead on to MQL
 reports MQL as usual. **Duplicated** and **Not qualified** are rejections.
 

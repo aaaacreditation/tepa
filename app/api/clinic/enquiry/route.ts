@@ -10,6 +10,7 @@ import { countries } from "@/lib/countries";
 import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
 import { cleanMetaEventId } from "@/lib/meta-identity";
+import { queueEnquiryForOdoo } from "@/lib/odoo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -109,6 +110,8 @@ export async function POST(request: Request) {
   const clientIp = ip === "unknown" ? "" : ip;
   const clientUserAgent = (request.headers.get("user-agent") ?? "").slice(0, 512);
 
+  const message = "Requested a free clinic accreditation consultation call.";
+
   try {
     const leadId = await insertLead({
       source: SOURCE,
@@ -125,7 +128,7 @@ export async function POST(request: Request) {
          rendering. */
       position: "",
       website: "",
-      message: "Requested a free clinic accreditation consultation call.",
+      message,
       attribution,
       fbp: metaIds.fbp,
       fbc: metaIds.fbc,
@@ -137,6 +140,9 @@ export async function POST(request: Request) {
       "[clinic/enquiry]",
       JSON.stringify({ leadId, organization, country }),
     );
+
+    /* Into the Odoo CRM, after the response; see lib/odoo.ts. */
+    await queueEnquiryForOdoo(leadId, message);
 
     /* One row per ad platform. Meta's carries the pixel's event id so its
        browser and server halves are counted once. */

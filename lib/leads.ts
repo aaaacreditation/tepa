@@ -46,6 +46,11 @@ export type LeadRow = {
   utmCampaign: string;
   utmTerm: string;
   utmContent: string;
+  /* The Odoo CRM record and the sync's progress towards it; see lib/odoo.ts.
+     odooSync is empty for a lead that was never queued. */
+  odooLeadId: number;
+  odooSync: "" | "pending" | "sending" | "sent" | "failed" | "skipped";
+  odooError: string;
 };
 
 export type LeadEventRow = {
@@ -103,7 +108,10 @@ const LEAD_COLUMNS = `
   utm_medium   AS "utmMedium",
   utm_campaign AS "utmCampaign",
   utm_term     AS "utmTerm",
-  utm_content  AS "utmContent"
+  utm_content  AS "utmContent",
+  odoo_lead_id AS "odooLeadId",
+  COALESCE((SELECT s.status FROM odoo_sync s WHERE s.lead_id = leads.id), '')     AS "odooSync",
+  COALESCE((SELECT s.last_error FROM odoo_sync s WHERE s.lead_id = leads.id), '') AS "odooError"
 `;
 
 export async function insertLead(lead: NewLead): Promise<number> {

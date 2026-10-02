@@ -10,6 +10,7 @@ import {
 import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
 import { cleanMetaEventId } from "@/lib/meta-identity";
+import { queueEnquiryForOdoo } from "@/lib/odoo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -192,6 +193,9 @@ async function deliver(enquiry: Enquiry) {
     clientUserAgent: enquiry.clientUserAgent,
   });
   console.info("[tepa/enquiry]", JSON.stringify(enquiry));
+
+  /* Into the Odoo CRM, after the response; see lib/odoo.ts. */
+  await queueEnquiryForOdoo(leadId, enquiry.message);
 
   /* Queue the "lead" conversion for each ad platform in the same request that
      stored the lead, so the two cannot disagree. Google's row needs

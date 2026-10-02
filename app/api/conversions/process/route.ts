@@ -1,32 +1,30 @@
 import { drainConversions } from "@/lib/conversions";
+import { rejectUnlessCron } from "@/lib/cron-auth";
+import { drainOdoo } from "@/lib/odoo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/* Drains the conversion outbox.
+/* Drains the conversion outbox, and the Odoo CRM outbox after it.
 
    The after() hooks on the enquiry route and the status action already send on
    the happy path. This exists for the unhappy one: Google returning 5xx, an
-   access token failing to refresh, or the process being torn down mid send.
-   Point a scheduler at it, or curl it by hand after fixing credentials.
+   access token failing to refresh, Odoo being down, or the process being torn
+   down mid send. The server's ten minute timer points at it; curl it by hand
+   after fixing credentials.
 
    Guarded by a shared secret rather than the dashboard session so a scheduler
-   can call it without logging in. Without CONVERSIONS_CRON_SECRET set it stays
-   closed, because an open endpoint would let anyone drive spend reporting. */
-export async function POST(request: Request) {
-  const secret = process.env.CONVERSIONS_CRON_SECRET;
-  if (!secret) {
-    return Response.json(
-      { error: "CONVERSIONS_CRON_SECRET is not set, so this endpoint is disabled." },
-      { status: 503 },
-    );
-  }
+   can call it without logging in; see lib/cron-auth.ts. An open endpoint would
+   let anyone drive spend reporting. */
 
-  const header = request.headers.get("authorization") ?? "";
-  const provided = header.startsWith("Bearer ") ? header.slice(7) : "";
-  if (!timingSafeEqual(provided, secret)) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
-  }
+/* Each Odoo row costs a few round trips, so a run takes at most this many and
+   stays well inside the timer's two minute curl timeout. A backlog clears over
+   a few runs. */
+const ODOO_PER_RUN = 25;
+
+export async function POST(request: Request) {
+  const rejected = rejectUnlessCron(request);
+  if (rejected) return rejected;
 
   const url = new URL(request.url);
   const requested = Number(url.searchParams.get("limit"));
@@ -34,21 +32,24 @@ export async function POST(request: Request) {
     ? Math.min(200, Math.max(1, Math.floor(requested)))
     : 50;
 
+  let conversions: Awaited<ReturnType<typeof drainConversions>>;
   try {
-    const result = await drainConversions(limit);
-    return Response.json({ ok: true, ...result });
+    conversions = await drainConversions(limit);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[conversions/process] drain failed", error);
     return Response.json({ ok: false, error: message }, { status: 500 });
   }
-}
 
-/* Compares in constant time so a caller cannot recover the secret by timing
-   how far the comparison got. */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
+  /* The two outboxes fail independently: an Odoo outage must not turn a run
+     that sent its conversions into an error. */
+  let odoo: Awaited<ReturnType<typeof drainOdoo>> | { error: string };
+  try {
+    odoo = await drainOdoo(Math.min(limit, ODOO_PER_RUN));
+  } catch (error) {
+    console.error("[conversions/process] odoo drain failed", error);
+    odoo = { error: error instanceof Error ? error.message : String(error) };
+  }
+
+  return Response.json({ ok: true, ...conversions, odoo });
 }

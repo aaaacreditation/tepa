@@ -9,8 +9,9 @@ export const PIPELINE_STAGES = ["lead", "mql", "sql", "customer"] as const;
 export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 
 /* The sales team's own checkpoint between Lead and MQL: the lead was picked
-   up, an Odoo record was created, the client was contacted (email, call or
-   WhatsApp) and replied with any acknowledgement. It is a status the board
+   up, the client was contacted (email, call or WhatsApp) and replied with any
+   acknowledgement. The Odoo record is no longer part of it: lib/odoo.ts
+   creates that for every lead on arrival. It is a status the board
    shows, not a stage the ad platforms hear about — it says the team did its
    job, not that the lead is worth more — so it stays out of PIPELINE_STAGES
    and queues no conversion. Promoting on to MQL reports MQL as usual. */

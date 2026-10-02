@@ -180,6 +180,39 @@ ALTER TABLE conversion_uploads ADD COLUMN IF NOT EXISTS event_id    TEXT NOT NUL
 ALTER TABLE conversion_uploads DROP CONSTRAINT IF EXISTS conversion_uploads_destination_check;
 ALTER TABLE conversion_uploads ADD  CONSTRAINT conversion_uploads_destination_check
   CHECK (destination IN ('google', 'meta'));
+
+/* The opportunity in AAA's Odoo CRM this lead was created as or matched to.
+   0 until the sync has run, like every other column here avoids NULL. */
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS odoo_lead_id INTEGER NOT NULL DEFAULT 0;
+
+/* Outbox for the Odoo CRM sync; see lib/odoo.ts. One row per lead, so a retry
+   or a second backfill run can never queue the same lead twice.
+
+   origin says how the row got here: 'enquiry' is a form submitted after the
+   sync went live, 'backfill' a lead from before it, which is only linked when
+   Odoo already has the person. nurture is decided when the row is queued, so
+   switching the welcome sequence on later never emails an old lead late.
+   outcome records what the sync did: 'created' a new opportunity, 'linked' to
+   one sales had entered, or 'noted' a repeat enquiry on the existing one. */
+CREATE TABLE IF NOT EXISTS odoo_sync (
+  id            SERIAL PRIMARY KEY,
+  lead_id       INTEGER NOT NULL UNIQUE REFERENCES leads (id) ON DELETE CASCADE,
+  origin        TEXT NOT NULL DEFAULT 'enquiry' CHECK (origin IN ('enquiry', 'backfill')),
+  nurture       BOOLEAN NOT NULL DEFAULT false,
+  status        TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'skipped')),
+  outcome       TEXT NOT NULL DEFAULT '' CHECK (outcome IN ('', 'created', 'linked', 'noted')),
+  odoo_lead_id  INTEGER NOT NULL DEFAULT 0,
+  attempts      INTEGER NOT NULL DEFAULT 0,
+  last_error    TEXT NOT NULL DEFAULT '',
+  claimed_at    TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  synced_at     TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS odoo_sync_pending_idx
+  ON odoo_sync (status, created_at)
+  WHERE status IN ('pending', 'sending');
 `;
 
 function pool(): Pool {
