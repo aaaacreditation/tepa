@@ -48,12 +48,12 @@ export const nav = [
 ] as const;
 
 export const hero = {
-  eyebrow: "Clinic & Healthcare Accreditation",
-  titleLead: "Show every patient your clinic is",
+  eyebrow: "Healthcare Accreditation",
+  titleLead: "Show every patient your facility is",
   titleAccent: "independently accredited",
-  title: "Show every patient your clinic is independently accredited",
+  title: "Show every patient your facility is independently accredited",
   lede:
-    "AAA accredits medical, dental, aesthetic and specialist clinics against international standards assessed by ISQua EEA. Apply in two minutes and a surveyor contacts you within 48 hours.",
+    "AAA accredits hospitals, clinics and specialist healthcare providers against international standards assessed by ISQua EEA. Apply in two minutes and a surveyor contacts you within 48 hours.",
   /* An accredited organization holding its award, shown whole beneath the
      promise. Shared with the gallery rather than duplicated: same people,
      same photograph. */
@@ -441,9 +441,9 @@ export const faq = {
 
 export const apply = {
   eyebrow: "Next step",
-  title: "Apply for clinic accreditation",
+  title: "Apply for healthcare accreditation",
   body:
-    "Tell us about your clinic. An AAA surveyor reviews your answers and contacts you within 48 hours with the standards that apply to your services and the next step.",
+    "Tell us about your organization. An AAA surveyor reviews your answers and contacts you within 48 hours with the standards that apply to your services and the next step.",
   captionTitle: "Accreditation handover",
   captionBody:
     "Awarded to healthcare organizations that meet the AAA healthcare standard.",
@@ -487,9 +487,9 @@ export const positionSuggestions = [
 ] as const;
 
 export const formCopy = {
-  title: "Apply for clinic accreditation",
-  step1: "Step 1 of 2 · You and your clinic",
-  step2: "Step 2 of 2 · Your clinic's size",
+  title: "Apply for healthcare accreditation",
+  step1: "Step 1 of 2 · You and your organization",
+  step2: "Step 2 of 2 · Your organization's size",
   continue: "Continue",
   back: "Back",
   submit: "Send my application",
@@ -507,7 +507,7 @@ export const formCopy = {
   doneItems: [
     {
       lead: "Your answers are reviewed first.",
-      body: "The surveyor reads your clinic's size, branches and services before getting in touch.",
+      body: "The surveyor reads your organization's size, branches and services before getting in touch.",
     },
     {
       lead: "You hear which standards apply.",
@@ -515,7 +515,7 @@ export const formCopy = {
     },
     {
       lead: "You receive your quote.",
-      body: "Based on your clinic's confirmed size, with the next step to begin.",
+      body: "Based on your organization's confirmed size, with the next step to begin.",
     },
   ],
   errorGeneric: "Something went wrong on our side. Please try again, or email us directly.",

@@ -169,9 +169,9 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
     if (!details.fullName.trim()) next.fullName = "Please tell us your name.";
     if (!details.position.trim()) next.position = "Please tell us your position.";
     if (!EMAIL_RE.test(details.email.trim())) next.email = "Please use a valid email address.";
-    if (!details.organization.trim()) next.organization = "Please add your clinic's name.";
-    if (!details.country) next.country = "Please choose your clinic's country.";
-    if (!details.city.trim()) next.city = "Please add your clinic's city.";
+    if (!details.organization.trim()) next.organization = "Please add your organization's name.";
+    if (!details.country) next.country = "Please choose your organization's country.";
+    if (!details.city.trim()) next.city = "Please add your organization's city.";
     if (!details.phoneRegion) {
       next.phoneNumber = "Please choose your country code.";
     } else if (!validPhone(phoneValue)) {
@@ -193,7 +193,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
     if (!clinic.branches) next.branches = "Please choose how many branches.";
     if (!clinic.specialty.trim()) next.specialty = "Please list your specialities or services.";
     if (!clinic.employees) next.employees = "Please choose how many employees.";
-    if (!clinic.clinicSize) next.clinicSize = "Please choose your clinic's size.";
+    if (!clinic.clinicSize) next.clinicSize = "Please choose your organization's size.";
     if (!clinic.contactMethod) next.contactMethod = "Please choose how we should contact you.";
 
     setErrors(next);
@@ -332,7 +332,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
               id={fieldId("position")}
               name="position"
               label="Position / job title"
-              placeholder="e.g. Owner, Medical Director, Clinic Manager"
+              placeholder="e.g. CEO, Medical Director, Quality Manager"
               autoComplete="organization-title"
               list={fieldId("positions")}
               value={details.position}
@@ -358,7 +358,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
             <Field
               id={fieldId("organization")}
               name="organization"
-              label="Name of the clinic"
+              label="Name of the hospital or clinic"
               autoComplete="organization"
               value={details.organization}
               onChange={(value) => setDetail("organization", value)}
@@ -370,7 +370,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
             <div className="hc-field-pair">
               <div className="hc-field hc-field--labelled">
                 <label htmlFor={fieldId("country")}>
-                  Clinic country
+                  Country
                   <Required />
                 </label>
                 <select
@@ -411,7 +411,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
               <Field
                 id={fieldId("city")}
                 name="city"
-                label="Clinic city"
+                label="City"
                 autoComplete="address-level2"
                 placeholder="City"
                 value={details.city}
@@ -501,7 +501,7 @@ export function ClinicForm({ layout = "panel" }: ClinicFormProps) {
             aria-describedby={errors.clinicSize ? fieldId("clinicSize-error") : fieldId("clinicSize-hint")}
           >
             <legend>
-              Clinic size
+              Clinic or hospital size
               <Required />
             </legend>
             <div className="hc-tier-options">

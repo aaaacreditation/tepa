@@ -26,7 +26,7 @@ import {
   team,
 } from "./content";
 
-const title = "Clinic & Healthcare Accreditation";
+const title = "Healthcare Accreditation";
 const description =
   "Independent accreditation for medical, dental, aesthetic and specialist clinics and hospitals. Standards assessed by ISQua EEA, active in 53+ countries. Fees from USD 4,000 by size.";
 
