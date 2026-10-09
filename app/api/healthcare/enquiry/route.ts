@@ -257,7 +257,7 @@ async function deliver(enquiry: Enquiry) {
   console.info("[healthcare/enquiry]", JSON.stringify(enquiry));
 
   /* Into the Odoo CRM, after the response; see lib/odoo.ts. */
-  await queueEnquiryForOdoo(leadId, message);
+  await queueEnquiryForOdoo(leadId, SOURCE, message);
 
   /* Queue the "lead" conversion for each ad platform in the same request that
      stored the lead, so the two cannot disagree. Google's row needs a

@@ -148,7 +148,21 @@ function contactTag(method: ContactMethod): string {
   return `Contact: ${method}`;
 }
 
-export function nurtureForEnquiry(message: string): boolean {
+/* Landing pages whose leads may be nurtured, from ODOO_NURTURE_SOURCES (e.g.
+   "tepa"). Empty means every page. Each product has its own campaign in Odoo,
+   and tagging leads for one that is stopped would start their welcome email
+   late, whenever someone restarts it — so a product is switched on only once
+   its campaign is running. */
+function nurtureSources(): string[] {
+  return (process.env.ODOO_NURTURE_SOURCES ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function nurtureForEnquiry(source: string, message: string): boolean {
+  const sources = nurtureSources();
+  if (sources.length > 0 && !sources.includes(source)) return false;
   const rule = nurtureRule();
   if (rule === "all") return true;
   if (rule === "email") return contactMethodOf(message) === "Email";
@@ -530,11 +544,15 @@ export async function enqueueOdooSync(
 /* Called by every enquiry route once the lead is stored. Never throws: the
    lead is already saved, and a CRM problem must not turn into a 502 that tells
    the visitor their enquiry failed. The drain timer picks up anything left. */
-export async function queueEnquiryForOdoo(leadId: number, message: string): Promise<void> {
+export async function queueEnquiryForOdoo(
+  leadId: number,
+  source: string,
+  message: string,
+): Promise<void> {
   try {
     const queued = await enqueueOdooSync(leadId, {
       origin: "enquiry",
-      nurture: nurtureForEnquiry(message),
+      nurture: nurtureForEnquiry(source, message),
     });
     if (!queued || !readOdooConfig().ok || odooSyncPaused()) return;
 
@@ -730,7 +748,7 @@ export async function previewLead(
       ...row,
       leadId,
       origin: options.origin ?? row.origin ?? "enquiry",
-      nurture: options.nurture ?? row.nurture ?? nurtureForEnquiry(row.message),
+      nurture: options.nurture ?? row.nurture ?? nurtureForEnquiry(row.source, row.message),
     },
     true,
   );

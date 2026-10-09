@@ -147,7 +147,7 @@ export async function POST(request: Request) {
     );
 
     /* Into the Odoo CRM, after the response; see lib/odoo.ts. */
-    await queueEnquiryForOdoo(leadId, message);
+    await queueEnquiryForOdoo(leadId, SOURCE, message);
 
     /* One row per ad platform. Meta's carries the pixel's event id so its
        browser and server halves are counted once. */

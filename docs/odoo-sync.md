@@ -42,14 +42,16 @@ ODOO_DB=aaa-acc1
 ODOO_API_KEY=...            # Odoo user -> Preferences -> Account Security
 ODOO_LOGIN=...              # the key's owner; unused by JSON-2, kept for XML-RPC
 ODOO_NURTURE=off            # off | all | email
+ODOO_NURTURE_SOURCES=       # e.g. tepa: only these pages are nurtured; empty = all
 ODOO_SYNC_PAUSED=           # 1 = keep queueing, send nothing (kill switch)
 ```
 
 Changing any of these needs `systemctl restart tepa`, not a rebuild.
 
-Keep `ODOO_NURTURE=off` until both campaigns are **running** in Odoo. A tag
-added while a campaign is in draft starts the sequence days late, when someone
-presses Start.
+Only switch nurture on for a product whose campaign is **running** in Odoo, and
+list exactly those products in `ODOO_NURTURE_SOURCES` (`tepa`, `healthcare`,
+`clinic`). A tag added while a campaign is in draft or stopped starts the
+sequence days late, when someone presses Start.
 
 ## Delivery and retries
 

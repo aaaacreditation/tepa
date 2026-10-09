@@ -205,7 +205,7 @@ async function deliver(enquiry: Enquiry) {
   console.info("[tepa/enquiry]", JSON.stringify(enquiry));
 
   /* Into the Odoo CRM, after the response; see lib/odoo.ts. */
-  await queueEnquiryForOdoo(leadId, enquiry.message);
+  await queueEnquiryForOdoo(leadId, enquiry.source, enquiry.message);
 
   /* Queue the "lead" conversion for each ad platform in the same request that
      stored the lead, so the two cannot disagree. Google's row needs
