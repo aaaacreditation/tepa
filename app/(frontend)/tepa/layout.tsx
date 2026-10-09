@@ -4,6 +4,7 @@ import { CalendlyTracking } from "./components/CalendlyTracking";
 import { GoogleTag } from "../components/GoogleTag";
 import { MetaPixel } from "../components/MetaPixel";
 import { MetaViewContent } from "../components/MetaViewContent";
+import { OpenAIPixel } from "../components/OpenAIPixel";
 import "./tepa.css";
 
 const fraunces = Fraunces({
@@ -29,6 +30,7 @@ export default function TepaLayout({
       <AttributionCapture />
       <GoogleTag />
       <MetaPixel />
+      <OpenAIPixel />
       <MetaViewContent contentCategory="tepa" />
       <CalendlyTracking />
       {children}

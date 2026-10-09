@@ -6,6 +6,7 @@ import { countries, dialCodes } from "@/lib/countries";
 import { SOURCES } from "@/lib/sources";
 import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
+import { openaiTrack } from "../../components/OpenAIPixel";
 import { IconArrow, IconCalendar, IconCheck } from "../../tepa/components/Icons";
 import {
   formatPhone,
@@ -254,6 +255,9 @@ export function BookingForm({ badge, title = booking.title }: BookingFormProps) 
           country: details.country,
         },
       );
+      /* ChatGPT ads. Same event id as the server's copy, sent from the
+         enquiry route, so OpenAI counts the enquiry once. */
+      openaiTrack("lead_created", { type: "customer_action" }, metaEventId);
 
       setSending(false);
       setStage("done");

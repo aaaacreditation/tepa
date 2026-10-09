@@ -7,6 +7,7 @@ import { formCopy, positionSuggestions, site } from "../content";
 import { SOURCES } from "@/lib/sources";
 import { FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
+import { openaiTrack } from "../../components/OpenAIPixel";
 import { IconArrow, IconCheck } from "./Icons";
 
 type RequiredField =
@@ -138,6 +139,9 @@ export function EnquiryForm({
           country: data.country,
         },
       );
+      /* ChatGPT ads. Same event id as the server's copy, sent from the
+         enquiry route, so OpenAI counts the enquiry once. */
+      openaiTrack("lead_created", { type: "customer_action" }, metaEventId);
 
       form.reset();
       setStatus("sent");

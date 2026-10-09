@@ -80,6 +80,9 @@ export type NewLead = {
   fbc: string;
   clientIp: string;
   clientUserAgent: string;
+  /* The OpenAI pixel's cookies, for ChatGPT ads; see lib/openai-capi.ts. */
+  oaiOppref: string;
+  oaiObref: string;
 };
 
 const LEAD_COLUMNS = `
@@ -123,13 +126,13 @@ export async function insertLead(lead: NewLead): Promise<number> {
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
         landing_path, referrer, clicked_at,
         fbclid, fbp, fbc, client_ip, client_user_agent,
-        contact_role)
+        contact_role, oai_oppref, oai_obref)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
              $10, $11, $12,
              $13, $14, $15, $16, $17,
              $18, $19, $20,
              $21, $22, $23, $24, $25,
-             $26)
+             $26, $27, $28)
      RETURNING id`,
     [
       lead.source,
@@ -158,6 +161,8 @@ export async function insertLead(lead: NewLead): Promise<number> {
       lead.clientIp,
       lead.clientUserAgent,
       lead.position,
+      lead.oaiOppref,
+      lead.oaiObref,
     ],
   );
   return rows[0].id;

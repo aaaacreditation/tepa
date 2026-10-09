@@ -20,11 +20,18 @@ import {
   sendMetaEvent,
   type MetaConfig,
 } from "./meta-capi";
+import {
+  OpenAICapiError,
+  readOpenAIConfig,
+  sendOpenAIEvent,
+  type OpenAIConfig,
+} from "./openai-capi";
 import { DEFAULT_SOURCE, getSource } from "./sources";
 
 /* Pipeline stage changes reported back to the ad platforms as offline
    conversions: Google Ads through the Data Manager API, Meta through the
-   Conversions API.
+   Conversions API. ChatGPT ads (OpenAI) get the enquiry itself and nothing
+   after it.
 
    The flow is deliberately two steps. A status change writes a row to the
    conversion_uploads outbox inside the same request that moved the lead, then
@@ -185,8 +192,10 @@ async function leadSource(leadId: number): Promise<string | null> {
 }
 
 export type EnqueueOptions = {
-  /* The id the pixel fired the browser half of the enquiry with. Only the
-     lead stage has one; Meta collapses the two halves on it. */
+  /* The id the pixels fired the browser half of the enquiry with. Only the
+     lead stage has one; Meta and OpenAI each collapse the two halves on it.
+     One id serves both, since each platform deduplicates within its own
+     pixel. */
   metaEventId?: string;
 };
 
@@ -213,6 +222,15 @@ export async function enqueueConversion(
       destination: "meta",
       value: stageValue(stage, source),
       eventId: browserId || dedupeKey(leadId, stage, "meta"),
+    });
+  }
+
+  /* OpenAI hears about the enquiry only, as lead_created. */
+  if (stage === "lead" && readOpenAIConfig().ok) {
+    rows.push({
+      destination: "openai",
+      value: stageValue(stage, source),
+      eventId: options.metaEventId || dedupeKey(leadId, stage, "openai"),
     });
   }
 
@@ -301,6 +319,8 @@ type PendingJob = {
   fbc: string;
   clientIp: string;
   clientUserAgent: string;
+  oaiOppref: string;
+  oaiObref: string;
   landingPath: string;
   isDemo: boolean;
   source: string;
@@ -323,11 +343,17 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
      rest wait in the outbox for the day they are. */
   const google = readConfig();
   const meta = readMetaConfig();
+  const openai = readOpenAIConfig();
   const ready: Destination[] = [];
   if (google.ok) ready.push("google");
   if (meta.ok) ready.push("meta");
+  if (openai.ok) ready.push("openai");
   if (ready.length === 0) {
-    const missing = [...(google.ok ? [] : google.missing), ...(meta.ok ? [] : meta.missing)];
+    const missing = [
+      ...(google.ok ? [] : google.missing),
+      ...(meta.ok ? [] : meta.missing),
+      ...(openai.ok ? [] : openai.missing),
+    ];
     return { ...empty, reason: `No ad platform is configured. Missing ${missing.join(", ")}.` };
   }
 
@@ -382,6 +408,8 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
             l.fbc,
             l.client_ip AS "clientIp",
             l.client_user_agent AS "clientUserAgent",
+            l.oai_oppref AS "oaiOppref",
+            l.oai_obref  AS "oaiObref",
             l.landing_path AS "landingPath",
             l.is_demo  AS "isDemo",
             l.source
@@ -412,7 +440,9 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
       const outcome =
         job.destination === "meta"
           ? await sendToMeta(meta.ok ? meta.config : null, job)
-          : await sendToGoogle(google.ok ? google.config : null, job);
+          : job.destination === "openai"
+            ? await sendToOpenAI(openai.ok ? openai.config : null, job)
+            : await sendToGoogle(google.ok ? google.config : null, job);
 
       /* attempts was already incremented when the row was claimed. */
       await q(
@@ -428,7 +458,9 @@ export async function drainConversions(limit = 25): Promise<DrainResult> {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const permanent =
-        (error instanceof GoogleAdsError || error instanceof MetaCapiError) &&
+        (error instanceof GoogleAdsError ||
+          error instanceof MetaCapiError ||
+          error instanceof OpenAICapiError) &&
         !error.retryable;
       const attempts = job.attempts;
 
@@ -554,6 +586,48 @@ async function sendToMeta(config: MetaConfig | null, job: PendingJob): Promise<S
     requestId: outcome.traceId,
     warnings:
       outcome.eventsReceived === 1 ? [] : [`Meta reported events_received=${outcome.eventsReceived}`],
+  };
+}
+
+/* The enquiry as ChatGPT ads sees it: lead_created, a website event carrying
+   the page, the connection, the pixel's cookies and the hashed contact
+   details. No value: the lead stage is worth nothing on its own. */
+async function sendToOpenAI(config: OpenAIConfig | null, job: PendingJob): Promise<SendOutcome> {
+  if (!config) {
+    throw new OpenAICapiError("OpenAI Conversions API key is not configured.", 0, true);
+  }
+  if (job.stage !== "lead") {
+    throw new OpenAICapiError(`Stage "${job.stage}" is not reported to OpenAI.`, 0, false);
+  }
+
+  const source = getSource(job.source);
+  const outcome = await sendOpenAIEvent(config, {
+    type: "lead_created",
+    id: job.eventId || dedupeKey(job.leadId, job.stage, "openai"),
+    eventTime: new Date(job.occurredAt),
+    sourceUrl: `${SITE_URL}${job.landingPath || source?.path || `/${job.source}`}`,
+    oppref: job.oaiOppref,
+    user: {
+      email: job.email,
+      phone: job.phone,
+      fullName: job.fullName,
+      country: job.countryCode,
+      externalId: String(job.leadId),
+      obref: job.oaiObref,
+      clientIp: job.clientIp,
+      clientUserAgent: job.clientUserAgent,
+    },
+    data: { type: "customer_action" },
+  });
+
+  return {
+    requestId: "",
+    warnings: [
+      ...(config.validateOnly ? ["validate_only: OpenAI checked the event and discarded it"] : []),
+      ...(outcome.acceptedEvents === 1
+        ? []
+        : [`OpenAI reported accepted_events=${outcome.acceptedEvents}`]),
+    ],
   };
 }
 

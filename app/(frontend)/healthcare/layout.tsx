@@ -3,6 +3,7 @@ import { AttributionCapture } from "../components/AttributionCapture";
 import { GoogleTag } from "../components/GoogleTag";
 import { MetaPixel } from "../components/MetaPixel";
 import { MetaViewContent } from "../components/MetaViewContent";
+import { OpenAIPixel } from "../components/OpenAIPixel";
 import { RevealController } from "../components/RevealController";
 import "./healthcare.css";
 
@@ -33,6 +34,7 @@ export default function HealthcareLayout({
       <AttributionCapture />
       <GoogleTag />
       <MetaPixel />
+      <OpenAIPixel />
       <MetaViewContent contentCategory="healthcare" />
       <RevealController scope=".hc" />
       {children}

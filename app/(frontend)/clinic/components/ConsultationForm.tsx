@@ -6,6 +6,7 @@ import { countries } from "@/lib/countries";
 import { SOURCES } from "@/lib/sources";
 import { CLINIC_FORM_LABEL, trackConversion } from "../../components/GoogleTag";
 import { metaTrack, newMetaEventId } from "../../components/MetaPixel";
+import { openaiTrack } from "../../components/OpenAIPixel";
 import { IconArrow, IconCheck, IconLock } from "../icons";
 import { formCopy, site } from "../content";
 
@@ -128,6 +129,9 @@ export function ConsultationForm({
           country: data.country,
         },
       );
+      /* ChatGPT ads. Same event id as the server's copy, sent from the
+         enquiry route, so OpenAI counts the enquiry once. */
+      openaiTrack("lead_created", { type: "customer_action" }, metaEventId);
 
       form.reset();
       setStatus("sent");

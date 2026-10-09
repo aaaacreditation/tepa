@@ -179,7 +179,13 @@ ALTER TABLE conversion_uploads ADD COLUMN IF NOT EXISTS destination TEXT NOT NUL
 ALTER TABLE conversion_uploads ADD COLUMN IF NOT EXISTS event_id    TEXT NOT NULL DEFAULT '';
 ALTER TABLE conversion_uploads DROP CONSTRAINT IF EXISTS conversion_uploads_destination_check;
 ALTER TABLE conversion_uploads ADD  CONSTRAINT conversion_uploads_destination_check
-  CHECK (destination IN ('google', 'meta'));
+  CHECK (destination IN ('google', 'meta', 'openai'));
+
+/* ChatGPT ads. oppref is the click reference the OpenAI pixel stores from the
+   ad URL, obref its browser id; both are read off the pixel's cookies when the
+   form is posted, the same way fbp and fbc are. */
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS oai_oppref TEXT NOT NULL DEFAULT '';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS oai_obref  TEXT NOT NULL DEFAULT '';
 
 /* The opportunity in AAA's Odoo CRM this lead was created as or matched to.
    0 until the sync has run, like every other column here avoids NULL. */

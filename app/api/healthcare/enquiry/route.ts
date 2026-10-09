@@ -16,6 +16,7 @@ import { countries } from "@/lib/countries";
 import { drainConversions, enqueueConversion } from "@/lib/conversions";
 import { insertLead } from "@/lib/leads";
 import { cleanMetaEventId } from "@/lib/meta-identity";
+import { openaiIdsFromCookies } from "@/lib/openai-capi";
 import { queueEnquiryForOdoo } from "@/lib/odoo";
 
 export const runtime = "nodejs";
@@ -64,6 +65,9 @@ export type Enquiry = {
   fbc: string;
   clientIp: string;
   clientUserAgent: string;
+  /* The ChatGPT ads pixel's cookies; see lib/openai-capi.ts. */
+  oaiOppref: string;
+  oaiObref: string;
 };
 
 /* Small in memory throttle. Enough to blunt casual abuse on a single instance;
@@ -161,6 +165,8 @@ export async function POST(request: Request) {
      id before posting, so its pixel call and the server's Conversions API call
      share it and Meta counts one enquiry, not two. */
   const metaIds = metaIdsFromCookies(request.headers.get("cookie"), attribution);
+  /* The ChatGPT ads pixel's click reference and browser id, read the same way. */
+  const openaiIds = openaiIdsFromCookies(request.headers.get("cookie"));
   const metaEventId = cleanMetaEventId(payload.metaEventId);
   const clientIp = ip === "unknown" ? "" : ip;
   const clientUserAgent = (request.headers.get("user-agent") ?? "").slice(0, 512);
@@ -187,6 +193,8 @@ export async function POST(request: Request) {
     fbc: metaIds.fbc,
     clientIp,
     clientUserAgent,
+    oaiOppref: openaiIds.oppref,
+    oaiObref: openaiIds.obref,
   };
 
   try {
@@ -243,6 +251,8 @@ async function deliver(enquiry: Enquiry) {
     fbc: enquiry.fbc,
     clientIp: enquiry.clientIp,
     clientUserAgent: enquiry.clientUserAgent,
+    oaiOppref: enquiry.oaiOppref,
+    oaiObref: enquiry.oaiObref,
   });
   console.info("[healthcare/enquiry]", JSON.stringify(enquiry));
 
