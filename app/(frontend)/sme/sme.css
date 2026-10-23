@@ -1,0 +1,2277 @@
+/* ==========================================================================
+   /sme — SMEs Accreditation landing page.
+
+   Ported from the AAA website's client-approved SMEs Accreditation Program
+   page (newwebsiteaaa: app/programs/smes-accreditation-program, Oct 2026).
+   Everything is scoped to .smex, the wrapper in layout.tsx.
+
+   1. Base layer: the website's global rules that actually matched elements on
+      that page (tokens, container, eyebrow, buttons, the readiness check's
+      smerc-* styles, the compact h2 scale), extracted from the live page and
+      scoped here so the port renders the same without the website's globals.
+   2. sme.css from the website, unchanged except /sme/ asset paths and its two
+      reveal-triggered animations, which key off this site's data-visible.
+   3. Landing-page additions: masthead, application form, footer, mobile bar.
+   ========================================================================== */
+
+/* ---------------------------- 1. Base layer ---------------------------- */
+/* Scoped with :where(.smex), which adds no specificity, so each rule keeps
+   exactly the weight it had as a global rule on the website — a reset like
+   `button { background: none }` must still lose to `.smex-btn-gold`, as it
+   did there. */
+.smex {
+  --aaa-blue: #173d73;
+  --aaa-blue-100: #d7e2f4;
+  --aaa-blue-50: #eef4ff;
+  --aaa-blue-500: #244f93;
+  --aaa-blue-950: #061a2c;
+  --aaa-gold: #b38a2e;
+  --aaa-gold-100: #f4e7c6;
+  --aaa-gold-700: #8e6b18;
+  --container: 1240px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --font-mono: "Poppins", "Poppins Fallback", system-ui, -apple-system, sans-serif;
+  --header-h: 76px;
+  --ink-100: #f1f5f9;
+  --ink-200: #e2e8f0;
+  --ink-300: #cbd5e1;
+  --ink-400: #94a3b8;
+  --ink-500: #64748b;
+  --ink-600: #475569;
+  --ink-700: #334155;
+  --ink-800: #1e293b;
+  --ink-900: #0f172a;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --section-pad: clamp(48px, 5vw, 76px);
+  --shadow-md: 0 2px 4px #0f172a0a, 0 16px 40px -12px #173d7329;
+  --shadow-sm: 0 1px 2px #0f172a0a, 0 4px 12px -2px #173d7314;
+  --white: #fff;
+  font-family: Poppins, "Poppins Fallback", system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 25.6px;
+  color: rgb(30, 41, 59);
+  -webkit-font-smoothing: antialiased;
+}
+
+:where(.smex) .container { width: 100%; }
+@media (min-width: 721px) and (max-width: 1024px) {
+  :where(.smex) .smex-hero { min-height: 0px; }
+}
+:where(.smex) *,
+:where(.smex) ::before,
+:where(.smex) ::after { box-sizing: border-box; }
+:where(.smex) img { max-width: 100%; display: block; }
+:where(.smex) a { color: inherit; text-decoration: none; }
+:where(.smex) button { cursor: pointer; background: none; border: 0px; padding: 0px; font-family: inherit; }
+:where(.smex) .container { max-width: var(--container); margin: 0px auto; padding: 0px 32px; }
+:where(.smex) .eyebrow { font-family: var(--font-mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--aaa-blue); align-items: center; gap: 10px; font-size: 12px; font-weight: 500; display: inline-flex; }
+:where(.smex) .eyebrow::before { content: ""; background: var(--aaa-blue); width: 24px; height: 1px; }
+:where(.smex) .btn { letter-spacing: 0.005em; border-radius: var(--radius); transition: transform .25s var(--ease-out), background .25s ease, color .25s ease, border-color .25s ease, box-shadow .3s var(--ease-out); white-space: nowrap; cursor: pointer; border: 1px solid rgba(0, 0, 0, 0); align-items: center; gap: 10px; padding: 15px 26px; font-size: 15px; font-weight: 600; display: inline-flex; }
+:where(.smex) .btn:active { transform: translateY(0px) scale(0.99); }
+:where(.smex) .btn-primary { background: linear-gradient(180deg, #244f93 0%, var(--aaa-blue) 58%); color: var(--white); box-shadow: rgba(255, 255, 255, 0.14) 0px 1px inset, rgba(23, 61, 115, 0.2) 0px 1px 2px, rgba(23, 61, 115, 0.45) 0px 10px 28px -8px; }
+:where(.smex) .btn-primary:hover { background: linear-gradient(rgb(43, 92, 171) 0%, rgb(29, 71, 133) 58%); transform: translateY(-2px); box-shadow: rgba(255, 255, 255, 0.16) 0px 1px inset, rgba(23, 61, 115, 0.22) 0px 2px 4px, rgba(23, 61, 115, 0.5) 0px 18px 40px -10px; }
+:where(.smex) .btn-ghost { color: var(--ink-900); border-color: var(--ink-300); background: none; }
+:where(.smex) .btn-ghost:hover { border-color: var(--aaa-blue); color: var(--aaa-blue); background: var(--aaa-blue-50); transform: translateY(-2px); }
+:where(.smex) .btn .arrow { transition: transform 0.2s; }
+:where(.smex) .btn:hover .arrow { transform: translateX(3px); }
+:where(.smex) .reveal { transition: opacity .9s var(--ease-out), transform .9s var(--ease-out); }
+.smex[data-reveal="on"] .reveal:not([data-visible="true"]) { opacity: 0; transform: translateY(26px); }
+:where(.smex) :focus-visible { outline: 2px solid var(--aaa-blue); outline-offset: 3px; border-radius: 2px; }
+:where(.smex) ::selection { background: var(--aaa-blue); color: var(--white); }
+@media (prefers-reduced-motion: reduce) {
+  :where(.smex) .reveal { opacity: 1; transition: none; transform: none; }
+  :where(.smex) * { transition: none !important; animation: none !important; }
+}
+@media (max-width: 720px) {
+  :where(.smex) .container { padding: 0px 20px; }
+}
+:where(.smex) em { font-style: normal; }
+:where(.smex) h2 { letter-spacing: -0.01em; line-height: 1.15; font-size: clamp(24px, 2.7vw, 36px) !important; }
+:where(.smex) .sme-head { text-align: center; max-width: 720px; margin: 0px auto clamp(44px, 5vw, 64px); }
+:where(.smex) .sme-head .eyebrow { justify-content: center; }
+:where(.smex) .sme-head h2 { color: var(--ink-900); letter-spacing: -0.02em; margin: 16px 0px 0px; font-weight: 600; line-height: 1.14; }
+:where(.smex) .sme-head p { max-width: 60ch; color: var(--ink-600); margin: 16px auto 0px; font-size: 16.5px; line-height: 1.72; }
+:where(.smex) .sme-cats { padding: var(--section-pad) 0; background: var(--white); }
+:where(.smex) .sme-cats-grid { grid-template-columns: repeat(3, minmax(0px, 1fr)); gap: 18px; display: grid; }
+:where(.smex) .sme-process { padding: var(--section-pad) 0; background: linear-gradient(180deg, var(--aaa-blue-50) 0%, #f5f9fd 100%); border-top: 1px solid var(--ink-100); }
+:where(.smex) .sme-faq { padding: var(--section-pad) 0; background: var(--white); }
+:where(.smex) .sme-faq-list { flex-direction: column; gap: 12px; max-width: 860px; margin: 0px auto; display: flex; }
+:where(.smex) .sme-faq-item { border: 1px solid var(--ink-200); border-radius: var(--radius-lg); background: var(--white); transition: border-color 0.25s, box-shadow 0.3s; overflow: hidden; }
+:where(.smex) .sme-faq-item[open] { border-color: var(--aaa-blue-100); box-shadow: var(--shadow-sm); }
+:where(.smex) .sme-faq-item summary { cursor: pointer; color: var(--ink-900); justify-content: space-between; align-items: center; gap: 18px; padding: 22px 26px; font-size: 16px; font-weight: 600; list-style: none; display: flex; }
+:where(.smex) .sme-faq-item summary::-webkit-details-marker { display: none; }
+:where(.smex) .sme-faq-item summary:hover { color: var(--aaa-blue); }
+:where(.smex) .sme-faq-plus { flex: 0 0 auto; width: 16px; height: 16px; position: relative; }
+:where(.smex) .sme-faq-plus::before,
+:where(.smex) .sme-faq-plus::after { content: ""; background: var(--aaa-blue); transition: transform .3s var(--ease-out), opacity .3s ease; border-radius: 2px; position: absolute; }
+:where(.smex) .sme-faq-plus::before { width: 16px; height: 2px; top: 7px; left: 0px; }
+:where(.smex) .sme-faq-plus::after { width: 2px; height: 16px; top: 0px; left: 7px; }
+:where(.smex) .sme-faq-item[open] .sme-faq-plus::after { opacity: 0; transform: rotate(90deg); }
+:where(.smex) .sme-faq-a { color: var(--ink-600); max-width: 76ch; padding: 0px 26px 24px; font-size: 15px; line-height: 1.72; }
+:where(.smex) .sme-contact { isolation: isolate; padding: var(--section-pad) 0; background: var(--aaa-blue-950); color: rgb(255, 255, 255); position: relative; overflow: hidden; }
+:where(.smex) .sme-contact::before { content: ""; z-index: -1; background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, rgba(0, 0, 0, 0) 1.2px); background-size: 22px 22px; position: absolute; inset: 0px; mask-image: radial-gradient(at 15% 30%, rgb(0, 0, 0), rgba(0, 0, 0, 0) 62%); }
+:where(.smex) .sme-contact-corner { border-top: 2px solid rgba(255, 255, 255, 0.5); border-right: 2px solid rgba(255, 255, 255, 0.5); width: 32px; height: 32px; position: absolute; top: 22px; right: 32px; }
+@media (max-width: 1080px) {
+  :where(.smex) .sme-cats-grid { grid-template-columns: repeat(2, minmax(0px, 1fr)); }
+}
+@media (max-width: 720px) {
+  :where(.smex) .sme-cats-grid { grid-template-columns: 1fr; }
+}
+:where(.smex) .smerc-card { background: var(--white); border: 1px solid var(--ink-200); border-radius: var(--radius-xl); max-width: 820px; box-shadow: var(--shadow-md); margin: clamp(28px, 4vw, 44px) auto 0px; padding: clamp(26px, 3.4vw, 40px); }
+:where(.smex) .smerc-card .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+:where(.smex) .smerc-card .btn:disabled:hover { transform: none; }
+:where(.smex) .smerc-intro { text-align: center; }
+:where(.smex) .smerc-intro p { max-width: 46ch; color: var(--ink-600); margin: 0px auto 22px; font-size: 15px; line-height: 1.7; }
+:where(.smex) .smerc-bar { background: var(--ink-100); border-radius: 4px; height: 6px; margin-bottom: 18px; overflow: hidden; }
+:where(.smex) .smerc-bar-fill { background: linear-gradient(90deg, var(--aaa-blue), var(--aaa-blue-500)); height: 100%; transition: width .35s var(--ease-out); border-radius: 4px; }
+:where(.smex) .smerc-step { font-family: var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--aaa-blue); font-size: 11px; font-weight: 500; }
+:where(.smex) .smerc-cat { color: var(--ink-900); letter-spacing: -0.01em; margin: 8px 0px 6px; font-size: clamp(20px, 2.4vw, 24px); font-weight: 600; }
+:where(.smex) .smerc-q { border-top: 1px solid var(--ink-100); padding: 20px 0px; }
+:where(.smex) .smerc-q:first-of-type { border-top-width: medium; border-top-style: none; border-top-color: currentcolor; padding-top: 8px; }
+:where(.smex) .smerc-qtext { color: var(--ink-900); margin-bottom: 14px; font-size: 15.5px; font-weight: 500; line-height: 1.5; }
+:where(.smex) .smerc-opts { flex-wrap: wrap; gap: 10px; display: flex; }
+:where(.smex) .smerc-opt { text-align: center; border: 1px solid var(--ink-200); border-radius: var(--radius); background: var(--white); min-width: 96px; color: var(--ink-700); cursor: pointer; flex: 1 1 0%; padding: 11px 14px; font-family: inherit; font-size: 14px; font-weight: 600; transition: border-color 0.2s, background 0.2s, color 0.2s; }
+:where(.smex) .smerc-opt:hover { border-color: var(--aaa-blue); color: var(--aaa-blue); }
+:where(.smex) .smerc-opt.sel { background: var(--aaa-blue); border-color: var(--aaa-blue); color: rgb(255, 255, 255); }
+:where(.smex) .smerc-nav { flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; margin-top: 24px; display: flex; }
+:where(.smex) .smerc-progress { color: var(--ink-500); font-size: 13px; font-weight: 500; }
+:where(.smex) .smerc-congrats { text-align: center; margin-bottom: 24px; }
+:where(.smex) .smerc-congrats strong { color: var(--aaa-blue); letter-spacing: -0.01em; font-size: clamp(20px, 2.4vw, 24px); font-weight: 600; display: block; }
+:where(.smex) .smerc-congrats p { max-width: 52ch; color: var(--ink-600); margin: 8px auto 0px; font-size: 15px; line-height: 1.65; }
+:where(.smex) .smerc-top { background: var(--aaa-blue-50); border: 1px solid var(--aaa-blue-100); border-radius: var(--radius-lg); flex-wrap: wrap; align-items: center; gap: 28px; padding: 24px; display: flex; }
+:where(.smex) .smerc-ring { border-radius: 50%; flex: 0 0 auto; place-items: center; width: 128px; height: 128px; display: grid; }
+:where(.smex) .smerc-ring-inner { background: var(--white); border-radius: 50%; flex-direction: column; justify-content: center; align-items: center; width: 100px; height: 100px; display: flex; }
+:where(.smex) .smerc-pct { color: var(--aaa-blue); letter-spacing: -0.02em; font-size: 30px; font-weight: 700; line-height: 1; }
+:where(.smex) .smerc-rlbl { font-family: var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-500); margin-top: 4px; font-size: 10px; }
+:where(.smex) .smerc-band { flex: 1 1 0%; min-width: 220px; }
+:where(.smex) .smerc-band-name { color: var(--ink-900); letter-spacing: -0.01em; font-size: 22px; font-weight: 600; display: block; }
+:where(.smex) .smerc-band-sub { color: var(--ink-600); margin-top: 6px; font-size: 14.5px; line-height: 1.6; display: block; }
+:where(.smex) .smerc-cols { grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 24px; display: grid; }
+:where(.smex) .smerc-col h4 { font-family: var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--aaa-blue); margin: 0px 0px 10px; font-size: 11px; font-weight: 600; }
+:where(.smex) .smerc-col ul { margin: 0px; padding: 0px; list-style: none; }
+:where(.smex) .smerc-col li { color: var(--ink-800); padding: 7px 0px 7px 26px; font-size: 14.5px; line-height: 1.5; position: relative; }
+:where(.smex) .smerc-col.ok li::before { content: ""; border-left: 2px solid var(--aaa-blue); border-bottom: 2px solid var(--aaa-blue); width: 9px; height: 5px; position: absolute; top: 11px; left: 3px; transform: rotate(-45deg); }
+:where(.smex) .smerc-col.gap li::before { content: "→"; color: var(--ink-400); font-weight: 700; position: absolute; top: 6px; left: 0px; }
+:where(.smex) .smerc-cta { flex-wrap: wrap; gap: 12px; margin-top: 26px; display: flex; }
+@media (max-width: 560px) {
+  :where(.smex) .smerc-cols { grid-template-columns: 1fr; }
+  :where(.smex) .smerc-ring { margin: 0px auto; }
+}
+
+/* ------------------- 2. SMEs program page (website) -------------------- */
+/* ========================================================================
+   SME FUNDING READINESS — 2026 visual direction
+   American navy / white / flag-red with restrained AAA gold. Everything is
+   scoped to .smex so the program can have its own editorial personality.
+   Content structure follows the client's "Website final Changes" doc (July 2026).
+   ======================================================================== */
+
+.smex {
+  --sme-red: #c1122f;
+  --sme-red-deep: #8f0e23;
+  --sme-red-soft: #fff0f2;
+  --sme-navy: #071d34;
+  --sme-blue: #173d73;
+  --sme-blue-bright: #2b5da8;
+  --sme-cream: #fbfaf6;
+  --sme-border: rgba(23, 61, 115, 0.14);
+  --sme-shadow: 0 30px 80px -36px rgba(7, 29, 52, 0.42);
+  color: var(--ink-800);
+  background: #fff;
+}
+
+.smex section { scroll-margin-top: 88px; }
+.smex .container { max-width: 1280px; }
+.smex .sme-head { max-width: 790px; margin-bottom: clamp(28px, 3vw, 42px); }
+.smex .sme-head h2,
+.smex .smex-close-strip h2 {
+  font-size: clamp(32px, 4.1vw, 54px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+}
+.smex .sme-head h2 { color: var(--sme-blue); }
+.smex .sme-head p { max-width: 63ch; font-size: 16px; }
+.smex .eyebrow { color: var(--aaa-gold-700); font-weight: 600; }
+.smex .eyebrow::before { height: 2px; background: var(--aaa-gold); }
+
+/* -------------------------------- Hero --------------------------------- */
+.smex-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 850px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 10% 34%, rgba(43, 93, 168, 0.38), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(193, 18, 47, 0.2), transparent 28%),
+    linear-gradient(118deg, #061a2c 0%, #092a4a 52%, #071d34 100%);
+}
+
+.smex-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 58px 58px;
+  -webkit-mask-image: radial-gradient(ellipse 62% 80% at 80% 42%, #000 10%, transparent 78%);
+  mask-image: radial-gradient(ellipse 62% 80% at 80% 42%, #000 10%, transparent 78%);
+}
+
+.smex-hero-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 0.98fr) minmax(460px, 0.92fr);
+  align-items: center;
+  gap: clamp(44px, 6vw, 88px);
+  min-height: 804px;
+  padding-top: clamp(190px, 15vw, 224px);
+  padding-bottom: 94px;
+}
+
+.smex-hero-copy { max-width: 660px; }
+
+.smex-crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 29px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.52);
+}
+.smex-crumbs a { transition: color 0.2s ease; }
+.smex-crumbs a:hover { color: #fff; }
+.smex-crumbs strong { font-weight: 500; color: rgba(255, 255, 255, 0.84); }
+.smex-crumbs > span { color: var(--aaa-gold); }
+
+.smex-hero h1 {
+  margin: 0;
+  max-width: 15ch;
+  font-size: clamp(38px, 4.5vw, 60px);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  font-weight: 600;
+  color: #fff;
+  text-wrap: balance;
+}
+.smex-hero-copy > p {
+  max-width: 62ch;
+  margin: 24px 0 0;
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.smex-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 31px; }
+.smex-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 51px;
+  padding: 13px 22px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 600;
+  transition: transform 0.25s var(--ease-out), box-shadow 0.3s ease, background 0.25s ease, border-color 0.25s ease;
+}
+.smex-btn svg { transition: transform 0.2s ease; }
+.smex-btn:hover { transform: translateY(-3px); }
+.smex-btn:hover svg { transform: translateX(3px); }
+.smex-btn.sm { min-height: 0; padding: 11px 18px; font-size: 13px; border-radius: 8px; }
+.smex-btn-blue {
+  color: #fff;
+  background: linear-gradient(145deg, var(--sme-blue-bright), var(--sme-blue));
+  box-shadow: 0 18px 36px -16px rgba(23, 61, 115, 0.82), inset 0 1px rgba(255, 255, 255, 0.22);
+}
+.smex-btn-blue:hover { box-shadow: 0 24px 44px -16px rgba(23, 61, 115, 0.92); }
+.smex-btn-ghost { color: #fff; border-color: rgba(255, 255, 255, 0.27); background: rgba(255, 255, 255, 0.055); }
+.smex-btn-ghost:hover { border-color: rgba(255, 255, 255, 0.7); background: rgba(255, 255, 255, 0.1); }
+.smex-btn-gold {
+  color: #fff;
+  background: linear-gradient(135deg, #c39a3d, var(--aaa-gold) 45%, var(--aaa-gold-700));
+  box-shadow: 0 18px 36px -16px rgba(142, 107, 24, 0.8), inset 0 1px rgba(255, 255, 255, 0.28);
+}
+.smex-btn-gold:hover { box-shadow: 0 24px 44px -16px rgba(142, 107, 24, 0.9); }
+.smex-btn-ghost-navy { color: var(--sme-blue); border-color: rgba(23, 61, 115, 0.35); background: #fff; }
+.smex-btn-ghost-navy:hover { border-color: var(--sme-blue); background: var(--aaa-blue-50); }
+
+.smex-hero-visual { position: relative; width: 100%; max-width: 610px; justify-self: end; }
+.smex-hero-photo {
+  position: relative;
+  overflow: hidden;
+  width: calc(100% - 22px);
+  aspect-ratio: 0.96 / 1;
+  margin: 0 0 0 auto;
+  border-radius: 28px 28px 82px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--sme-navy);
+  box-shadow: 0 34px 70px -28px rgba(0, 0, 0, 0.8);
+}
+.smex-hero-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(7, 29, 52, 0.04) 35%, rgba(7, 29, 52, 0.8) 100%);
+}
+.smex-hero-photo::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  border-top: 2px solid rgba(255, 255, 255, 0.72);
+  border-right: 2px solid rgba(255, 255, 255, 0.72);
+}
+.smex-hero-photo img { object-fit: cover; object-position: center; transition: transform 1.2s var(--ease-out); }
+.smex-hero-visual:hover .smex-hero-photo img { transform: scale(1.045); }
+.smex-hero-photo figcaption {
+  position: absolute;
+  right: 32px;
+  bottom: 30px;
+  z-index: 2;
+  text-align: right;
+}
+.smex-hero-photo figcaption span { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--aaa-gold-100); }
+.smex-hero-photo figcaption strong { display: block; margin-top: 5px; font-size: 15px; color: #fff; }
+
+.smex-hero-rail {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  border-top: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(3, 17, 31, 0.8);
+  backdrop-filter: blur(12px);
+}
+.smex-hero-rail::before { content: ""; position: absolute; top: 0; left: 0; width: 30%; height: 2px; background: linear-gradient(90deg, var(--sme-red), #fff, var(--sme-blue-bright)); }
+.smex-hero-rail .container { display: flex; align-items: center; justify-content: center; gap: clamp(16px, 3vw, 42px); min-height: 54px; }
+.smex-hero-rail span { font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255, 255, 255, 0.82); }
+.smex-hero-rail i { font-style: normal; font-size: 9px; color: #fff; }
+
+/* -------------------------- Section rhythm ------------------------------ */
+.smex .smex-journey,
+.smex .sme-cats,
+.smex .sme-process,
+.smex .smex-legacy,
+.smex .smex-struggle,
+.smex .smerc,
+.smex .sme-faq,
+.smex .sme-contact { padding: clamp(38px, 3.8vw, 54px) 0; }
+
+/* ------------- Section 3 — what is AAA SME Accreditation ---------------- */
+/* Split intro per client reference (July 2026): copy left, navy stat cards right */
+.smex .smex-journey { background: #fff; }
+.smex-about-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.98fr);
+  gap: clamp(40px, 5vw, 76px);
+  align-items: center;
+  scroll-margin-top: 100px;
+}
+.smex-about-copy .eyebrow { justify-content: flex-start; }
+.smex .smex-about-copy h2 {
+  margin: 14px 0 0;
+  font-size: clamp(32px, 3.6vw, 48px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  color: var(--sme-blue);
+}
+.smex-about-rule {
+  display: block;
+  width: 64px;
+  height: 3px;
+  margin: 24px 0 4px;
+  border-radius: 3px;
+  background: var(--aaa-gold);
+}
+.smex .smex-about-copy p {
+  max-width: 52ch;
+  margin: 22px 0 0;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--ink-600);
+}
+
+.smex-about-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.6vw, 20px);
+}
+.smex-about-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(20px, 2vw, 28px) clamp(16px, 1.8vw, 24px) clamp(22px, 2vw, 27px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(168deg, #0b2d50 0%, #173d73 62%, #244f93 135%);
+  box-shadow: 0 30px 60px -34px rgba(7, 29, 52, 0.6);
+}
+.smex .smex-about-card h3 { display: flex; flex-direction: column; gap: 2px; margin: 0; color: #fff; }
+.smex-about-card h3 .t1 {
+  font-size: clamp(21px, 1.8vw, 26px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.smex-about-card h3 .t2 { font-size: clamp(14.5px, 1.2vw, 16.5px); font-weight: 600; line-height: 1.25; }
+.smex-about-card-rule { width: 34px; height: 2px; margin: 13px 0 11px; background: var(--aaa-gold); }
+.smex-about-card p { margin: 0; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.86); }
+.smex-card-kicker { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--aaa-gold-700); }
+
+/* Sub-blocks under the big title (who it serves / sectors) */
+.smex-sub {
+  max-width: 820px;
+  margin: clamp(34px, 3.6vw, 50px) auto clamp(22px, 2.6vw, 30px);
+  text-align: center;
+  scroll-margin-top: 100px;
+}
+.smex-sub h3 {
+  margin: 0;
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--sme-blue);
+  text-wrap: balance;
+}
+.smex-sub h3::after {
+  content: "";
+  display: block;
+  width: 54px;
+  height: 3px;
+  margin: 14px auto 0;
+  border-radius: 3px;
+  background: var(--aaa-gold);
+}
+.smex-sub p { max-width: 60ch; margin: 16px auto 0; font-size: 15.5px; line-height: 1.7; color: var(--ink-600); }
+.smex .sme-head + .smex-sub { margin-top: 0; }
+
+.smex-sub-kicker {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sme-blue);
+}
+
+/* Full-bleed sector strip: 12 photo columns + icon cells + navy message band.
+   The whole column lifts on hover. */
+.smex-sector-strip { border-top: 1px solid var(--sme-border); }
+.smex-sector-cols { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); background: #fff; }
+.smex-sector-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--sme-border);
+  background: #fff;
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s ease;
+}
+.smex-sector-col:last-child { border-right: 0; }
+.smex-sector-col:hover {
+  z-index: 2;
+  transform: translateY(-8px);
+  box-shadow: 0 24px 46px -22px rgba(7, 29, 52, 0.45);
+}
+.smex-sector-photo { position: relative; overflow: hidden; aspect-ratio: 9 / 16; background: var(--sme-navy); }
+.smex-sector-photo img { object-fit: cover; }
+.smex-sector-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 105, 178, 0.6);
+  pointer-events: none;
+}
+.smex-sector-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  padding: 18px 8px 22px;
+  text-align: center;
+}
+.smex-sector-glyph { display: grid; place-items: center; width: 34px; height: 34px; color: var(--sme-blue); }
+.smex-sector-glyph svg { width: 28px; height: 28px; }
+.smex-sector-name { font-size: 12.5px; font-weight: 600; line-height: 1.4; color: var(--ink-800); }
+.smex-sector-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 26px;
+  padding: 18px clamp(20px, 3vw, 34px);
+  background: linear-gradient(120deg, #061a2c, #0b2d50 55%, #173d73);
+  color: #fff;
+}
+.smex-sector-band-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  color: #fff;
+}
+.smex-sector-band-ico svg { width: 22px; height: 22px; }
+/* icon + copy share the left half so the CTAs can sit on the same row */
+.smex-sector-band p {
+  flex: 1 1 auto;
+  margin: 0 auto 0 -10px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.92);
+  text-wrap: nowrap;
+}
+
+.smex-about-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  gap: 10px;
+}
+.smex-about-ctas .smex-btn { min-height: 46px; padding: 11px 18px; font-size: 13.5px; }
+
+@media (max-width: 1240px) {
+  .smex-sector-band { justify-content: center; text-align: center; }
+  .smex-sector-band p { flex-basis: 100%; margin: 0; text-wrap: balance; }
+  .smex-sector-band-ico { display: none; }
+}
+
+/* the band closes the section — it butts straight onto the next one */
+.smex .smex-journey { padding-bottom: 0; }
+
+/* ------------- Section 4 — framework pillars -----------------------------
+   Mirrors the About page's Mission/Vision/Values cards (app/about/about.css):
+   white card on a 1.5px animated gold+blue border track, stars-and-stripes
+   band, ghost number, gold star label. Values are ported because the About
+   --abx-* tokens are scoped to .abx and unavailable here.
+   ------------------------------------------------------------------------ */
+.smex .sme-cats { padding: clamp(34px, 3.4vw, 48px) 0 clamp(30px, 3vw, 42px); background: var(--sme-cream); }
+.smex .sme-process { padding-top: clamp(32px, 3.2vw, 44px); }
+.smex .sme-cats-grid { gap: 22px; }
+
+/* Two-column framework intro: copy left, photo right */
+.smex-fw-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.74fr);
+  align-items: center;
+  gap: clamp(32px, 5vw, 72px);
+  margin-bottom: clamp(26px, 2.8vw, 36px);
+}
+.smex-fw-head .sme-head { max-width: 640px; margin: 0; text-align: left; }
+.smex-fw-head .sme-head .eyebrow { justify-content: flex-start; }
+.smex-fw-head .sme-head p { margin-left: 0; }
+.smex-fw-photo {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--sme-border);
+  border-radius: 22px 22px 64px 22px;
+  background: var(--sme-navy);
+  box-shadow: var(--sme-shadow);
+}
+.smex-fw-photo::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(7, 29, 52, 0.02) 45%, rgba(7, 29, 52, 0.62)); }
+.smex-fw-photo::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border-top: 2px solid rgba(255, 255, 255, 0.75);
+  border-right: 2px solid rgba(255, 255, 255, 0.75);
+}
+.smex-fw-photo img { object-fit: cover; }
+.smex-fw-photo figcaption { position: absolute; right: 24px; bottom: 20px; z-index: 2; text-align: right; }
+.smex-fw-photo figcaption span { display: block; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--aaa-gold-100); }
+.smex-fw-photo figcaption strong { display: block; margin-top: 5px; font-size: 14.5px; color: #fff; }
+
+.smex-mvv-card {
+  position: relative;
+  padding: 1.5px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #33598e; /* border track behind the spinning accent */
+  box-shadow: 0 30px 60px -34px rgba(7, 29, 52, 0.6);
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s ease;
+}
+.smex-mvv-card::before {
+  content: "";
+  position: absolute;
+  inset: -160%;
+  opacity: 0.85;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 46deg,
+    var(--sme-red) 80deg,
+    transparent 114deg 226deg,
+    var(--sme-red-deep) 260deg,
+    transparent 294deg 360deg
+  );
+  animation: smex-border-spin 7s linear infinite;
+}
+.smex-mvv-card:hover { transform: translateY(-5px); box-shadow: 0 34px 66px -30px rgba(7, 29, 52, 0.7); }
+.smex-mvv-card:hover::before { opacity: 1; }
+@keyframes smex-border-spin { to { transform: rotate(1turn); } }
+
+.smex-mvv-in {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 22px 24px 26px;
+  border-radius: 14.5px;
+  /* same navy gradient as the About stat cards */
+  background: linear-gradient(168deg, #0b2d50 0%, #173d73 62%, #244f93 135%);
+}
+
+/* icon left, number right — title sits under the pair */
+.smex-mvv-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.smex-mvv-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border: 1.5px solid rgba(179, 138, 46, 0.85);
+  border-radius: 50%;
+  color: #fff;
+}
+.smex-mvv-ico svg { width: 23px; height: 23px; }
+.smex-mvv-no {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: rgba(255, 255, 255, 0.22);
+  user-select: none;
+}
+.smex .smex-mvv-in { min-height: 180px; }
+.smex .smex-mvv-in h3 {
+  position: relative;
+  flex: 1;
+  margin: 16px 0 10px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.smex-mvv-rule { margin-top: 20px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--aaa-gold), rgba(179, 138, 46, 0.4) 45%, transparent 78%); }
+
+/* Card description stays hidden until hover/keyboard focus (per client spec);
+   the navy panel slides over the card face. Statically shown under 720px. */
+.smex-hover-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 26px;
+  overflow: hidden;
+  border-radius: inherit;
+  color: rgba(255, 255, 255, 0.85);
+  background: linear-gradient(160deg, #0a2748, #071d34);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.35s ease, transform 0.4s var(--ease-out);
+  pointer-events: none;
+}
+.smex-hover-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--aaa-gold), var(--aaa-gold-100) 45%, transparent 80%);
+}
+.smex-mvv-card .smex-hover-panel::before {
+  background: linear-gradient(90deg, var(--sme-red), rgba(193, 18, 47, 0.4) 55%, transparent 85%);
+}
+.smex-hover-panel h4 { margin: 0; font-size: 16.5px; font-weight: 600; letter-spacing: -0.01em; color: #fff; }
+.smex-hover-panel p { margin: 0; font-size: 13.5px; line-height: 1.75; }
+.smex-mvv-card:hover .smex-hover-panel,
+.smex-mvv-card:focus-within .smex-hover-panel,
+.smex-strug-card:hover .smex-hover-panel,
+.smex-strug-card:focus-within .smex-hover-panel { opacity: 1; transform: none; }
+.smex-mvv-card:focus-visible,
+.smex-strug-card:focus-visible { outline: 2px solid var(--aaa-gold); outline-offset: 3px; }
+
+/* Card layout: sample result left, copy middle, button right — with the check
+   itself unrolling full width beneath the row. */
+.smex-strip-preview {
+  grid-column: 1;
+  grid-row: 1;
+  width: clamp(190px, 20vw, 260px);
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--ink-100);
+  border-radius: 14px;
+  background: #fff;
+}
+.smex-strip-copy { grid-column: 2; grid-row: 1; }
+.smex-strip-card > .smex-btn { grid-column: 3; grid-row: 1; justify-self: end; }
+.smex-strip-preview img { display: block; width: 100%; height: auto; }
+
+.smex-rc-panel {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding-top: clamp(22px, 3vw, 30px);
+  border-top: 1px solid var(--ink-100);
+  scroll-margin-top: 96px;
+  animation: smex-rc-in 0.45s var(--ease-out) both;
+}
+/* height is set from the frame's own content so nothing scrolls inside it */
+.smex-rc-panel iframe {
+  display: block;
+  width: 100%;
+  height: 640px;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+@keyframes smex-rc-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ------------- Section 5 — readiness-check strip (gold gauge) ----------- */
+.smex-strip {
+  position: relative;
+  padding: clamp(36px, 3.6vw, 50px) 0;
+  background: #fff;
+  border-top: 1px solid var(--ink-100);
+  border-bottom: 1px solid var(--ink-100);
+}
+.smex-strip-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(28px, 4vw, 56px);
+  padding: clamp(26px, 3.5vw, 40px) clamp(26px, 4vw, 52px);
+  overflow: hidden;
+  border: 1px solid rgba(23, 61, 115, 0.28);
+  border-radius: 22px;
+  background: linear-gradient(150deg, #fff 60%, #f2f6fd 100%);
+  box-shadow: 0 34px 80px -44px rgba(7, 29, 52, 0.5);
+}
+.smex-strip-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--sme-blue), var(--aaa-blue-100) 45%, var(--sme-navy));
+}
+.smex-strip .eyebrow { color: var(--sme-blue); }
+.smex-strip .eyebrow::before { background: var(--sme-blue); }
+.smex-strip-copy h2 {
+  margin-top: 10px;
+  font-size: clamp(24px, 2.6vw, 34px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: var(--sme-navy);
+}
+.smex-strip-copy p { max-width: 54ch; margin-top: 12px; font-size: 14px; font-weight: 500; line-height: 1.65; color: var(--ink-600); }
+
+.smex-gauge { position: relative; flex: none; width: 190px; padding-bottom: 30px; }
+.smex-gauge svg { display: block; width: 100%; height: auto; }
+.smex-gauge path { fill: none; stroke-width: 13; stroke-linecap: round; }
+.smex-gauge-track { stroke: #dde7f5; }
+.smex-gauge-val {
+  stroke: url(#smexGaugeGrad);
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 1.5s var(--ease-out) 0.35s;
+}
+.smex-strip-card[data-visible="true"] .smex-gauge-val { stroke-dashoffset: 22; }
+.smex-gauge-read { position: absolute; right: 0; bottom: 40px; left: 0; text-align: center; color: var(--sme-navy); }
+.smex-gauge-read strong { font-size: 38px; font-weight: 700; letter-spacing: -0.03em; }
+.smex-gauge-read > span { font-size: 13px; font-weight: 600; color: var(--ink-500); }
+.smex-gauge-lbl {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border: 1px solid rgba(23, 61, 115, 0.28);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sme-blue);
+  background: var(--aaa-blue-50);
+  white-space: nowrap;
+}
+
+/* ------------- Section 8 — why many SMEs struggle to grow --------------- */
+.smex .smex-struggle { background: linear-gradient(180deg, #fff, #f5f8fc); }
+.smex-strug-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.smex-strug-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 224px;
+  padding: 28px 26px;
+  border: 1px solid var(--sme-border);
+  border-radius: 17px;
+  background: linear-gradient(155deg, #fff 65%, #f5f8fc 100%);
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s ease, border-color 0.3s ease;
+}
+/* AAA seal watermark, cropped by the card's overflow so only a corner shows */
+.smex-strug-card::before {
+  content: "";
+  position: absolute;
+  top: -44px;
+  right: -44px;
+  z-index: -1;
+  width: 172px;
+  height: 172px;
+  opacity: 0.08;
+  background: url("/sme/aaalog.png") no-repeat center / contain;
+}
+.smex-strug-card:hover { transform: translateY(-8px); border-color: rgba(179, 138, 46, 0.45); box-shadow: var(--sme-shadow); }
+.smex-strug-card h3 {
+  flex: 1;
+  margin: 10px 0 0;
+  font-size: 18.5px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--sme-blue);
+}
+.smex-strug-rule { margin-top: 18px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--aaa-gold), transparent 70%); }
+
+/* ------------- Section 7 — accreditation process (timeline) ------------- */
+.smex .sme-process { background: #fff; }
+.smex-timeline { margin-top: clamp(40px, 5vw, 56px); }
+.smex-proc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(190px, 16vw, 224px);
+  gap: clamp(24px, 3vw, 44px);
+  align-items: stretch;
+}
+.smex-proc-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.smex-proc-step { position: relative; padding: 0 8px; text-align: center; }
+.smex-proc-badge {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--sme-red);
+  box-shadow: 0 6px 14px -6px rgba(193, 18, 47, 0.7);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    transform 0.5s var(--ease-out) calc(var(--i) * 110ms + 0.15s),
+    opacity 0.4s ease calc(var(--i) * 110ms + 0.15s);
+}
+.smex-timeline[data-visible="true"] .smex-proc-badge { opacity: 1; transform: none; }
+/* dashed connector running through the numbered badges */
+.smex-proc-step + .smex-proc-step::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: calc(50% + 22px);
+  left: calc(-50% + 22px);
+  height: 2px;
+  background-image: repeating-linear-gradient(90deg, rgba(23, 61, 115, 0.5) 0 7px, transparent 7px 14px);
+}
+.smex-proc-ico {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 16px;
+  border: 2px solid rgba(23, 61, 115, 0.2);
+  border-radius: 50%;
+  color: var(--sme-red);
+  background: #fff;
+  box-shadow: 0 14px 30px -18px rgba(7, 29, 52, 0.5);
+}
+.smex-proc-ico svg { width: 32px; height: 32px; }
+.smex-proc-step h3 {
+  margin: 0 0 7px;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--sme-navy);
+}
+.smex-proc-step p { max-width: 22ch; margin: 0 auto; font-size: 13px; line-height: 1.6; color: var(--ink-600); }
+/* certificate card the dashed arrow leads into */
+.smex-proc-cert {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 26px 20px;
+  border-radius: 20px;
+  text-align: center;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(43, 93, 168, 0.45), transparent 60%),
+    linear-gradient(150deg, #0b2d50, var(--sme-navy) 75%);
+  box-shadow: var(--sme-shadow);
+}
+.smex-proc-cert::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: calc(100% + 12px);
+  width: clamp(18px, 3vw, 60px);
+  height: 2px;
+  background-image: repeating-linear-gradient(90deg, rgba(23, 61, 115, 0.5) 0 7px, transparent 7px 14px);
+}
+.smex-proc-cert::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: calc(100% + 3px);
+  border: 5px solid transparent;
+  border-left-color: rgba(23, 61, 115, 0.7);
+}
+.smex-proc-seal {
+  width: 96px;
+  height: auto;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.5));
+}
+.smex-proc-cert p { margin: 0; font-size: 14.5px; font-weight: 500; line-height: 1.55; color: rgba(255, 255, 255, 0.92); }
+.smex-proc-cert strong { color: var(--aaa-gold-100); }
+.smex-proc-note { margin: clamp(26px, 4vw, 38px) auto 0; text-align: center; font-size: 13.5px; color: var(--ink-600); }
+/* Two-column process intro: copy + CTAs left, photo right */
+.smex-proc-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.74fr);
+  align-items: center;
+  gap: clamp(32px, 5vw, 72px);
+  margin-bottom: clamp(26px, 3vw, 38px);
+}
+.smex-proc-head .sme-head { max-width: 640px; margin: 0; text-align: left; }
+.smex-proc-head .sme-head p { margin-left: 0; }
+.smex-proc-photo {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--sme-border);
+  border-radius: 22px 22px 64px 22px;
+  background: var(--sme-navy);
+  box-shadow: var(--sme-shadow);
+}
+.smex-proc-photo img { object-fit: cover; object-position: center 28%; }
+.smex-proc-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: clamp(24px, 2.6vw, 32px); }
+
+/* ------------- Section 8 — legacy of accredited excellence -------------- */
+.smex-legacy { position: relative; background: var(--sme-cream); }
+.smex-legacy::before {
+  content: "★";
+  position: absolute;
+  top: 74px;
+  left: clamp(24px, 5vw, 80px);
+  font-size: 120px;
+  line-height: 1;
+  color: rgba(23, 61, 115, 0.035);
+}
+/* Auto-scrolling success carousel: the track holds the org list twice and
+   slides -50%, so the loop is seamless; per-card side margins (no flex gap)
+   keep the halfway point exact. Pauses on hover. */
+.smex-carousel {
+  position: relative;
+  overflow: hidden;
+  padding: 12px 0 20px;
+}
+.smex-carousel::before,
+.smex-carousel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: clamp(48px, 9vw, 140px);
+  pointer-events: none;
+}
+.smex-carousel::before { left: 0; background: linear-gradient(90deg, var(--sme-cream), rgba(251, 250, 246, 0)); }
+.smex-carousel::after { right: 0; background: linear-gradient(270deg, var(--sme-cream), rgba(251, 250, 246, 0)); }
+.smex-carousel-track { display: flex; width: max-content; animation: smex-scroll 72s linear infinite; }
+.smex-carousel:hover .smex-carousel-track { animation-play-state: paused; }
+@keyframes smex-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+/* Section head: copy left, featured-story chip right (per client mockup) */
+.smex-stories-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: end;
+  margin-bottom: clamp(34px, 4vw, 48px);
+}
+.smex-stories-head .sme-head { max-width: 760px; margin: 0; text-align: left; }
+.smex-stories-head .sme-head .eyebrow { justify-content: flex-start; }
+.smex-stories-head .sme-head p { margin-left: 0; }
+.smex-stories-featured {
+  padding: 20px 22px;
+  border: 1px solid var(--sme-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 16px 34px -26px rgba(7, 29, 52, 0.5);
+}
+.smex-stories-featured strong { display: block; margin-bottom: 6px; font-size: 15px; color: var(--sme-navy); }
+.smex-stories-featured strong::before { content: "★ "; color: var(--aaa-gold); }
+.smex-stories-featured span { display: block; font-size: 13.5px; line-height: 1.6; color: var(--ink-600); }
+
+.smex-story-card {
+  flex: none;
+  display: grid;
+  grid-template-rows: 200px 1fr;
+  width: 344px;
+  height: 430px;
+  margin: 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--sme-border);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 18px 45px -35px rgba(7, 29, 52, 0.55);
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.smex-story-card.featured { width: 404px; border: 2px solid rgba(179, 138, 46, 0.55); }
+.smex-story-card:hover { transform: translateY(-6px); border-color: rgba(179, 138, 46, 0.45); box-shadow: var(--sme-shadow); }
+.smex-story-card.featured:hover { border-color: var(--aaa-gold); }
+.smex-story-photo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(43, 93, 168, 0.5), transparent 60%),
+    linear-gradient(150deg, #0a2748, #071d34);
+}
+/* Most of these are people holding their certificate — bias the crop upward so
+   faces and the certificate stay in frame rather than the floor. */
+.smex-story-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 32%; }
+.smex-story-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7, 29, 52, 0) 50%, rgba(7, 29, 52, 0.68)); }
+.smex-story-seal {
+  width: 62px;
+  height: 62px;
+  color: var(--aaa-gold);
+  opacity: 0.92;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+  transition: transform 0.4s var(--ease-out);
+}
+.smex-story-card:hover .smex-story-seal { transform: scale(1.08) rotate(-4deg); }
+.smex-story-loc {
+  position: absolute;
+  bottom: 12px;
+  left: 15px;
+  z-index: 2;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+}
+.smex-story-card figcaption {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 19px 19px;
+}
+.smex-story-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.smex-story-card figcaption h3 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; color: var(--sme-blue); }
+.smex-story-logo { width: auto; max-width: 92px; height: 34px; object-fit: contain; object-position: right center; }
+.smex-story-quote { margin: 0 0 8px; font-size: 13.5px; font-weight: 500; line-height: 1.6; color: var(--sme-navy); }
+.smex-story-desc { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink-600); }
+.smex-story-foot { display: flex; align-items: center; gap: 12px; }
+.smex-story-badge {
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sme-blue);
+  background: var(--aaa-blue-50);
+}
+.smex-legacy-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: clamp(36px, 4vw, 48px); }
+
+/* -------------------------- Readiness product ---------------------------- */
+.smex .smerc { position: relative; background: var(--sme-cream); }
+.smex .smerc::before { content: ""; position: absolute; top: 0; right: 0; left: 0; height: 5px; background: linear-gradient(90deg, var(--sme-red) 0 22%, #fff 22% 44%, var(--sme-blue) 44% 78%, var(--aaa-gold) 78%); }
+.smex .smerc-card { max-width: 900px; overflow: hidden; padding: clamp(28px, 4vw, 46px); border: 1px solid var(--sme-border); border-radius: 22px; box-shadow: var(--sme-shadow); }
+.smex .smerc-bar { height: 7px; background: var(--ink-100); }
+.smex .smerc-bar-fill { background: linear-gradient(90deg, var(--sme-blue), var(--sme-blue-bright) 65%, var(--sme-red)); }
+.smex .smerc-step,
+.smex .smerc-col h4 { color: var(--sme-red); }
+.smex .smerc-opt { border-radius: 9px; }
+.smex .smerc-opt:hover { border-color: var(--sme-red); color: var(--sme-red); }
+.smex .smerc-opt.sel { border-color: var(--sme-blue); background: var(--sme-blue); }
+.smex .smerc-top { border-color: rgba(193, 18, 47, 0.14); background: linear-gradient(135deg, var(--aaa-blue-50), var(--sme-red-soft)); }
+.smex .smerc-col.ok li::before { border-color: var(--sme-red); }
+
+/* -------------------------------- FAQ ----------------------------------- */
+.smex .sme-faq { padding-top: clamp(20px, 2vw, 28px); background: linear-gradient(180deg, var(--sme-cream), #fff); }
+.smex .sme-faq-list { max-width: 940px; gap: 10px; }
+.smex .sme-faq-item { border-color: var(--sme-border); border-radius: 13px; background: rgba(255, 255, 255, 0.92); }
+.smex .sme-faq-item[open] { border-color: rgba(179, 138, 46, 0.45); box-shadow: 0 18px 42px -34px rgba(7, 29, 52, 0.55); }
+.smex .sme-faq-item summary { padding: 22px 25px; }
+.smex .sme-faq-item summary:hover { color: var(--aaa-gold-700); }
+.smex .sme-faq-plus::before,
+.smex .sme-faq-plus::after { background: var(--aaa-gold); }
+.smex .sme-faq-item[open] .sme-faq-a { animation: smex-answer 0.35s var(--ease-out) both; }
+@keyframes smex-answer { from { opacity: 0; transform: translateY(-7px); } to { opacity: 1; transform: none; } }
+
+/* ------------- Section 10 — closing CTA, form & contact ----------------- */
+.smex .sme-contact { background: linear-gradient(120deg, #061a2c, #0a3158); }
+.smex .sme-contact::before { opacity: 0.7; background-image: radial-gradient(circle, rgba(255,255,255,.07) 1px, transparent 1.2px), linear-gradient(100deg, transparent 65%, rgba(193, 18, 47, 0.18)); }
+.smex .sme-contact-corner { width: 50px; height: 50px; border-color: var(--aaa-gold-100); }
+.smex .sme-contact .eyebrow { color: var(--aaa-gold-100); }
+.smex .sme-contact .eyebrow::before { background: var(--aaa-gold); }
+
+.smex-close-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px clamp(30px, 4vw, 52px);
+  padding-bottom: clamp(38px, 5vw, 54px);
+  margin-bottom: clamp(38px, 5vw, 54px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+/* no form/contact grid follows it any more — drop the divider when it closes the section */
+.smex-close-strip:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+.smex-close-photo {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1 / 3;
+  width: clamp(240px, 24vw, 330px);
+  aspect-ratio: 4 / 3;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  box-shadow: 0 34px 70px -34px rgba(0, 0, 0, 0.75);
+}
+.smex-close-photo img { object-fit: cover; }
+.smex-close-strip h2 { margin: 14px 0 0; color: #fff; }
+.smex-close-strip p { max-width: 52ch; margin: 14px 0 0; font-size: 15.5px; line-height: 1.7; color: rgba(255, 255, 255, 0.74); }
+.smex-close-actions { display: flex; flex-wrap: wrap; align-self: start; gap: 12px; }
+
+.smex-close-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 24px; align-items: stretch; }
+.smex-form-card {
+  padding: clamp(26px, 3.5vw, 38px);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.75);
+  scroll-margin-top: 100px;
+}
+.smex-form-head { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 22px; }
+.smex-form-seal {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(179, 138, 46, 0.32);
+  border-radius: 13px;
+  color: var(--aaa-gold-700);
+  background: linear-gradient(150deg, #faf3e0, #f4e7c6);
+}
+.smex-form-seal svg { width: 26px; height: 26px; }
+.smex-form-head strong { display: block; font-size: 17px; line-height: 1.3; letter-spacing: -0.01em; color: var(--sme-navy); }
+.smex-form-head p { margin: 7px 0 0; font-size: 13.5px; line-height: 1.65; color: var(--ink-600); }
+
+/* ---- application form ---- */
+.smex-appform-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.smex-appform-row { margin-bottom: 12px; }
+.smex-appform-row label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--sme-navy);
+}
+.smex-appform input,
+.smex-appform select,
+.smex-appform textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--ink-200);
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink-900);
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.smex-appform textarea { resize: vertical; min-height: 84px; line-height: 1.6; }
+.smex-appform input::placeholder,
+.smex-appform textarea::placeholder { color: var(--ink-400); }
+.smex-appform input:focus,
+.smex-appform select:focus,
+.smex-appform textarea:focus {
+  outline: none;
+  border-color: var(--sme-blue);
+  box-shadow: 0 0 0 3px rgba(23, 61, 115, 0.14);
+}
+.smex-appform > .smex-btn { width: 100%; margin-top: 4px; }
+.smex-appform > .smex-btn:disabled { opacity: 0.6; transform: none; cursor: default; }
+.smex-appform-err {
+  margin: 0 0 12px;
+  padding: 10px 13px;
+  border: 1px solid #f2c6c2;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #b3261e;
+  background: #fdf0ef;
+}
+.smex-appform-note { margin: 12px 0 0; font-size: 11.5px; line-height: 1.6; color: var(--ink-500); }
+
+.smex-appform-done { padding: 22px 4px; text-align: center; }
+.smex-appform-done .tick {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(145deg, #c39a3d, var(--aaa-gold) 55%, var(--aaa-gold-700));
+}
+.smex-appform-done .tick svg { width: 27px; height: 27px; }
+.smex-appform-done strong { display: block; margin-bottom: 8px; font-size: 19px; color: var(--sme-blue); }
+.smex-appform-done p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--ink-600); }
+
+.smex-close-contact {
+  display: grid;
+  gap: 15px;
+  align-content: center;
+  padding: clamp(24px, 3vw, 32px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(10px);
+}
+.smex .sme-contact-item .ico { color: var(--aaa-gold-100); border-color: rgba(244, 231, 198, 0.25); }
+
+/* ------------------------------ Responsive ------------------------------ */
+@media (max-width: 1100px) {
+  .smex-hero-grid { grid-template-columns: minmax(0, 0.95fr) minmax(400px, 0.8fr); gap: 46px; }
+  .smex-hero h1 { font-size: clamp(36px, 4.6vw, 52px); }
+  .smex-strug-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .smex-about-split { grid-template-columns: 1fr; gap: 46px; align-items: start; }
+  .smex-sector-cols { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .smex-sector-col { border-bottom: 1px solid var(--sme-border); }
+  .smex-sector-col:nth-child(6n) { border-right: 0; }
+  .smex-fw-head,
+  .smex-proc-head { grid-template-columns: 1fr; gap: 36px; }
+  .smex-fw-photo,
+  .smex-proc-photo { max-width: 620px; }
+}
+
+@media (max-width: 980px) {
+  .smex-close-grid { grid-template-columns: 1fr; }
+  .smex-stories-head { grid-template-columns: 1fr; align-items: start; }
+  .smex-stories-featured { max-width: 480px; }
+  .smex-proc-grid { grid-template-columns: 1fr; }
+  .smex-proc-steps { grid-auto-flow: column; grid-auto-columns: 208px; grid-template-columns: none; overflow-x: auto; padding-bottom: 14px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .smex-proc-step { scroll-snap-align: start; }
+  .smex-proc-cert { max-width: 360px; margin: 6px auto 0; }
+  .smex-proc-cert::before,
+  .smex-proc-cert::after { display: none; }
+}
+
+@media (max-width: 920px) {
+  .smex-hero { min-height: 0; }
+  .smex-hero-grid { grid-template-columns: 1fr; gap: 58px; padding-top: 184px; padding-bottom: 112px; }
+  .smex-hero-copy { max-width: 720px; }
+  .smex-hero h1 { max-width: 17ch; font-size: clamp(36px, 6.6vw, 54px); }
+  .smex-hero-visual { max-width: 680px; justify-self: center; }
+  .smex-hero-photo { aspect-ratio: 1.22 / 1; }
+}
+
+@media (max-width: 860px) {
+  /* stacked: copy, preview, button, then the check */
+  .smex-strip-card { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 26px; }
+  .smex-strip-copy .eyebrow { justify-content: center; }
+  .smex-strip-copy { grid-column: 1; grid-row: auto; }
+  .smex-strip-card > .smex-btn { grid-column: 1; grid-row: auto; justify-self: center; width: min(100%, 340px); }
+  .smex-strip-preview { grid-column: 1; grid-row: auto; width: min(100%, 340px); }
+  .smex-rc-panel { grid-column: 1; grid-row: auto; justify-self: stretch; }
+}
+
+@media (max-width: 720px) {
+  .smex .container { padding-right: 20px; padding-left: 20px; }
+  .smex .sme-head { margin-bottom: 36px; text-align: left; }
+  .smex .sme-head .eyebrow { justify-content: flex-start; }
+  .smex .sme-head h2,
+  .smex .smex-close-strip h2 { font-size: clamp(30px, 9.2vw, 42px); }
+  .smex .smex-journey,
+  .smex .sme-cats,
+  .smex .sme-process,
+  .smex .smex-legacy,
+  .smex .smex-struggle,
+  .smex .smerc,
+  .smex .sme-faq,
+  .smex .sme-contact { padding: 48px 0; }
+  .smex-hero-grid { padding-top: 164px; padding-bottom: 112px; }
+  .smex-hero h1 { font-size: clamp(31px, 9.4vw, 44px); }
+  .smex-hero-copy > p { font-size: 14.5px; line-height: 1.72; }
+  .smex-hero-actions { flex-direction: column; }
+  .smex-hero-actions .smex-btn { width: 100%; }
+  .smex-hero-photo { width: 100%; aspect-ratio: 0.92 / 1; border-radius: 22px 22px 54px 22px; }
+  .smex-hero-photo figcaption { right: 20px; bottom: 22px; }
+  .smex-hero-rail .container { justify-content: flex-start; overflow: hidden; white-space: nowrap; }
+  .smex-hero-rail span:nth-of-type(n + 3),
+  .smex-hero-rail i:nth-of-type(n + 3) { display: none; }
+  .smex .sme-cats-grid,
+  .smex-about-cards,
+  .smex-strug-grid { grid-template-columns: 1fr; }
+  /* Hover isn't available on touch — show card descriptions statically */
+  .smex .smex-mvv-in { min-height: 0; }
+  .smex-strug-card { min-height: 0; }
+  .smex-hover-panel {
+    position: static;
+    margin-top: 16px;
+    padding: 16px 0 0;
+    overflow: visible;
+    border-top: 1px dashed var(--ink-100);
+    border-radius: 0;
+    color: var(--ink-600);
+    background: none;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .smex-hover-panel::before { display: none; }
+  .smex-hover-panel h4 { display: none; }
+  .smex-hover-panel p { color: #64758a; }
+  /* pillar cards are navy — the static description needs light text */
+  .smex-mvv-card .smex-hover-panel { border-top-color: rgba(255, 255, 255, 0.22); }
+  .smex-mvv-card .smex-hover-panel p { color: rgba(255, 255, 255, 0.82); }
+  .smex-story-card { width: 296px; height: 462px; }
+  .smex-story-card.featured { width: 330px; }
+  .smex-sector-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .smex-sector-col:nth-child(6n) { border-right: 1px solid var(--sme-border); }
+  .smex-sector-col:nth-child(3n) { border-right: 0; }
+  .smex-sector-name { font-size: 11px; }
+  .smex-sector-band { flex-direction: column; text-align: center; gap: 12px; }
+  .smex-about-ctas { flex-direction: column; align-items: stretch; text-align: center; }
+  .smex-proc-ctas { flex-direction: column; align-items: stretch; }
+  .smex-appform-two { grid-template-columns: 1fr; gap: 0; }
+  .smex-close-strip { grid-template-columns: 1fr; padding-bottom: 40px; margin-bottom: 40px; }
+  .smex-close-photo { grid-column: auto; grid-row: auto; width: 100%; aspect-ratio: 16 / 10; }
+  .smex-close-actions { width: 100%; flex-direction: column; }
+}
+
+@media (max-width: 430px) {
+  .smex-crumbs a:nth-of-type(2),
+  .smex-crumbs a:nth-of-type(2) + span { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smex-mvv-card::before { animation: none; }
+  .smex-hero-photo img { transition: none; }
+  .smex-gauge-val { transition: none; stroke-dashoffset: 22; }
+  .smex-proc-badge { opacity: 1; transform: none; transition: none; }
+  .smex-carousel { overflow-x: auto; }
+  .smex-carousel-track { animation: none; }
+  .smex .sme-faq-item[open] .sme-faq-a { animation: none; }
+}
+
+/* ------------------------------------------------------------------------
+   Split hero variant (July 2026 mockup) — navy copy panel on the left,
+   light/white photo panel on the right, blended with a soft blurred seam.
+   Used by /programs/smes-accreditation-program (with .lpx-hero--nav for header
+   clearance) and /lp/sme-funding-readiness (bare, no header).
+   ------------------------------------------------------------------------ */
+
+.smex-hero.lpx-hero {
+  min-height: 0;
+  background:
+    linear-gradient(100deg, #04162f 0%, #0a2547 22%, #17395f 38%, #2b4d78 50%, #335583 62%, #335583 100%);
+}
+
+.lpx-hero-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  min-height: clamp(600px, 48vw, 740px);
+  padding-top: 90px;
+  padding-bottom: 144px; /* keeps copy clear of the bottom rail */
+}
+.lpx-hero-inner .smex-hero-copy { width: 100%; max-width: min(660px, 48vw); }
+.lpx-hero--nav .lpx-hero-inner { padding-top: clamp(170px, 13vw, 200px); }
+
+/* The supplied reference uses a photographic right side that dissolves into
+   the navy copy panel rather than a hard split between two columns. */
+.lpx-hero-media {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 54px; /* meets the rail */
+  width: 56%;
+  z-index: 1;
+  background: radial-gradient(circle at 62% 28%, #ffffff 0%, #f2f5f9 52%, #d9e2ec 100%);
+  /* The fade holds at 0 until past the photo's left edge (~24% of this
+     panel) so the man's cut-off arm dissolves into the navy instead of
+     showing a hard crop line, then ramps up quickly before his face. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 26%, rgba(0, 0, 0, 0.35) 34%, rgba(0, 0, 0, 0.8) 42%, #000 52%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 26%, rgba(0, 0, 0, 0.35) 34%, rgba(0, 0, 0, 0.8) 42%, #000 52%);
+}
+.lpx-hero-media img {
+  width: 76% !important;
+  right: 0 !important;
+  left: auto !important;
+  object-fit: contain;
+  object-position: right bottom;
+  transform: translateY(28px);
+}
+
+/* A soft navy wash makes the transparent portrait feel integrated with the
+   reference's blue photographic treatment. */
+.lpx-hero-media::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 46%;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(4, 22, 47, 0.88), rgba(6, 27, 53, 0.5) 60%, transparent);
+}
+
+.lpx-hero-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(4, 22, 47, 0.12), rgba(4, 22, 47, 0.2)),
+    linear-gradient(90deg, rgba(4, 22, 47, 0.32), transparent 34%);
+}
+
+/* With the fixed transparent header, keep nav links legible over the light
+   panel by fading navy down from the top edge (mirrors the mockup's bar). */
+.lpx-hero--nav .lpx-hero-media::after {
+  background:
+    linear-gradient(180deg, rgba(6, 26, 44, 0.82) 0%, rgba(6, 26, 44, 0.3) 96px, transparent 170px),
+    linear-gradient(90deg, #0a2748 0%, rgba(13, 44, 81, 0.55) 12%, rgba(13, 44, 81, 0.25) 24%, transparent 40%);
+}
+
+.lpx-hero-caption {
+  position: absolute;
+  right: 36px;
+  bottom: 26px;
+  z-index: 4;
+  text-align: right;
+  text-shadow: 0 2px 16px rgba(3, 17, 31, 0.6);
+}
+.lpx-hero-caption span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+}
+.lpx-hero-caption strong { display: block; margin-top: 5px; font-size: 17px; color: #fff; }
+
+@media (max-width: 980px) {
+  .lpx-hero-inner {
+    min-height: 0;
+    padding-top: 84px;
+    padding-bottom: 48px;
+  }
+  .lpx-hero--nav .lpx-hero-inner { padding-top: 150px; }
+  .lpx-hero-inner .smex-hero-copy { max-width: 720px; }
+  .lpx-hero-media {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 1.35 / 1;
+    margin-bottom: 54px; /* clears the absolute rail */
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 38%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 38%);
+  }
+  .lpx-hero-media img { width: 100% !important; left: 0 !important; transform: none; }
+  .lpx-hero-media::before {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    height: 34%;
+    background: linear-gradient(180deg, rgba(4, 22, 47, 0.8), transparent);
+  }
+  .lpx-hero-media::after,
+  .lpx-hero--nav .lpx-hero-media::after {
+    background: linear-gradient(180deg, #0a2748 0%, rgba(13, 44, 81, 0.4) 14%, transparent 40%);
+  }
+}
+
+/* -------------------- 3. Landing-page additions ------------------------ */
+
+/* next/font exposes Poppins as --font-poppins; the website's tokens named
+   the family directly. */
+.smex {
+  --font-mono: var(--font-poppins), system-ui, -apple-system, sans-serif;
+  position: relative;
+  font-family: var(--font-poppins), system-ui, -apple-system, sans-serif;
+}
+
+/* The shared icons carry no size of their own (the website's Icon did). */
+.smex .smex-btn > svg { flex: none; width: 16px; height: 16px; }
+.smex .btn .arrow { flex: none; width: 14px; height: 14px; }
+
+/* Masthead — over the navy hero; the hero's own top wash
+   (.lpx-hero--nav .lpx-hero-media::after) keeps it legible over the photo. */
+.sme-masthead {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 30;
+}
+.sme-masthead-inner {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  height: var(--header-h);
+}
+.sme-brand { display: flex; flex: none; align-items: center; }
+.sme-brand img { width: auto; height: 50px; }
+.sme-nav { display: flex; align-items: center; gap: 26px; margin-left: auto; }
+.sme-nav a {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  transition: color 0.2s ease;
+}
+.sme-nav a:hover { color: var(--aaa-gold-100); }
+.sme-masthead-cta { flex: none; }
+.sme-masthead-cta.smex-btn.sm { min-height: 42px; }
+
+@media (max-width: 1100px) {
+  .sme-nav { display: none; }
+  .sme-masthead-cta { margin-left: auto; }
+}
+@media (max-width: 560px) {
+  .smex { --header-h: 64px; }
+  .sme-brand img { height: 40px; }
+  .sme-masthead-cta.smex-btn.sm { min-height: 38px; padding: 9px 13px; font-size: 12px; }
+}
+
+/* --------------------------------- Hero ---------------------------------
+   The /tepa layout: copy on the left, the application form on the right,
+   over the team photo as a background. The photo is a cut-out on a
+   transparent ground, so it sits on the website hero's navy, and a wash keeps
+   the copy and the form readable over it. */
+.sme-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 10% 34%, rgba(43, 93, 168, 0.38), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(193, 18, 47, 0.16), transparent 28%),
+    linear-gradient(118deg, #061a2c 0%, #092a4a 52%, #071d34 100%);
+}
+.sme-hero-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.sme-hero-bg-img { object-fit: contain; object-position: 60% 100%; opacity: 0.42; }
+.sme-hero-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(6, 26, 44, 0.9) 0%, rgba(6, 26, 44, 0.55) 38%, rgba(6, 26, 44, 0.18) 60%, rgba(6, 26, 44, 0.5) 100%),
+    linear-gradient(180deg, rgba(6, 26, 44, 0.55) 0%, transparent 24%, transparent 72%, rgba(6, 26, 44, 0.75) 100%);
+}
+/* The website hero's faint grid, over the photo and under the copy. */
+.sme-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.22;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 58px 58px;
+  -webkit-mask-image: radial-gradient(ellipse 62% 80% at 70% 42%, #000 10%, transparent 78%);
+  mask-image: radial-gradient(ellipse 62% 80% at 70% 42%, #000 10%, transparent 78%);
+}
+.sme-hero-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 460px);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "head form"
+    "body form";
+  /* Top-aligned, so the copy stays put when the form grows into step 2. */
+  align-items: start;
+  column-gap: clamp(32px, 5vw, 80px);
+  row-gap: 0;
+  padding-top: calc(var(--header-h) + clamp(28px, 4vw, 56px));
+  padding-bottom: clamp(48px, 6vw, 84px);
+}
+.sme-hero-head { grid-area: head; max-width: 620px; padding-top: clamp(16px, 3vw, 44px); }
+.sme-hero-body { grid-area: body; max-width: 620px; }
+.sme-hero-form { grid-area: form; }
+.sme-hero-kicker {
+  margin: 0 0 18px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #e3c27a;
+}
+.smex .sme-hero h1 {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(38px, 4.6vw, 62px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  color: #fff;
+  text-wrap: balance;
+}
+.sme-hero-lead { max-width: 60ch; margin: 22px 0 0; font-size: 15.5px; line-height: 1.75; color: rgba(255, 255, 255, 0.78); }
+.sme-hero-links { display: flex; flex-wrap: wrap; gap: 14px 30px; margin-top: 28px; }
+.sme-hero-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e3c27a;
+  transition: color 0.2s ease;
+}
+.sme-hero-link svg { flex: none; width: 16px; height: 16px; transition: transform 0.2s ease; }
+.sme-hero-link:hover { color: #f4e7c6; }
+.sme-hero-link:hover svg { transform: translateX(3px); }
+.sme-hero-link--quiet { color: rgba(255, 255, 255, 0.86); }
+.sme-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 520px;
+  margin: 34px 0 0;
+  padding-top: 24px;
+  border-top: 1px solid rgba(224, 191, 116, 0.35);
+}
+.sme-hero-stat {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 0 18px;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+.sme-hero-stat:first-child { padding-left: 0; border-left: 0; }
+.sme-hero-stat dd { margin: 0; font-size: clamp(26px, 2.6vw, 34px); font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; color: #fff; }
+.sme-hero-stat dt { font-size: 12.5px; line-height: 1.4; color: rgba(255, 255, 255, 0.7); }
+.sme-hero-form .sap-card { border-color: rgba(255, 255, 255, 0.7); box-shadow: 0 32px 85px rgba(0, 0, 0, 0.35); }
+
+/* The principles rail sits under the hero instead of over its foot, so it
+   needs its own navy rather than the website's see-through one. */
+.smex .sme-rail { position: relative; background: #061a2c; }
+
+/* The hero's form card: a little tighter, so it sits beside the copy. */
+.sap-card--compact { padding: clamp(20px, 2.2vw, 28px); }
+.sap-card--compact .sap-title { margin-bottom: 16px; font-size: clamp(21px, 1.9vw, 25px); }
+.sap-card--compact .sap-form { gap: 12px; }
+.sap-card--compact .sap-two { gap: 10px; }
+
+/* Phones and small tablets: title, then the form, then the intro — so the
+   form is on the first screen instead of after eleven lines of copy. */
+@media (max-width: 980px) {
+  .sme-hero-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-template-areas:
+      "head"
+      "form"
+      "body";
+    row-gap: 24px;
+  }
+  .sme-hero-head,
+  .sme-hero-body { max-width: none; }
+  .sme-hero-head { padding-top: 8px; }
+  .sme-hero-bg-img { object-position: 50% 0; opacity: 0.3; }
+}
+@media (max-width: 560px) {
+  .sme-hero-kicker { margin-bottom: 12px; font-size: 11px; letter-spacing: 0.12em; }
+  .smex .sme-hero h1 { font-size: clamp(34px, 9.6vw, 40px); }
+  .sme-hero-lead { margin-top: 4px; }
+  .sme-hero-stat { padding: 0 10px; }
+  .sme-hero-stat dd { font-size: 24px; }
+}
+
+/* ------------------------------ Phone fixes -----------------------------
+   The website's SME stylesheet clips the principles rail to two items, keeps
+   the sector photos as tall 9:16 strips and turns the process into a sideways
+   scroller on phones. On this page all four principles wrap, the photos go
+   4:3, and the steps read as a vertical timeline. */
+@media (max-width: 720px) {
+  .smex .sme-rail .container {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 18px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    white-space: normal;
+  }
+  .smex .sme-rail span:nth-of-type(n + 3) { display: inline; }
+  .smex .sme-rail i { display: none; }
+  .smex .sme-rail span { font-size: 10.5px; }
+
+  .smex .smex-sector-photo { aspect-ratio: 4 / 3; }
+  /* Eleven sectors in three columns: the last one fills the empty cell. */
+  .smex .smex-sector-col:last-child { grid-column: span 2; }
+  .smex .smex-sector-col:last-child .smex-sector-photo { aspect-ratio: 8 / 3; }
+
+  .smex .smex-proc-steps {
+    position: relative;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding-bottom: 0;
+    overflow: visible;
+  }
+  /* one dashed line down through the numbered badges */
+  .smex .smex-proc-steps::before {
+    content: "";
+    position: absolute;
+    top: 34px;
+    bottom: 34px;
+    left: 12px;
+    width: 2px;
+    background-image: repeating-linear-gradient(180deg, rgba(23, 61, 115, 0.45) 0 7px, transparent 7px 14px);
+  }
+  .smex .smex-proc-step {
+    display: grid;
+    grid-template-columns: 26px 56px minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: center;
+    padding: 12px 0;
+    text-align: left;
+  }
+  .smex .smex-proc-step + .smex-proc-step::before { display: none; }
+  .smex .smex-proc-badge { grid-column: 1; grid-row: 1 / span 2; margin: 0; }
+  .smex .smex-proc-ico { grid-column: 2; grid-row: 1 / span 2; width: 56px; height: 56px; margin: 0; }
+  .smex .smex-proc-ico svg { width: 24px; height: 24px; }
+  .smex .smex-proc-step h3 { grid-column: 3; align-self: end; margin: 0; }
+  .smex .smex-proc-step p { grid-column: 3; align-self: start; max-width: none; margin: 3px 0 0; }
+
+  /* room for the sticky apply bar, so it never covers the last line
+     (qualified to beat the footer's own padding rule further down) */
+  .smex .sme-footer { padding-bottom: 72px; }
+}
+
+/* The readiness check opens inside the strip card. */
+.smex .smex-rc-panel .smerc-card { margin-top: 0; max-width: none; box-shadow: none; }
+
+/* --------------------------- Application form --------------------------- */
+.sap {
+  padding: var(--section-pad) 0;
+  background: linear-gradient(180deg, #fff 0%, var(--sme-cream) 100%);
+  border-top: 1px solid var(--ink-100);
+  scroll-margin-top: 0;
+}
+.sap-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: clamp(32px, 5vw, 72px);
+}
+.sap-copy { position: sticky; top: 32px; padding-top: 8px; }
+.sap-copy h2 { margin: 16px 0 0; color: var(--sme-blue); font-weight: 600; }
+.sap-copy > p { max-width: 52ch; margin: 16px 0 0; font-size: 16px; line-height: 1.72; color: var(--ink-600); }
+.sap-points { display: grid; gap: 12px; margin: 26px 0 0; padding: 0; list-style: none; }
+.sap-points li {
+  position: relative;
+  padding-left: 30px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--ink-800);
+}
+.sap-points li::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 0;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: var(--aaa-gold-100);
+}
+.sap-points li::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 6px;
+  width: 7px;
+  height: 4px;
+  border-bottom: 2px solid var(--aaa-gold-700);
+  border-left: 2px solid var(--aaa-gold-700);
+  transform: rotate(-45deg);
+}
+.sap-alt { margin: 26px 0 0; font-size: 14.5px; color: var(--ink-600); }
+.sap-alt a { font-weight: 600; color: var(--sme-blue); border-bottom: 1px solid rgba(23, 61, 115, 0.3); }
+.sap-alt a:hover { color: var(--aaa-gold-700); border-color: var(--aaa-gold); }
+
+/* The card sets its own text colour: in the hero it sits inside white copy. */
+.sap-card {
+  color: var(--ink-800);
+  padding: clamp(24px, 3vw, 36px);
+  border: 1px solid var(--sme-border);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--sme-shadow);
+  scroll-margin-top: 24px;
+}
+.sap-kicker {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--aaa-gold-700);
+}
+.sap-title {
+  margin: 8px 0 22px;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--sme-blue);
+}
+.sap-title:focus { outline: none; }
+.sap-form { display: grid; gap: 16px; }
+.sap-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.smex .sap-card .form-field { display: flex; flex-direction: column; min-width: 0; }
+.smex .sap-card .bk-field > label,
+.smex .sap-card .bk-group legend {
+  margin: 0 0 6px 2px;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #33445a;
+}
+.smex .sap-card .form-field input,
+.smex .sap-card .form-field select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid #d2d8df;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--ink-900);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.smex .sap-card .form-field select { appearance: auto; }
+.smex .sap-card .form-field input::placeholder { color: var(--ink-400); }
+.smex .sap-card .form-field input:focus,
+.smex .sap-card .form-field select:focus {
+  outline: none;
+  border-color: var(--sme-blue);
+  box-shadow: 0 0 0 3px rgba(23, 61, 115, 0.14);
+}
+.smex .sap-card .form-field [aria-invalid="true"] { border-color: #c2483c; }
+.smex .sap-card .form-error { margin: 6px 0 0 2px; font-size: 12.5px; color: #a43e35; }
+.smex .sap-card .bk-req { margin-left: 3px; font-weight: 700; color: #a43e35; }
+
+.sap-submit { width: 100%; margin-top: 4px; }
+.sap-submit[disabled] { cursor: progress; opacity: 0.75; transform: none; }
+.sap-note { margin: 0; font-size: 12.5px; line-height: 1.6; text-align: center; color: var(--ink-500); }
+.sap-submit-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #f2c6c2;
+  border-radius: 8px;
+  background: #fdf0ef;
+  font-size: 13.5px;
+  color: #b3261e;
+}
+.sap-readiness {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--aaa-blue-100);
+  border-radius: 8px;
+  background: var(--aaa-blue-50);
+  font-size: 13.5px;
+  color: var(--ink-700);
+}
+.sap-readiness strong { color: var(--sme-blue); }
+.sap-honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.sap-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sap-spin 0.8s linear infinite;
+}
+@keyframes sap-spin { to { transform: rotate(360deg); } }
+
+/* Two-step progress */
+.smex .sap-card .bk-progress {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+.smex .sap-card .bk-progress li { height: 4px; border-radius: 4px; background: #e3e7ec; }
+.smex .sap-card .bk-progress li[data-state="done"] { background: var(--sme-blue); }
+.smex .sap-card .bk-progress li[data-state="current"] { background: linear-gradient(90deg, var(--aaa-gold), #ddbd77); }
+
+/* Chip answers — real radios underneath (see ApplyForm.tsx) */
+.smex .sap-card .bk-group { min-width: 0; margin: 0; padding: 0; border: 0; }
+.smex .sap-card .bk-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.smex .sap-card .bk-chips[data-columns] {
+  display: grid;
+  grid-template-columns: repeat(var(--bk-columns, 3), minmax(0, 1fr));
+  align-items: stretch;
+  gap: 6px;
+}
+.smex .sap-card .bk-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #d2d8df;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #33445a;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+.smex .sap-card .bk-chips[data-columns] .bk-chip {
+  justify-content: center;
+  min-height: 46px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  line-height: 1.3;
+  text-align: center;
+  text-wrap: balance;
+}
+.smex .sap-card .bk-chip:hover { border-color: var(--aaa-gold); }
+.smex .sap-card .bk-chip input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.smex .sap-card .bk-chip:has(input:focus-visible) { outline: 3px solid var(--aaa-gold); outline-offset: 2px; }
+.smex .sap-card .bk-chip[data-checked="true"] { color: #fff; border-color: var(--sme-navy); background: var(--sme-navy); }
+.smex .sap-card .bk-group[aria-invalid="true"] .bk-chip { border-color: #d9a39d; }
+
+.smex .sap-card .bk-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.smex .sap-card .bk-actions .sap-submit { flex: 1 1 auto; width: auto; margin-top: 0; }
+.smex .sap-card .bk-back {
+  min-height: 51px;
+  padding: 0 18px;
+  border: 1px solid #d2d8df;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #33445a;
+}
+.smex .sap-card .bk-back:hover { border-color: var(--sme-blue); }
+
+/* Confirmation */
+.sap-tick {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #c39a3d, var(--aaa-gold) 45%, var(--aaa-gold-700));
+}
+.sap-tick svg { width: 26px; height: 26px; }
+.smex .sap-card .bk-confirm {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(179, 138, 46, 0.4);
+  border-radius: 10px;
+  background: rgba(179, 138, 46, 0.09);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #22415f;
+}
+.smex .sap-card .bk-confirm strong { font-weight: 700; color: var(--sme-blue); overflow-wrap: anywhere; }
+.smex .sap-card .bk-checklist { display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+.smex .sap-card .bk-checklist li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #445366;
+}
+.smex .sap-card .bk-checklist strong { color: var(--sme-blue); }
+.smex .sap-card .bk-check { width: 20px; height: 20px; margin-top: 2px; color: var(--aaa-gold-700); }
+
+/* Phone field (shared component: components/PhoneField.tsx) */
+.smex .sap-card .bk-phone-row {
+  display: flex;
+  min-height: 46px;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid #d2d8df;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.smex .sap-card .bk-phone-row:focus-within { border-color: var(--sme-blue); box-shadow: 0 0 0 3px rgba(23, 61, 115, 0.14); }
+.smex .sap-card .bk-phone-row[data-invalid="true"] { border-color: #c2483c; }
+.smex .sap-card .bk-phone-code {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 0;
+  border-right: 1px solid #d2d8df;
+  background: rgba(9, 35, 76, 0.035);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--ink-900);
+  cursor: pointer;
+}
+.smex .sap-card .bk-phone-code:hover { background: rgba(9, 35, 76, 0.07); }
+.smex .sap-card .bk-phone-flag { font-size: 1.05rem; line-height: 1; }
+.smex .sap-card .bk-phone-dial { font-weight: 600; font-variant-numeric: tabular-nums; }
+.smex .sap-card .bk-phone-caret {
+  width: 0;
+  height: 0;
+  border-top: 4px solid #6b7a8d;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+.smex .sap-card .bk-phone-row > input {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.smex .sap-card .bk-phone-row > input:focus { border: 0; box-shadow: none; }
+.smex .sap-card .bk-phone-menu {
+  margin-top: 6px;
+  overflow: hidden;
+  border: 1px solid #d2d8df;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(17, 34, 56, 0.1);
+}
+.smex .sap-card .bk-phone-search {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid #e6e9ed;
+  border-radius: 0;
+  outline: none;
+  background: #fff;
+  font: inherit;
+  font-size: 13.5px;
+}
+.smex .sap-card .bk-phone-search:focus { border-bottom-color: var(--aaa-gold); box-shadow: none; }
+.smex .sap-card .bk-phone-list {
+  max-height: 232px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  overscroll-behavior: contain;
+}
+.smex .sap-card .bk-phone-list button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.smex .sap-card .bk-phone-list button[data-cursor="true"] { background: rgba(9, 35, 76, 0.06); }
+.smex .sap-card .bk-phone-list button[aria-selected="true"] { font-weight: 600; }
+.smex .sap-card .bk-phone-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--ink-900);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.smex .sap-card .bk-phone-plus { flex: 0 0 auto; color: #6b7a8d; font-variant-numeric: tabular-nums; }
+.smex .sap-card .bk-phone-empty { margin: 0; padding: 14px 12px; font-size: 13.5px; text-align: center; color: #6b7a8d; }
+
+@media (max-width: 980px) {
+  .sap-grid { grid-template-columns: 1fr; }
+  .sap-copy { position: static; }
+}
+@media (max-width: 560px) {
+  .sap-two { grid-template-columns: 1fr; }
+  .smex .sap-card .bk-chips[data-columns] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* -------------------------------- Footer -------------------------------- */
+.sme-footer { padding: clamp(48px, 6vw, 72px) 0 0; color: rgba(255, 255, 255, 0.72); background: var(--aaa-blue-950); }
+.sme-footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1.2fr;
+  gap: clamp(28px, 4vw, 56px);
+}
+.sme-footer-brand img { width: auto; height: 56px; }
+.sme-footer-brand p { max-width: 42ch; margin: 18px 0 0; font-size: 14px; line-height: 1.7; }
+.sme-footer-socials { display: flex; gap: 10px; margin-top: 20px; }
+.sme-footer-socials a {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: #fff;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.sme-footer-socials a:hover { border-color: var(--aaa-gold); color: var(--aaa-gold-100); }
+.sme-footer-socials svg { width: 16px; height: 16px; }
+.sme-footer h2 {
+  margin: 0 0 16px;
+  font-size: 12px !important;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.sme-footer-links { display: grid; gap: 10px; }
+.sme-footer-links a,
+.sme-footer-contact a { font-size: 14px; transition: color 0.2s ease; }
+.sme-footer-links a:hover,
+.sme-footer-contact a:hover { color: var(--aaa-gold-100); }
+.sme-footer-contact { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 1.6; }
+.sme-footer-contact li { display: grid; grid-template-columns: 18px 1fr; gap: 12px; }
+.sme-footer-contact svg { width: 18px; height: 18px; margin-top: 3px; color: var(--aaa-gold); }
+.sme-footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: clamp(36px, 5vw, 56px);
+  padding-top: 22px;
+  padding-bottom: 26px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+}
+.sme-footer-bottom p { margin: 0; }
+.sme-footer-bottom a:hover { color: var(--aaa-gold-100); }
+@media (max-width: 860px) {
+  .sme-footer-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------- Mobile call bar --------------------------- */
+.sme-mobile-cta { display: none; }
+@media (max-width: 720px) {
+  .sme-mobile-cta {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: block;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(6, 26, 44, 0.94);
+    backdrop-filter: blur(10px);
+    transform: translateY(110%);
+    transition: transform 0.3s var(--ease-out);
+  }
+  .sme-mobile-cta[data-shown="true"] { transform: none; }
+  .sme-mobile-cta .smex-btn { width: 100%; }
+}

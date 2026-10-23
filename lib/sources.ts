@@ -28,6 +28,12 @@ export const SOURCES: Record<string, LandingPageSource> = {
     name: "Clinic Accreditation Readiness Assessment",
     path: "/clinic",
   },
+  sme: {
+    key: "sme",
+    label: "SMEs",
+    name: "SMEs Accreditation Program",
+    path: "/sme",
+  },
 };
 
 /* The landing page that existed before there was a registry. Its Google Ads

@@ -74,6 +74,7 @@ const LANDING_PAGES = [
   { key: "tepa", label: "TEPA", envSuffix: "" },
   { key: "healthcare", label: "Healthcare", envSuffix: "_HEALTHCARE" },
   { key: "clinic", label: "Clinic", envSuffix: "_CLINIC" },
+  { key: "sme", label: "SMEs", envSuffix: "_SME" },
 ];
 
 const actionForPage = (stage, page) =>
