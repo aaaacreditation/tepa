@@ -31,7 +31,7 @@
   --container: 1240px;
   --ease-out: cubic-bezier(.22, 1, .36, 1);
   --font-mono: "Poppins", "Poppins Fallback", system-ui, -apple-system, sans-serif;
-  --header-h: 76px;
+  --header-h: 104px;
   --ink-100: #f1f5f9;
   --ink-200: #e2e8f0;
   --ink-300: #cbd5e1;
@@ -1587,33 +1587,19 @@
   left: 0;
   z-index: 30;
 }
+/* The logo alone, centred and larger (client, Oct 23 2026). */
 .sme-masthead-inner {
   display: flex;
   align-items: center;
-  gap: 28px;
+  justify-content: center;
   height: var(--header-h);
 }
 .sme-brand { display: flex; flex: none; align-items: center; }
-.sme-brand img { width: auto; height: 50px; }
-.sme-nav { display: flex; align-items: center; gap: 26px; margin-left: auto; }
-.sme-nav a {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.82);
-  transition: color 0.2s ease;
-}
-.sme-nav a:hover { color: var(--aaa-gold-100); }
-.sme-masthead-cta { flex: none; }
-.sme-masthead-cta.smex-btn.sm { min-height: 42px; }
+.sme-brand img { width: auto; height: 78px; }
 
-@media (max-width: 1100px) {
-  .sme-nav { display: none; }
-  .sme-masthead-cta { margin-left: auto; }
-}
 @media (max-width: 560px) {
-  .smex { --header-h: 64px; }
-  .sme-brand img { height: 40px; }
-  .sme-masthead-cta.smex-btn.sm { min-height: 38px; padding: 9px 13px; font-size: 12px; }
+  .smex { --header-h: 84px; }
+  .sme-brand img { height: 60px; }
 }
 
 /* --------------------------------- Hero ---------------------------------
@@ -1931,7 +1917,23 @@
   color: var(--ink-900);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.smex .sap-card .form-field select { appearance: auto; }
+/* The country select drawn like the text inputs (client: the browser's own
+   dropdown looked out of place): no native chrome, a matching chevron, and the
+   prompt in placeholder grey until a country is picked — the select is
+   required, so it is :invalid while empty. */
+.smex .sap-card .form-field select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23173d73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center / 16px 16px;
+}
+.smex .sap-card .form-field select:invalid { color: var(--ink-400); }
+.smex .sap-card .form-field select option { color: var(--ink-900); }
+.smex .sap-card .form-field select option[value=""] { color: var(--ink-400); }
 .smex .sap-card .form-field input::placeholder { color: var(--ink-400); }
 .smex .sap-card .form-field input:focus,
 .smex .sap-card .form-field select:focus {
