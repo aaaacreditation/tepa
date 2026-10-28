@@ -51,6 +51,8 @@ export type LeadRow = {
   odooLeadId: number;
   odooSync: "" | "pending" | "sending" | "sent" | "failed" | "skipped";
   odooError: string;
+  /* The record's stage in Odoo as the stage pull last saw it; '' until then. */
+  odooStage: string;
 };
 
 export type LeadEventRow = {
@@ -113,6 +115,7 @@ const LEAD_COLUMNS = `
   utm_term     AS "utmTerm",
   utm_content  AS "utmContent",
   odoo_lead_id AS "odooLeadId",
+  odoo_stage   AS "odooStage",
   COALESCE((SELECT s.status FROM odoo_sync s WHERE s.lead_id = leads.id), '')     AS "odooSync",
   COALESCE((SELECT s.last_error FROM odoo_sync s WHERE s.lead_id = leads.id), '') AS "odooError"
 `;

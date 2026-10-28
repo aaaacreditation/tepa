@@ -1,11 +1,12 @@
 import { drainConversions } from "@/lib/conversions";
 import { rejectUnlessCron } from "@/lib/cron-auth";
-import { drainOdoo } from "@/lib/odoo";
+import { drainOdoo, pullOdooStages } from "@/lib/odoo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/* Drains the conversion outbox, and the Odoo CRM outbox after it.
+/* Follows stage changes made in Odoo, then drains the conversion outbox, and
+   the Odoo CRM outbox after it.
 
    The after() hooks on the enquiry route and the status action already send on
    the happy path. This exists for the unhappy one: Google returning 5xx, an
@@ -32,6 +33,16 @@ export async function POST(request: Request) {
     ? Math.min(200, Math.max(1, Math.floor(requested)))
     : 50;
 
+  /* Stage changes made in Odoo first, so the conversions they queue leave in
+     this same run. A failure here must not stop the drain. */
+  let stages: Awaited<ReturnType<typeof pullOdooStages>> | { error: string };
+  try {
+    stages = await pullOdooStages();
+  } catch (error) {
+    console.error("[conversions/process] odoo stage pull failed", error);
+    stages = { error: error instanceof Error ? error.message : String(error) };
+  }
+
   let conversions: Awaited<ReturnType<typeof drainConversions>>;
   try {
     conversions = await drainConversions(limit);
@@ -51,5 +62,5 @@ export async function POST(request: Request) {
     odoo = { error: error instanceof Error ? error.message : String(error) };
   }
 
-  return Response.json({ ok: true, ...conversions, odoo });
+  return Response.json({ ok: true, ...conversions, odoo, stages });
 }

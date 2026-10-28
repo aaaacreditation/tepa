@@ -191,6 +191,11 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS oai_obref  TEXT NOT NULL DEFAULT '';
    0 until the sync has run, like every other column here avoids NULL. */
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS odoo_lead_id INTEGER NOT NULL DEFAULT 0;
 
+/* The last Odoo stage the stage pull saw for that record ("Prospect", or
+   "Lost" for one marked lost), so the dashboard moves only when the stage in
+   Odoo actually changes. '' until the first pull baselines it. */
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS odoo_stage TEXT NOT NULL DEFAULT '';
+
 /* Outbox for the Odoo CRM sync; see lib/odoo.ts. One row per lead, so a retry
    or a second backfill run can never queue the same lead twice.
 

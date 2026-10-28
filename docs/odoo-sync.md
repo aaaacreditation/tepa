@@ -44,6 +44,7 @@ ODOO_LOGIN=...              # the key's owner; unused by JSON-2, kept for XML-RP
 ODOO_NURTURE=off            # off | all | email
 ODOO_NURTURE_SOURCES=       # e.g. tepa: only these pages are nurtured; empty = all
 ODOO_SYNC_PAUSED=           # 1 = keep queueing, send nothing (kill switch)
+ODOO_PULL=                  # on = dashboard statuses follow Odoo stage changes
 ```
 
 Changing any of these needs `systemctl restart tepa`, not a rebuild.
@@ -78,3 +79,40 @@ curl -H "Authorization: Bearer $CONVERSIONS_CRON_SECRET" \
 `node scripts/odoo-backfill.mjs` does a dry run and prints counts.
 `--apply` queues the old leads, and the drain sends them. See the script
 header for the matching and nurture rules.
+
+## Stages back from Odoo
+
+Sales works the pipeline in Odoo, and the dashboard follows it. With
+`ODOO_PULL=on`, every run of the ten-minute timer does three things:
+- reads the stage of every Odoo record a lead is linked to;
+- moves the dashboard status when that stage **changed** since the last run;
+- queues the Google Ads and Meta conversions the new status earns, just as a
+  click in the dashboard would. They leave in the same run.
+
+| Odoo stage | Dashboard status |
+|---|---|
+| New | Lead |
+| Prospect | First contact |
+| Negotiation | MQL |
+| Proposal, Invoice Sent | SQL |
+| Won | Customer |
+| No Communication, Closed, marked Lost | Not qualified (the stage or lost reason is the reason) |
+| Postponed for Future | unchanged |
+
+`STAGE_TO_STATUS` in `lib/odoo.ts` holds this mapping. A stage that is not in
+the table changes nothing.
+
+- **Only real moves count.** The first time the pull sees a record, it notes
+  the record's stage (`leads.odoo_stage`) and changes nothing. Statuses set in
+  the dashboard stay until the record next moves in Odoo.
+- **Resubmissions.** When a person enquired twice, only their earliest
+  non-duplicate dashboard row follows the record, so a deal reports one SQL,
+  not two.
+- **The history panel** records these moves as "changed by Odoo".
+
+`GET /api/odoo/stages` is read-only. It shows how the two sides compare today,
+and what aligning every status with Odoo once would change, including how
+many MQL, SQL and Customer promotions it would report.
+
+`/sme` has no Google Ads conversion actions yet (`GOOGLE_ADS_ACTION_*_SME`), so
+its stage changes reach Meta but not Google until those exist.

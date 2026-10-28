@@ -1,7 +1,10 @@
 import "server-only";
 import { after } from "next/server";
 import { channelOf, type Channel } from "./channels";
+import { enqueueStageAndBackfill } from "./conversions";
 import { q } from "./db";
+import { DUPLICATED, NOT_QUALIFIED, PIPELINE_STAGES, type LeadStatus } from "./lead-status";
+import { updateLeadStatus } from "./leads";
 import { SOURCES } from "./sources";
 
 /* Every lead is copied into AAA's Odoo CRM (aaa-acc1.odoo.com) as an
@@ -78,18 +81,22 @@ export function odooRecordUrl(odooLeadId: number): string {
    ========================================================================== */
 
 /* Tag names as they exist in Odoo. Looked up by name rather than id so a tag
-   recreated by hand keeps working; the nurture names are what the two
-   Marketing Automation campaigns filter on. */
+   recreated by hand keeps working; the nurture names are what each product's
+   Marketing Automation campaign filters on. */
 const PRODUCT_TAG: Record<string, string> = {
   tepa: "TEPA",
   healthcare: "Healthcare Accreditation",
   clinic: "Healthcare Accreditation",
+  sme: "SME Accreditation",
 };
 
+/* "Nurture: SME" does not exist in Odoo until the SME campaign is built; until
+   then ODOO_NURTURE_SOURCES leaves sme out and nothing asks for it. */
 const NURTURE_TAG: Record<string, string> = {
   tepa: "Nurture: TEPA",
   healthcare: "Nurture: Healthcare",
   clinic: "Nurture: Healthcare",
+  sme: "Nurture: SME",
 };
 
 /* The medium sales already picks by hand for each ad platform. Google's is
@@ -702,7 +709,16 @@ export async function drainOdoo(limit = 25): Promise<OdooDrainResult> {
          WHERE id = $1`,
         [job.id, odooLeadId, outcome, warnings],
       );
-      await q("UPDATE leads SET odoo_lead_id = $2 WHERE id = $1", [job.leadId, odooLeadId]);
+      /* A record this sync created starts in New, so its first move in Odoo is
+         seen as a move; a record sales entered by hand is baselined by the
+         first stage pull instead. See pullOdooStages. */
+      await q(
+        `UPDATE leads
+         SET odoo_lead_id = $2,
+             odoo_stage = CASE WHEN $3 = 'created' THEN 'New' ELSE odoo_stage END
+         WHERE id = $1`,
+        [job.leadId, odooLeadId, outcome],
+      );
       if (warnings) console.warn(`[odoo] lead ${job.leadId}: ${warnings}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -752,4 +768,206 @@ export async function previewLead(
     },
     true,
   );
+}
+
+/* ==========================================================================
+   Stages back from Odoo
+   ========================================================================== */
+
+/* Sales works the pipeline in Odoo; the dashboard follows, and through it the
+   ad platforms. Each Odoo stage maps onto one dashboard status, in Odoo's own
+   order — New, Prospect, Negotiation, Proposal, Invoice Sent, Won — so moving
+   a deal right in Odoo can only move the lead right here. Prospect is first
+   contact rather than MQL on purpose: MQL was once pressed for 94% of leads
+   (docs/MQL-QUALIFICATION-PROMPT.md), and Negotiation is the first stage where
+   a deal is really in play. null leaves the dashboard as it is: a postponed
+   deal is still whatever it was. A stage missing from this table is ignored,
+   so a stage added in Odoo changes nothing until it is mapped here. */
+export const STAGE_TO_STATUS: Record<string, LeadStatus | null> = {
+  New: "lead",
+  Prospect: "first_contact",
+  Negotiation: "mql",
+  Proposal: "sql",
+  "Invoice Sent": "sql",
+  Won: "customer",
+  "Postponed for Future": null,
+  "No Communication": NOT_QUALIFIED,
+  Closed: NOT_QUALIFIED,
+};
+
+/* What odoo_stage holds for a record marked lost (archived) in Odoo. The team
+   files dead deals under Closed today, but the Lost button means the same. */
+const LOST = "Lost";
+
+export function odooPullEnabled(): boolean {
+  return (process.env.ODOO_PULL ?? "").trim().toLowerCase() === "on";
+}
+
+type OdooStageRead = { label: string; lostReason: string };
+
+/* The current stage of every Odoo record a lead is linked to. Two calls for
+   the ~300 records there are, one after the other: see RATE_LIMIT_RETRIES. */
+async function readOdooStages(
+  config: OdooConfig,
+  ids: number[],
+): Promise<Map<number, OdooStageRead>> {
+  const stages = new Map<number, OdooStageRead>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const records = await odooCall<
+      { id: number; active: boolean; stage_id: [number, string] | false; lost_reason_id: [number, string] | false }[]
+    >(config, "crm.lead", "search_read", {
+      domain: [
+        ["id", "in", ids.slice(i, i + 200)],
+        ["active", "in", [true, false]],
+      ],
+      fields: ["active", "stage_id", "lost_reason_id"],
+    });
+    for (const record of records) {
+      stages.set(record.id, {
+        label: record.active ? (record.stage_id ? record.stage_id[1] : "") : LOST,
+        lostReason: record.lost_reason_id ? record.lost_reason_id[1] : "",
+      });
+    }
+  }
+  return stages;
+}
+
+function statusForStage(label: string): LeadStatus | null {
+  if (label === LOST) return NOT_QUALIFIED;
+  return STAGE_TO_STATUS[label] ?? null;
+}
+
+/* The dashboard asks a reason of every disqualification; this is it. */
+function reasonForStage(stage: OdooStageRead): string {
+  if (stage.label === LOST) {
+    return stage.lostReason ? `Lost in Odoo: ${stage.lostReason}` : "Marked lost in Odoo";
+  }
+  return `Moved to "${stage.label}" in Odoo`;
+}
+
+type LinkedLead = { id: number; source: string; status: LeadStatus; odooLeadId: number; odooStage: string };
+
+/* One dashboard lead per Odoo record. A person who enquired twice has two rows
+   linked to the same opportunity; moving that opportunity must report one SQL,
+   not two, so only the earliest row that is not itself a duplicate follows. */
+async function linkedLeads(): Promise<LinkedLead[]> {
+  return q<LinkedLead>(
+    `SELECT DISTINCT ON (odoo_lead_id)
+            id, source, status, odoo_lead_id AS "odooLeadId", odoo_stage AS "odooStage"
+     FROM leads
+     WHERE odoo_lead_id > 0 AND NOT is_demo AND status <> $1
+     ORDER BY odoo_lead_id, id`,
+    [DUPLICATED],
+  );
+}
+
+export type OdooPullResult = {
+  checked: number;
+  baselined: number;
+  changed: number;
+  queuedConversions: number;
+  reason?: string;
+};
+
+/* Runs on the ten minute timer, before the conversion drain, so an upload a
+   stage change queues leaves in the same run.
+
+   A lead follows Odoo only when its Odoo stage actually changes. odoo_stage
+   remembers the last stage seen; a lead seen for the first time is baselined
+   — the stage is noted, nothing else moves — because the dashboard and Odoo
+   have both been edited by hand, and overwriting every status with today's
+   Odoo stage would undo work and push a burst of backdated conversions into
+   the bidding. Aligning the two once is a separate, explicit decision; see
+   previewOdooReconcile.
+
+   Backward moves follow too. A conversion already uploaded cannot be taken
+   back, and the outbox's dedupe keys stop a re-promotion counting twice. */
+export async function pullOdooStages(): Promise<OdooPullResult> {
+  const empty: OdooPullResult = { checked: 0, baselined: 0, changed: 0, queuedConversions: 0 };
+  if (!odooPullEnabled()) return { ...empty, reason: "ODOO_PULL is not on." };
+  const read = readOdooConfig();
+  if (!read.ok) return { ...empty, reason: `Odoo is not configured. Missing ${read.missing.join(", ")}.` };
+  if (odooSyncPaused()) return { ...empty, reason: "ODOO_SYNC_PAUSED is set." };
+
+  const leads = await linkedLeads();
+  const stages = await readOdooStages(read.config, leads.map((lead) => lead.odooLeadId));
+  const result: OdooPullResult = { ...empty, checked: leads.length };
+
+  for (const lead of leads) {
+    /* Missing: deleted or merged in Odoo. Nothing to follow. */
+    const stage = stages.get(lead.odooLeadId);
+    if (!stage || !stage.label || stage.label === lead.odooStage) continue;
+
+    if (lead.odooStage === "") {
+      await q("UPDATE leads SET odoo_stage = $2 WHERE id = $1", [lead.id, stage.label]);
+      result.baselined += 1;
+      continue;
+    }
+
+    const target = statusForStage(stage.label);
+    if (target && target !== lead.status) {
+      const reason = target === NOT_QUALIFIED ? reasonForStage(stage) : "";
+      if (await updateLeadStatus(lead.id, target, "Odoo", reason)) {
+        result.changed += 1;
+        result.queuedConversions += await enqueueStageAndBackfill(lead.id, target);
+      }
+    }
+    await q("UPDATE leads SET odoo_stage = $2 WHERE id = $1", [lead.id, stage.label]);
+  }
+
+  return result;
+}
+
+export type OdooReconcilePreview = {
+  linked: number;
+  /* Odoo stage (or Lost) -> dashboard status -> leads, as things stand. */
+  matrix: Record<string, Record<string, number>>;
+  /* "from -> to" -> leads that aligning with Odoo would move. */
+  wouldChange: Record<string, number>;
+  /* Leads aligning would promote to each stage the ad platforms hear about. */
+  promotions: Record<string, number>;
+  missingInOdoo: number;
+  unmappedStages: string[];
+};
+
+/* What aligning every dashboard status with today's Odoo stage would do,
+   without doing it. Reads only. The answer to "should we reconcile once", to
+   be read together with whoever owns the ad bidding. */
+export async function previewOdooReconcile(): Promise<OdooReconcilePreview | { error: string }> {
+  const read = readOdooConfig();
+  if (!read.ok) return { error: `Odoo is not configured. Missing ${read.missing.join(", ")}.` };
+
+  const leads = await linkedLeads();
+  const stages = await readOdooStages(read.config, leads.map((lead) => lead.odooLeadId));
+  const preview: OdooReconcilePreview = {
+    linked: leads.length,
+    matrix: {},
+    wouldChange: {},
+    promotions: {},
+    missingInOdoo: 0,
+    unmappedStages: [],
+  };
+  const rank = (status: LeadStatus) => (PIPELINE_STAGES as readonly string[]).indexOf(status);
+
+  for (const lead of leads) {
+    const stage = stages.get(lead.odooLeadId);
+    if (!stage || !stage.label) {
+      preview.missingInOdoo += 1;
+      continue;
+    }
+    const row = (preview.matrix[stage.label] ??= {});
+    row[lead.status] = (row[lead.status] ?? 0) + 1;
+
+    if (!(stage.label in STAGE_TO_STATUS) && stage.label !== LOST && !preview.unmappedStages.includes(stage.label)) {
+      preview.unmappedStages.push(stage.label);
+    }
+    const target = statusForStage(stage.label);
+    if (!target || target === lead.status) continue;
+    const key = `${lead.status} -> ${target}`;
+    preview.wouldChange[key] = (preview.wouldChange[key] ?? 0) + 1;
+    if (rank(target) > 0 && rank(target) > rank(lead.status)) {
+      preview.promotions[target] = (preview.promotions[target] ?? 0) + 1;
+    }
+  }
+  return preview;
 }

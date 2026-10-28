@@ -56,6 +56,8 @@ export type TableLead = {
   /* The sync's outbox status; empty for a lead it has never queued. */
   odooSync: "" | TableUpload["status"];
   odooError: string;
+  /* Its stage in Odoo, which the status follows; empty until first read. */
+  odooStage: string;
 };
 
 export type TableEvent = { id: number; label: string };
@@ -543,6 +545,9 @@ function LeadRow({
                             >
                               Open in Odoo
                             </a>
+                            {lead.odooStage && (
+                              <span className="text-ink-500">· {lead.odooStage}</span>
+                            )}
                             {/* A synced lead can still carry a warning, such as
                                 a nurture tag missing in Odoo. */}
                             {lead.odooError && (

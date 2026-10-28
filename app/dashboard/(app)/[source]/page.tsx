@@ -167,6 +167,7 @@ export default async function SourceDashboard({
     odooSync: lead.odooSync,
     /* A warning on a synced lead (a tag missing in Odoo) stays visible too. */
     odooError: lead.odooError,
+    odooStage: lead.odooStage,
   }));
 
   const eventsByLead: Record<number, TableEvent[]> = {};
